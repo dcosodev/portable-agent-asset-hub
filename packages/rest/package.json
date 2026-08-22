@@ -1,0 +1,1 @@
+{"name":"@portable-agent-asset-hub/rest","version":"0.1.0","type":"module","private":true,"license":"Apache-2.0","files":["dist/**/*.js","dist/**/*.d.ts","openapi/**"],"main":"./dist/index.js","types":"./dist/index.d.ts","exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"}},"dependencies":{"@portable-agent-asset-hub/core":"workspace:*"}}

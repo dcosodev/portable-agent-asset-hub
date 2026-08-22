@@ -1,0 +1,55 @@
+{
+  "name": "portable-agent-asset-hub",
+  "version": "0.1.0",
+  "private": false,
+  "license": "Apache-2.0",
+  "author": "Daniel C. S.",
+  "description": "Portable, auditable hub for versioned agent assets and runtime materialization.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "packageManager": "pnpm@11.0.8",
+  "files": ["dist/packages/baseline/**", "README.md", "THIRD_PARTY_NOTICES.md", "schemas/input/**", "third_party/licenses/**"],
+  "scripts": {
+    "lint": "eslint . --ignore-pattern 'dist/**' --ignore-pattern 'rejected/**' --ignore-pattern 'artifacts/**' --max-warnings 0",
+    "typecheck": "tsc -b",
+    "pretest": "pnpm build",
+    "test": "vitest run",
+    "build": "node scripts/clean.mjs dist && tsc -b --force && node scripts/copy-s2-migrations.mjs",
+    "pack": "node scripts/s0-pack.mjs",
+    "audit": "pnpm audit --prod",
+    "baseline:audit": "node scripts/s0-audit.mjs",
+    "s0:gate": "node scripts/s0-gate.mjs",
+    "s2:gate": "node scripts/s2-gate.mjs",
+    "s2:package-repro": "node scripts/package-repro.mjs",
+    "s2:external-install": "node scripts/external-install-s2.mjs",
+    "s3:external-install": "node scripts/external-install-s3.mjs",
+    "s2:fresh-backup": "node scripts/fresh-backup-s2.mjs",
+    "s3:gate": "node scripts/s3-gate.mjs",
+    "s4:gate": "node scripts/s4-gate.mjs",
+    "s5:gate": "node scripts/s5-gate.mjs",
+    "s5:fresh-process": "node scripts/s5-fresh-process.mjs",
+    "s6:generate": "node scripts/generate-sdks.mjs",
+    "s6:drift": "node scripts/check-openapi-drift.mjs",
+    "s6:gate": "node scripts/s6-gate.mjs",
+    "s7:gate": "node scripts/s7-gate.mjs",
+    "s8:gate": "node scripts/s8-gate.mjs",
+    "s9:gate": "node scripts/s9-gate.mjs",
+    "s10:gate": "node scripts/s10-gate.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.15.0",
+    "@typescript-eslint/eslint-plugin": "^8.27.0",
+    "@typescript-eslint/parser": "^8.27.0",
+    "eslint": "^9.22.0",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^3.0.8"
+  }
+}

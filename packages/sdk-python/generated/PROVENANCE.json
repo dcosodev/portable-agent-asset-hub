@@ -1,0 +1,15 @@
+{
+  "generator": "OpenAPI Generator",
+  "version": "7.10.0",
+  "generator_available": true,
+  "source": "openapi/openapi.yaml",
+  "cli": {
+    "command": "openapi-generator-cli",
+    "resolution": "PATH:openapi-generator-cli",
+    "version": "7.10.0"
+  },
+  "java": {
+    "version": "17.0.20"
+  },
+  "contract_fixtures": []
+}

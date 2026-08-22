@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-memory.local/schemas/memory-record.v1.json",
+  "type": "object",
+  "required": ["memory_id", "kind", "content", "scope", "status", "schema_version"],
+  "properties": {
+    "memory_id": {"type": "string", "pattern": "^mem_[A-Za-z0-9]+$"},
+    "kind": {"enum": ["fact", "decision", "episode", "task", "error", "lesson", "artifact", "entity", "relation"]},
+    "content": {"type": "string", "minLength": 1},
+    "summary": {"type": ["string", "null"]},
+    "scope": {"enum": ["global", "user", "project", "repository", "session", "agent"]},
+    "scope_key": {"type": ["string", "null"]},
+    "status": {"enum": ["candidate", "active", "superseded", "forgotten"]},
+    "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "importance": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "source_event_ids": {"type": "array", "items": {"type": "string"}},
+    "supersedes_id": {"type": ["string", "null"]},
+    "version": {"type": "integer", "minimum": 1},
+    "created_by": {"type": "string"},
+    "schema_version": {"const": "1.0"}
+  },
+  "additionalProperties": true
+}

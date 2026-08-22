@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS memory_versions (memory_id TEXT NOT NULL, version INTEGER NOT NULL, content_json TEXT NOT NULL, redaction_summary_json TEXT NOT NULL, lifecycle TEXT NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY(memory_id,version), FOREIGN KEY(memory_id) REFERENCES memories(id) ON DELETE CASCADE);

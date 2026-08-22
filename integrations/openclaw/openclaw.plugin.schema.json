@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portable-agent-asset-hub/schemas/openclaw.plugin.schema.json",
+  "title": "PAH OpenClaw Plugin Manifest",
+  "description": "Frozen v1 contract for the OpenClaw plugin manifest descriptor. The host loads this file when wiring the OpenClaw adapter into a runtime; the descriptor pins the renderer version + snapshot/profile the plugin was built against so a host can refuse to load a stale plugin against a newer snapshot.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "name",
+    "version",
+    "snapshotId",
+    "profileId",
+    "rendererVersion",
+    "entry",
+    "commands",
+    "requiredCapabilities"
+  ],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "openclaw",
+      "description": "Plugin kind. The S9 surface only ships the 'openclaw' kind."
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "description": "Plugin name (author-supplied)."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9._-]+)?$",
+      "description": "Plugin version (semver)."
+    },
+    "snapshotId": {
+      "type": "string",
+      "pattern": "^snap_[A-Za-z0-9._-]+$",
+      "description": "Snapshot the plugin was generated against."
+    },
+    "profileId": {
+      "type": "string",
+      "pattern": "^prf_[A-Za-z0-9._-]+$",
+      "description": "Profile the plugin was generated against."
+    },
+    "rendererVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9._-]+)?$",
+      "description": "Renderer version the plugin was generated against. A renderer bump forces a plugin re-build."
+    },
+    "stateDir": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Absolute state dir the plugin was built against."
+    },
+    "entry": {
+      "type": "string",
+      "const": "index.js",
+      "description": "JS entry point the host spawns."
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "description"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]+$",
+            "description": "Command name."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable description."
+          }
+        }
+      },
+      "description": "Commands the plugin surfaces."
+    },
+    "requiredCapabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._:-]+$"
+      },
+      "description": "Capabilities the host must grant before any command runs."
+    }
+  }
+}

@@ -1,0 +1,956 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Portable Agent Asset Hub",
+    "version": "0.1.0"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [
+    {
+      "url": "http://127.0.0.1"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "health.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "getHealth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/Health"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status": {
+      "get": {
+        "operationId": "getStatus",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "status.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "getStatus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/Status"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/doctor": {
+      "get": {
+        "operationId": "getDoctor",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "admin.doctor",
+        "x-mcp.safety": "diagnostic",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "getDoctor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identities": {
+      "get": {
+        "operationId": "listIdentities",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "identity.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "listIdentities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponseArray"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bindings": {
+      "post": {
+        "operationId": "createBinding",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "binding.write",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": true,
+        "responses": {
+          "200": {
+            "description": "createBinding",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "./components/parameters.yaml#/RequestId"
+          },
+          {
+            "$ref": "./components/parameters.yaml#/IfMatch"
+          }
+        ]
+      }
+    },
+    "/api/v1/profiles": {
+      "post": {
+        "operationId": "createProfile",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "profile.write",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "createProfile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memory-blocks": {
+      "get": {
+        "operationId": "listMemoryBlocks",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "memory.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "listMemoryBlocks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponseArray"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events": {
+      "post": {
+        "operationId": "createEvent",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "event.write",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "createEvent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memories": {
+      "post": {
+        "operationId": "createMemory",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "memory.write",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "createMemory",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/memories/{id}/supersede": {
+      "post": {
+        "operationId": "supersedeMemory",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "memory.supersede",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": true,
+        "responses": {
+          "200": {
+            "description": "supersedeMemory",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "./components/parameters.yaml#/RequestId"
+          },
+          {
+            "$ref": "./components/parameters.yaml#/IfMatch"
+          }
+        ]
+      }
+    },
+    "/api/v1/memories/{id}/forget": {
+      "post": {
+        "operationId": "forgetMemory",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "memory.forget",
+        "x-mcp.safety": "destructive",
+        "x-idempotent": true,
+        "x-cas-required": true,
+        "responses": {
+          "200": {
+            "description": "forgetMemory",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "./components/parameters.yaml#/RequestId"
+          },
+          {
+            "$ref": "./components/parameters.yaml#/IfMatch"
+          }
+        ]
+      }
+    },
+    "/api/v1/skills": {
+      "get": {
+        "operationId": "listSkills",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "skill.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "listSkills",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponseArray"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skills/{id}/versions": {
+      "get": {
+        "operationId": "listSkillVersions",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "skill.version.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "listSkillVersions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponseArray"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/resources/{path}": {
+      "get": {
+        "operationId": "getResource",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "resource.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "getResource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog": {
+      "get": {
+        "operationId": "getCatalog",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "catalog.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "getCatalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponseArray"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/sync/preview": {
+      "post": {
+        "operationId": "previewCatalogSync",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "catalog.sync.preview",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "previewCatalogSync",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/sync/apply": {
+      "post": {
+        "operationId": "applyCatalogSync",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "catalog.sync.apply",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": true,
+        "responses": {
+          "200": {
+            "description": "applyCatalogSync",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "./components/parameters.yaml#/RequestId"
+          },
+          {
+            "$ref": "./components/parameters.yaml#/IfMatch"
+          }
+        ]
+      }
+    },
+    "/api/v1/audit": {
+      "get": {
+        "operationId": "listAudit",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "audit.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "listAudit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponseArray"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/snapshots": {
+      "get": {
+        "operationId": "listSnapshots",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "snapshot.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "listSnapshots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponseArray"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replay": {
+      "post": {
+        "operationId": "replay",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "replay.run",
+        "x-mcp.safety": "diagnostic",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/materializations/preview": {
+      "post": {
+        "operationId": "previewMaterialization",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "materialization.preview",
+        "x-mcp.safety": "safe",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "previewMaterialization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/materializations/apply": {
+      "post": {
+        "operationId": "applyMaterialization",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "materialization.apply",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": true,
+        "responses": {
+          "200": {
+            "description": "applyMaterialization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "./components/parameters.yaml#/RequestId"
+          },
+          {
+            "$ref": "./components/parameters.yaml#/IfMatch"
+          }
+        ]
+      }
+    },
+    "/api/v1/materializations/{run_id}/rollback": {
+      "post": {
+        "operationId": "rollbackMaterialization",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "materialization.rollback",
+        "x-mcp.safety": "destructive",
+        "x-idempotent": true,
+        "x-cas-required": true,
+        "responses": {
+          "200": {
+            "description": "rollbackMaterialization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./components/schemas.yaml#/ObjectResponse"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "./components/parameters.yaml#/RequestId"
+          },
+          {
+            "$ref": "./components/parameters.yaml#/IfMatch"
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Health": {
+        "$ref": "./components/schemas.yaml#/Health"
+      },
+      "Status": {
+        "$ref": "./components/schemas.yaml#/Status"
+      },
+      "Error": {
+        "$ref": "./components/errors.yaml#/Error"
+      },
+      "ObjectResponse": {
+        "$ref": "./components/schemas.yaml#/ObjectResponse"
+      },
+      "ObjectResponseArray": {
+        "$ref": "./components/schemas.yaml#/ObjectResponseArray"
+      }
+    },
+    "parameters": {
+      "RequestId": {
+        "$ref": "./components/parameters.yaml#/RequestId"
+      },
+      "IfMatch": {
+        "$ref": "./components/parameters.yaml#/IfMatch"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "$ref": "./components/security.yaml#/bearerAuth"
+      }
+    }
+  }
+}

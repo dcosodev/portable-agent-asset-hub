@@ -1,0 +1,1 @@
+local resource; never executed

@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://portable-agent-asset-hub.dev/schemas/capabilities.v1.json","type":"string","enum":["read","write.memory","write.skill","write.catalog","write.profile","admin.materialize","admin.snapshot","admin.replay","admin.sync","admin.doctor","admin.migrate"]}

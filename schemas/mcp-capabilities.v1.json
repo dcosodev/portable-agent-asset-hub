@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portable-agent-asset-hub.dev/schemas/mcp-capabilities.v1.json",
+  "title": "MCP Capability Matrix v1",
+  "description": "Capability -> tool allowlist. A capability unlocks exactly the tools listed under its 'tools' array. The 'read' capability is the default baseline; 'write.*' and 'admin.*' capabilities are opt-in and must be granted explicitly by the operator. A request without any matching capability sees only the 'read' tools (and any other tool whose list contains a capability present on the actor).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "default", "buckets"],
+  "properties": {
+    "version": { "const": "1" },
+    "default": {
+      "description": "Capability granted implicitly to every MCP actor. By convention this is 'read' and cannot be disabled.",
+      "type": "string",
+      "enum": ["read"]
+    },
+    "buckets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "read",
+        "write.memory",
+        "write.skill",
+        "write.catalog",
+        "write.profile",
+        "admin.materialize",
+        "admin.snapshot",
+        "admin.replay",
+        "admin.sync",
+        "admin.doctor",
+        "admin.migrate"
+      ],
+      "properties": {
+        "read": { "$ref": "#/$defs/bucket" },
+        "write.memory": { "$ref": "#/$defs/bucket" },
+        "write.skill": { "$ref": "#/$defs/bucket" },
+        "write.catalog": { "$ref": "#/$defs/bucket" },
+        "write.profile": { "$ref": "#/$defs/bucket" },
+        "admin.materialize": { "$ref": "#/$defs/bucket" },
+        "admin.snapshot": { "$ref": "#/$defs/bucket" },
+        "admin.replay": { "$ref": "#/$defs/bucket" },
+        "admin.sync": { "$ref": "#/$defs/bucket" },
+        "admin.doctor": { "$ref": "#/$defs/bucket" },
+        "admin.migrate": { "$ref": "#/$defs/bucket" }
+      }
+    }
+  },
+  "$defs": {
+    "bucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "safety", "tools"],
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "safety": {
+          "type": "string",
+          "enum": ["safe", "mutating", "destructive", "diagnostic"]
+        },
+        "tools": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+        }
+      }
+    }
+  }
+}

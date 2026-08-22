@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "root": "docs/baseline/public-fixture/agent-memory",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 206,
+      "mode": 384,
+      "sha256": "aedff7c1ddead4ed68277a588984983667b2dac1050220080c1936fb4386c942"
+    }
+  ],
+  "allowlist": ["README.md"],
+  "exclusions": [
+    ".git",
+    ".env",
+    ".env.*",
+    ".venv",
+    "node_modules",
+    ".pytest_cache",
+    ".ruff_cache",
+    "__pycache__",
+    "*.pyc",
+    "dist",
+    "build",
+    "*.egg-info",
+    "coverage",
+    "coverage.*",
+    "caches",
+    "logs",
+    "logs/*.log",
+    "*secret*",
+    "*token*",
+    "*cookie*"
+  ],
+  "toolVersion": "s0-baseline-tool/2.0.0",
+  "snapshot": {
+    "path": "docs/baseline/public-fixture/agent-memory-python-s0.tar.gz",
+    "sha256": "4c8909e1494bac9420071bb8d84ed9d49de088f223ae37f2a8bb910a07a6af3f"
+  },
+  "completeness": "complete",
+  "extrasPolicy": "reject-non-excluded",
+  "symlinkPolicy": "reject-root-and-internal"
+}

@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS memories (id TEXT PRIMARY KEY, kind TEXT NOT NULL, owner_user_id TEXT NOT NULL, scope_agent_id TEXT NOT NULL, scope_key TEXT NOT NULL, lifecycle TEXT NOT NULL, confidence REAL NOT NULL, importance REAL NOT NULL, supersedes_id TEXT, current_version INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, FOREIGN KEY(supersedes_id) REFERENCES memories(id));
+CREATE INDEX IF NOT EXISTS memories_scope ON memories(owner_user_id,scope_agent_id,scope_key);

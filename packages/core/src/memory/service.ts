@@ -1,0 +1,3 @@
+import type { Memory, MemoryCreate, MemorySupersede, MemoryUpdate } from './types.js';
+import type { Scope } from '../identity/types.js';
+export interface MemoryRepository { create(input:MemoryCreate):Memory; get(id:string,scope:Scope):Memory|undefined; getOrThrow(id:string,scope:Scope):Memory; update(id:string,input:MemoryUpdate,scope:Scope):Memory; supersede(id:string,input:MemorySupersede,scope:Scope):Memory; forget(id:string,expectedVersion:number,scope:Scope,reason?:string,requestId?:string):Memory; history(id:string,scope:Scope):Memory[]; provenance(id:string,scope:Scope):string[]; search(scope:Scope,query:string,limit?:number):Memory[]; }

@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portable-agent-asset-hub/schemas/manifest.v1.json",
+  "title": "PAH Materialization Manifest v1",
+  "description": "Frozen manifest contract for Slice 8 (Hermes) and Slice 9 (OpenClaw). Renderer-agnostic. The harness-specific layout is encoded in `harness` plus the renderer version; the bytes themselves are base64-encoded so the manifest is JSON-safe across processes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "runId",
+    "snapshotId",
+    "harness",
+    "profileId",
+    "targetRoot",
+    "files",
+    "generatedAt",
+    "rendererVersion"
+  ],
+  "properties": {
+    "runId": {
+      "type": "string",
+      "pattern": "^run_[A-Za-z0-9._-]+$",
+      "description": "Unique run identifier stamped at apply time."
+    },
+    "snapshotId": {
+      "type": "string",
+      "pattern": "^snap_[A-Za-z0-9._-]+$",
+      "description": "Snapshot id the materialization was derived from."
+    },
+    "harness": {
+      "type": "string",
+      "enum": ["hermes", "openclaw"],
+      "description": "Target harness. Slice 8 only writes 'hermes'; Slice 9 reuses the same contract."
+    },
+    "profileId": {
+      "type": "string",
+      "pattern": "^prf_[A-Za-z0-9._-]+$",
+      "description": "Profile this materialization belongs to."
+    },
+    "targetRoot": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Absolute or workspace-relative target root (resolved by the materializer at apply time; never autodetected)."
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["relativePath", "sha256", "bytes", "mode", "sourceRef"],
+        "properties": {
+          "relativePath": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._/-]+$",
+            "description": "Forward-slash relative path inside the target root. No leading slash, no '..', no empty segments."
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 of the decoded bytes."
+          },
+          "bytes": {
+            "type": "string",
+            "description": "Base64-encoded file bytes. The bytes must decode to a UTF-8 / LF canonical text artefact."
+          },
+          "mode": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4095,
+            "description": "POSIX mode bits. Standard for materialised text files is 0644."
+          },
+          "sourceRef": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Profile-derived provenance token, e.g. 'profile:block:user'."
+          }
+        }
+      }
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp the manifest was generated."
+    },
+    "rendererVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9._-]+)?$",
+      "description": "Renderer version (semver). A renderer bump always forces a re-preview."
+    }
+  }
+}

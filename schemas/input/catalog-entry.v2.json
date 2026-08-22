@@ -1,0 +1,255 @@
+{
+  "properties": {
+    "aliases": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 100,
+      "title": "Aliases",
+      "type": "array"
+    },
+    "canonical_ref": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Canonical Ref"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "default": "explicit",
+      "title": "Created By",
+      "type": "string"
+    },
+    "domain": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Domain"
+    },
+    "entry_id": {
+      "maxLength": 100,
+      "title": "Entry Id",
+      "type": "string"
+    },
+    "entry_type": {
+      "enum": [
+        "project",
+        "repository",
+        "tool",
+        "skill",
+        "domain",
+        "workflow",
+        "rule",
+        "document",
+        "service",
+        "integration",
+        "source",
+        "archive"
+      ],
+      "title": "Entry Type",
+      "type": "string"
+    },
+    "logical_key": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Logical Key",
+      "type": "string"
+    },
+    "maturity": {
+      "default": "unknown",
+      "enum": [
+        "prototype",
+        "experimental",
+        "technical-preview",
+        "beta",
+        "production",
+        "legacy",
+        "external",
+        "unknown"
+      ],
+      "title": "Maturity",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "name": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "review_after": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Review After"
+    },
+    "schema_version": {
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "default": "global",
+      "enum": [
+        "global",
+        "user",
+        "project",
+        "repository",
+        "session",
+        "agent"
+      ],
+      "title": "Scope",
+      "type": "string"
+    },
+    "scope_key": {
+      "anyOf": [
+        {
+          "maxLength": 1000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scope Key"
+    },
+    "source_checked_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Checked At"
+    },
+    "source_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Hash"
+    },
+    "source_ref": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Ref"
+    },
+    "source_type": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Type"
+    },
+    "status": {
+      "default": "candidate",
+      "enum": [
+        "candidate",
+        "active",
+        "stale",
+        "superseded",
+        "archived",
+        "forgotten"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "summary": {
+      "default": "",
+      "maxLength": 5000,
+      "title": "Summary",
+      "type": "string"
+    },
+    "supersedes_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Supersedes Id"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 100,
+      "title": "Tags",
+      "type": "array"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "logical_key",
+    "entry_type",
+    "name"
+  ],
+  "title": "CatalogEntry",
+  "type": "object"
+}

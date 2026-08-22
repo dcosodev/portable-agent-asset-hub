@@ -1,0 +1,14 @@
+upstream:
+  name: TencentDB Agent Memory
+  repository: TencentCloud/TencentDB-Agent-Memory
+  commit: 97f94654280b2932c35ba4806a491999ed244cc9
+  license: MIT
+  license_file: third_party/licenses/TENCENTDB_AGENT_MEMORY_LICENSE
+  status: pinned-read-only
+reuse_entries: []
+policy:
+  require_commit_license_treatment: true
+  excluded:
+    - MemoryProxy/
+    - MemoryPanel/
+    - Tencent cloud services

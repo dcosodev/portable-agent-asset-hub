@@ -1,0 +1,82 @@
+{
+  "properties": {
+    "confidence": {
+      "default": 1.0,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "default": "explicit",
+      "title": "Created By",
+      "type": "string"
+    },
+    "object_id": {
+      "title": "Object Id",
+      "type": "string"
+    },
+    "predicate": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Predicate",
+      "type": "string"
+    },
+    "relation_id": {
+      "title": "Relation Id",
+      "type": "string"
+    },
+    "source_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Id"
+    },
+    "status": {
+      "default": "active",
+      "enum": [
+        "candidate",
+        "active",
+        "stale",
+        "superseded",
+        "archived",
+        "forgotten"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "subject_id": {
+      "title": "Subject Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "subject_id",
+    "predicate",
+    "object_id"
+  ],
+  "title": "CatalogRelation",
+  "type": "object"
+}

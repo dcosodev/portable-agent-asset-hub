@@ -1,0 +1,27 @@
+{
+  "name": "@portable-agent-asset-hub/spike-skills",
+  "version": "1.0.0",
+  "private": false,
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": { ".": { "types": "./dist/src/index.d.ts", "import": "./dist/src/index.js" } },
+  "bin": { "spike-skills-mcp": "./dist/src/mcp/stdio.js" },
+  "files": ["dist/src", "README.md", "migrations", "fixtures"],
+  "scripts": {
+    "lint": "eslint src tests scripts --ext .ts,.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json",
+    "package": "node scripts/package.mjs && node scripts/metrics.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "external-install": "node scripts/external-install.mjs",
+    "protocol-smoke": "node scripts/protocol-smoke.mjs",
+    "stdio-smoke": "node scripts/stdio-smoke.mjs",
+    "no-cloud": "node scripts/no-cloud-check.mjs",
+    "gate": "node scripts/gate.mjs"
+  },
+  "dependencies": { "@modelcontextprotocol/sdk": "^1.30.0", "zod": "^3.25.76" },
+  "devDependencies": { "@types/node": "^22.15.0", "typescript": "^5.8.2", "vitest": "^3.0.8" }
+}

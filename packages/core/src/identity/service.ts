@@ -1,0 +1,2 @@
+import type { Agent, Harness, User, UserId, AgentId, HarnessId } from './types.js';
+export interface IdentityService { createUser(input: { displayName: string }): User; createAgent(input: { ownerUserId: UserId; name: string }): Agent; createHarness(input: { name: string; runtime: string }): Harness; getUser(id: UserId): User | undefined; getAgent(id: AgentId): Agent | undefined; getHarness(id: HarnessId): Harness | undefined; }

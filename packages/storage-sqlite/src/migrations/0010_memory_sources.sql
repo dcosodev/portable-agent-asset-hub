@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS memory_sources (memory_id TEXT NOT NULL, version INTEGER NOT NULL, event_id TEXT NOT NULL, PRIMARY KEY(memory_id,version,event_id), FOREIGN KEY(memory_id,version) REFERENCES memory_versions(memory_id,version), FOREIGN KEY(event_id) REFERENCES events(id));

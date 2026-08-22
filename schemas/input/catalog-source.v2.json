@@ -1,0 +1,53 @@
+{
+  "properties": {
+    "checked_at": {
+      "format": "date-time",
+      "title": "Checked At",
+      "type": "string"
+    },
+    "content_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content Hash"
+    },
+    "kind": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Kind",
+      "type": "string"
+    },
+    "locator": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Locator",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "source_id": {
+      "title": "Source Id",
+      "type": "string"
+    },
+    "status": {
+      "default": "active",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "locator"
+  ],
+  "title": "CatalogSource",
+  "type": "object"
+}

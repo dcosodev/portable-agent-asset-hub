@@ -1,0 +1,29 @@
+{
+  "name": "@portable-agent-asset-hub/migration",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "src/**/manifest.v1.json",
+    "src/**/python-v2-to-hub-v1.json"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapters/python": {
+      "types": "./dist/adapters/python.js",
+      "import": "./dist/adapters/python.js"
+    }
+  },
+  "dependencies": {
+    "@portable-agent-asset-hub/core": "workspace:*"
+  }
+}

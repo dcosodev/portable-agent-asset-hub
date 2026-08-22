@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS idempotency (key TEXT NOT NULL, actor_id TEXT NOT NULL, operation TEXT NOT NULL, request_digest TEXT NOT NULL, response_json TEXT NOT NULL, status INTEGER NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY(actor_id, operation, key));

@@ -1,0 +1,27 @@
+{
+  "name": "@portable-agent-asset-hub/materializers",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "files": ["dist/**/*.js", "dist/**/*.d.ts", "README.md", "src/**/manifest.v1.json"],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./hermes": {
+      "types": "./dist/hermes/index.d.ts",
+      "import": "./dist/hermes/index.js"
+    },
+    "./openclaw": {
+      "types": "./dist/openclaw/index.d.ts",
+      "import": "./dist/openclaw/index.js"
+    }
+  },
+  "dependencies": {
+    "@portable-agent-asset-hub/core": "workspace:*"
+  }
+}

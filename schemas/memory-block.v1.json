@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"memory-block.v1","type":"object","additionalProperties":false,"required":["blockId","ordinal","kind","body"],"properties":{"blockId":{"type":"string","pattern":"^[A-Za-z0-9][A-Za-z0-9._-]*$"},"ordinal":{"type":"integer","minimum":0},"kind":{"const":"MEMORY"},"body":{"type":"string","minLength":1}}}

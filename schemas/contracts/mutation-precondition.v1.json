@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portable-agent-asset-hub.local/schemas/contracts/mutation-precondition.v1.json",
+  "type": "object",
+  "required": ["expected_version"],
+  "properties": {
+    "expected_version": { "type": "integer", "minimum": 1 },
+    "idempotency_key": { "type": ["string", "null"], "minLength": 1 },
+    "reason": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

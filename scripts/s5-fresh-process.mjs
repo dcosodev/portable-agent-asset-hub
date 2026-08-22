@@ -1,0 +1,6 @@
+import { mkdtempSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { createActorContext, SyncService, candidatesFrom } from '../packages/core/dist/index.js';
+import { SqliteStore } from '../packages/storage-sqlite/dist/index.js';
+const dir=mkdtempSync(join(tmpdir(),'s5-fresh-')),path=join(dir,'catalog.sqlite');const actor=createActorContext({userId:'usr_fresh',agentId:'agt_fresh',role:'user',capabilities:[]});const meta={reason:'fresh-process',requestId:'req-fresh'};const scanner=candidatesFrom([{kind:'document',relativePath:'README.md',locator:'README.md',bytes:Buffer.from('bounded'),metadata:{name:'readme'}}]);let db=new SqliteStore(path);const p=await new SyncService(scanner).preview({roots:[dir],scope:actor.scope,profile:'fresh'});db.transaction(actor,tx=>tx.catalogSync.savePreview(p,meta));db.transaction(actor,tx=>tx.catalogSync.review(p.id,p.digest,actor.scope,meta));db.transaction(actor,tx=>new SyncService(scanner,{catalog:tx.catalog,sync:tx.catalogSync}).apply({previewId:p.id,scope:actor.scope,observed:p,meta}));db.close();db=new SqliteStore(path);const report=db.doctor();db.close();if(!report.ok)throw new Error(`doctor failed: ${report.errors.join(',')}`);console.log(JSON.stringify({ok:true,preview:p.id,doctor:report.ok,path}));

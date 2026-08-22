@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, owner_user_id TEXT NOT NULL, scope_agent_id TEXT NOT NULL, scope_key TEXT NOT NULL, payload_json TEXT NOT NULL, request_id TEXT NOT NULL, provenance_json TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(owner_user_id,scope_agent_id,id));
+CREATE INDEX IF NOT EXISTS events_scope ON events(owner_user_id,scope_agent_id,scope_key);

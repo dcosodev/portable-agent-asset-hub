@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portable-agent-asset-hub.local/schemas/contracts/actor-context.v1.json",
+  "type": "object",
+  "required": ["user_id", "agent_id", "harness_id"],
+  "properties": {
+    "user_id": { "type": "string", "minLength": 1 },
+    "agent_id": { "type": "string", "minLength": 1 },
+    "harness_id": { "type": "string", "minLength": 1 },
+    "session_id": { "type": ["string", "null"] },
+    "task_id": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

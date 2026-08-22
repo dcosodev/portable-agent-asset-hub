@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS harnesses (id TEXT PRIMARY KEY CHECK(id GLOB 'hrn_*'), name TEXT NOT NULL, runtime TEXT NOT NULL, created_at TEXT NOT NULL);

@@ -1,0 +1,5 @@
+packages:
+  - packages/*
+  - slices/1-spike-skills
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+artifacts/
+artifacts/.evidence/
+.tmp-*/
+dist-package/
+*.tsbuildinfo
+*.tgz
+.env*
+*.secret
+*.token
+logs/
+caches/
+.DS_Store

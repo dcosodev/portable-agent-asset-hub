@@ -1,0 +1,16 @@
+import type { Scope } from '../identity/types.js';
+import type { MutationMeta } from '../storage/contracts.js';
+export type CatalogKind = 'repository'|'skill'|'document'|'tool';
+export type CatalogLifecycle = 'candidate'|'active'|'stale'|'rejected';
+export type CatalogEntry = { id:string; scope:Scope; logicalKey:string; kind:CatalogKind; name:string; summary?:string; lifecycle:CatalogLifecycle; currentVersion:number; metadata:Record<string,unknown>; createdAt:string; updatedAt:string };
+export type CatalogSource = { id:string; scope:Scope; kind:string; locator:string; fingerprint:string; createdAt:string };
+export type CatalogRelation = { scope:Scope; fromEntryId:string; relation:string; toEntryId:string; sourceId?:string };
+export type CatalogCandidate = { kind:CatalogKind; relativePath:string; locator:string; bytes:Buffer; metadata?:Record<string,unknown>; summary?:string; sourceKind?:string; rootId?:string; contentDigest?:string };
+export type CatalogOperation = { action:'upsert'|'stale'|'conflict'; logicalKey:string; candidate?:CatalogCandidate; expectedVersion?:number; reason?:string; sourceId?:string };
+export type SyncInput = { roots:RootDescriptor[]|string[]; scope:Scope; profile:string; target?:{bytes:Buffer}; selectors?:string[]; expiresAt?:number; inputFingerprint?:string; profileFingerprint?:string; catalogFingerprint?:string; targetFingerprint?:string };
+export type RootDescriptor = {id:string;path:string};
+export type SyncPreview = { id:string; scope:Scope; profile:string; roots:RootDescriptor[]; selectors:string[]; inputFingerprint:string; rootsFingerprint:string; catalogFingerprint:string; profileFingerprint:string; targetFingerprint:string; operations:CatalogOperation[]; diagnostics:string[]; complete:boolean; digest:string; expiresAt:number; reviewedDigest?:string; appliedAt?:string };
+export type CatalogMutationMeta = MutationMeta;
+export type ApplyRequest = { previewId:string; reviewedDigest:string; meta:MutationMeta; scope?:Scope; observed?:{inputFingerprint:string;rootsFingerprint:string;catalogFingerprint:string;profileFingerprint:string;targetFingerprint:string;digest:string} };
+export type CatalogScanner = { scan(input:{roots:RootDescriptor[]|string[];selectors?:string[]}): Promise<CatalogCandidate[]>|CatalogCandidate[] };
+export type CatalogStore = { getFingerprint(scope:Scope):string; applyPreview(preview:SyncPreview, meta:MutationMeta):void };
