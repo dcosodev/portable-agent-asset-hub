@@ -12,24 +12,27 @@ explicitly not a hosted service.
 
 | Badge | Source |
 | --- | --- |
+| CI | [![CI](https://github.com/dcosodev/portable-agent-asset-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/dcosodev/portable-agent-asset-hub/actions/workflows/ci.yml) |
 | License | [Apache-2.0](LICENSE) |
 | Node engine | `>=22.16.0` (see `package.json` `engines.node`) |
 | pnpm | `11.0.8` (see `package.json` `packageManager`) |
 | TypeScript | `^5.8.2` (devDependency) |
 | Project status | Portfolio / research, not a hosted service |
 
-> The repository intentionally does not advertise a CI badge. There is no
-> active GitHub Actions workflow shipped with this public export; the staged
-> gates (`s0`–`s10`) are local, fail-closed scripts. The S6 SDK-generation
-> gate additionally requires Java 17 and OpenAPI Generator `7.10.0`; missing
-> external tools are reported as blockers, not silently downgraded.
+> CI runs the fast checks only (`lint`, `typecheck`, `test`, and the
+> end-to-end demo). The staged gates (`s0`–`s10`) remain local, fail-closed
+> scripts. The S6 SDK-generation gate additionally requires Java 17 and
+> OpenAPI Generator `7.10.0`; missing external tools are reported as
+> blockers, not silently downgraded.
 
 ## At a glance
 
 - **OpenAPI 3.1 contract** under [`openapi/openapi.yaml`](openapi/openapi.yaml)
   with 23 operations across health, identity, profiles, memories, memory
   blocks, events, skills, resources, catalog, audit, snapshots, replay,
-  materializations, and bindings.
+  materializations, and bindings. (The file is JSON-formatted — valid YAML —
+  and its path is pinned by the drift detector and the generated SDKs'
+  `PROVENANCE.json`, so it keeps the `.yaml` name.)
 - **REST surface** at `/api/v1/...` (`@portable-agent-asset-hub/rest`) using
   the standard `node:http` server, with bearer auth, optional loopback
   `localMode`, `If-Match` CAS enforcement on mutating routes, `x-request-id`
@@ -183,11 +186,21 @@ pnpm build
 pnpm lint
 pnpm typecheck
 pnpm test
+
+# 4. Watch the hub work end to end (profile -> preview -> apply ->
+#    drift 412 -> rollback), fully local. See docs/demo.md.
+node examples/demo/demo.mjs
 ```
 
 > `pnpm test` is preceded by `pnpm build` (`pretest` hook) and runs
 > `vitest run` against the contract, integration, E2E, and gate test files
 > under [`tests/`](tests/).
+
+> Node prints `ExperimentalWarning: SQLite is an experimental feature`
+> during tests: the storage adapter uses the built-in `node:sqlite` module,
+> which is experimental on the supported Node >= 22.16 line. The warning is
+> expected and harmless; the limitation is recorded explicitly in the gate
+> evidence rather than suppressed.
 
 ## Validation
 
@@ -267,8 +280,8 @@ personal skills, profiles, credentials, sessions, and runtime state.
 ### Not implemented (in this public export)
 
 - A hosted service, a managed runtime, or any kind of SLA.
-- A live CI workflow under `.github/workflows/`. The repository ships
-  issue and PR templates but no active Actions configuration.
+- CI coverage of the staged gates: the GitHub Actions workflow runs the
+  fast checks and the demo only; gates `s0`–`s10` are local scripts.
 - Personal skills, profiles, cookies, tokens, sessions, `state.db`, or
   other runtime data. The public fixture under
   `docs/baseline/public-fixture/` contains neutral example data only.
@@ -348,6 +361,8 @@ checklist.
   — what the portable v1 contract explicitly leaves out.
 - [`docs/adr/0003-tencent-extraction-boundary.md`](docs/adr/0003-tencent-extraction-boundary.md)
   — extraction boundary for upstream material.
+- [`docs/demo.md`](docs/demo.md) — the end-to-end walkthrough
+  (`examples/demo/demo.mjs`) and SDK usage snippets.
 - [`docs/engineering-log.md`](docs/engineering-log.md) — staged-gate
   methodology, glossary, and the consolidated RED/GREEN log per stage.
 - [`docs/s2-contract.md`](docs/s2-contract.md) — S2 contract notes.

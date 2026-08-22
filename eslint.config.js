@@ -6,6 +6,7 @@ const nodeGlobals = {
   process: 'readonly',
   Buffer: 'readonly',
   URL: 'readonly',
+  fetch: 'readonly',
   setTimeout: 'readonly',
   clearTimeout: 'readonly',
 };
@@ -49,7 +50,7 @@ export default tseslint.config(
     ],
   },
   {
-    files: ['scripts/**/*.mjs'],
+    files: ['scripts/**/*.mjs', 'examples/**/*.mjs'],
     languageOptions: { globals: nodeGlobals },
     rules: { 'no-console': 'off' },
   },

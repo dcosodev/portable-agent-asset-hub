@@ -103,6 +103,39 @@ describe('E2E hermes-rollback (S8)', () => {
     }
   });
 
+  it('removes files the apply added over an empty target', () => {
+    const home = tempHome('added');
+    const target = join(home, 'hermes', 'state');
+    mkdirSync(target, { recursive: true });
+    const store = new SqliteStore(join(home, 'hub.db'));
+    try {
+      seed(store);
+      const preview = computePreview(store, actor, {
+        harness: 'hermes',
+        profileId: 'prf_rb',
+        snapshotId: 'snap_rb',
+        targetRoot: target,
+      });
+      const applied = applyPlan(store, actor, {
+        preview,
+        targetRoot: target,
+        lockDir: target,
+        reason: 'rb-added-apply',
+      });
+      expect(preview.plan.files.length).toBeGreaterThan(0);
+      for (const file of preview.plan.files) {
+        expect(existsSync(join(target, file.relativePath))).toBe(true);
+      }
+      const result = rollbackPlan(store, actor, { runId: applied.runId, reason: 'rb-added' });
+      expect(result.restored.length).toBeGreaterThan(0);
+      for (const file of preview.plan.files) {
+        expect(existsSync(join(target, file.relativePath))).toBe(false);
+      }
+    } finally {
+      store.close();
+    }
+  });
+
   it('clears the staging backup directory and the lock after rollback', () => {
     const home = tempHome('cleanup');
     const target = join(home, 'hermes', 'state');

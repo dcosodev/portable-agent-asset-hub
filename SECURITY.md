@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Until the first tagged release, security fixes are handled on the current `main` branch. There is no hosted service or guaranteed response SLA yet.
+Security fixes are handled on the current `main` branch; the most recent tagged release is the supported version. There is no hosted service or guaranteed response SLA.
 
 ## Reporting a vulnerability
 

@@ -1,0 +1,17 @@
+{
+  "name": "@portable-agent-asset-hub/demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "End-to-end walkthrough of the hub: profile -> preview -> apply -> drift 412 -> rollback.",
+  "scripts": {
+    "start": "node demo.mjs"
+  },
+  "dependencies": {
+    "@portable-agent-asset-hub/core": "workspace:*",
+    "@portable-agent-asset-hub/materializers": "workspace:*",
+    "@portable-agent-asset-hub/rest": "workspace:*",
+    "@portable-agent-asset-hub/storage-sqlite": "workspace:*"
+  }
+}

@@ -17,7 +17,7 @@ import { eventRoutes } from './routes/events.js';
 export type AuthVerifier = (token: string) => ActorContext | null;
 export type RestHub = {
   doctor?: () => unknown;
-  dispatch?: (operationId: string, input: { body: unknown; params: Record<string,string>; query: Record<string,string>; actor: ActorContext; requestId: string }) => unknown | Promise<unknown>;
+  dispatch?: (operationId: OperationId, input: { body: unknown; params: Record<string,string>; query: Record<string,string>; actor: ActorContext; requestId: string }) => unknown | Promise<unknown>;
 };
 export type RestOptions = {
   hub: RestHub;
@@ -29,7 +29,7 @@ export type RestOptions = {
   port?: number;
 };
 
-const routes: Array<{ method: string; pattern: RegExp; operationId: string; cas: boolean }> = [
+const routes = [
   ...healthRoutes,
   ...adminRoutes,
   ...identityRoutes,
@@ -41,7 +41,11 @@ const routes: Array<{ method: string; pattern: RegExp; operationId: string; cas:
   ...syncRoutes,
   ...materializationRoutes,
   ...eventRoutes,
-];
+] as const;
+
+export type OperationId = (typeof routes)[number]['operationId'];
+
+const createdOperations: ReadonlySet<OperationId> = new Set<OperationId>(['createBinding', 'createProfile', 'createEvent', 'createMemory']);
 
 function requestId(req: IncomingMessage): string {
   const value = req.headers['x-request-id'];
@@ -66,8 +70,13 @@ export function createApp(options: RestOptions) {
   const max = options.maxBodyBytes ?? 1024 * 1024;
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     const id = requestId(req); const url = new URL(req.url ?? '/', 'http://localhost');
-    const route = routes.find((candidate) => candidate.method === req.method && candidate.pattern.test(url.pathname));
-    if (!route) return send(res, 404, { error: { code: 'NOT_FOUND', message: 'route not found', status: 404 } }, id);
+    const pathMatches = routes.filter((candidate) => candidate.pattern.test(url.pathname));
+    if (pathMatches.length === 0) return send(res, 404, { error: { code: 'NOT_FOUND', message: 'route not found', status: 404 } }, id);
+    const route = pathMatches.find((candidate) => candidate.method === req.method);
+    if (!route) {
+      res.setHeader('allow', [...new Set(pathMatches.map((candidate) => candidate.method))].join(', '));
+      return send(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'method not allowed', status: 405 } }, id);
+    }
     const peer = req.socket.remoteAddress ?? '';
     const bearer = req.headers.authorization;
     let actor: ActorContext | undefined;
@@ -84,11 +93,13 @@ export function createApp(options: RestOptions) {
       if (route.operationId === 'getStatus') return send(res, 200, { ok: true, service: 'portable-agent-asset-hub' }, id);
       if (route.operationId === 'getDoctor') return send(res, 200, options.hub.doctor?.() ?? { ok: true }, id);
       if (!options.hub.dispatch || !actor) throw new HubError('INTERNAL', 'operation unavailable', 501);
-      const matches = route.pattern.exec(url.pathname) ?? [];
-      const params: Record<string,string> = {}; if (matches[1]) params.id = decodeURIComponent(matches[1]);
+      const matches = route.pattern.exec(url.pathname);
+      const params: Record<string,string> = {};
+      for (const [name, value] of Object.entries(matches?.groups ?? {})) if (value !== undefined) params[name] = decodeURIComponent(value);
+      if (matches?.[1] && !matches.groups) params.id = decodeURIComponent(matches[1]);
       const result = await options.hub.dispatch(route.operationId, { body, params, query: Object.fromEntries(url.searchParams), actor, requestId: id });
       if (result === undefined) throw new HubError('INTERNAL', 'operation returned no response', 500);
-      return send(res, route.method === 'POST' && route.operationId.startsWith('create') ? 201 : 200, result, id);
+      return send(res, createdOperations.has(route.operationId) ? 201 : 200, result, id);
     } catch (error) { return fail(res, error, id); }
   };
 }

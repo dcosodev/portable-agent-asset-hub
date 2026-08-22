@@ -188,6 +188,12 @@ export function applyPlan(
         const backupPath = join(backupDir, file.relativePath);
         mkdirSync(join(backupPath, '..'), { recursive: true });
         writeFileSync(backupPath, bytes);
+      } else {
+        // No prior bytes: record a `.deleted` marker so rollback knows
+        // this file must be removed, not restored.
+        const markerPath = join(backupDir, `${file.relativePath}.deleted`);
+        mkdirSync(join(markerPath, '..'), { recursive: true });
+        writeFileSync(markerPath, '');
       }
     }
 
@@ -345,6 +351,12 @@ function restoreBackupTree(backupDir: string, targetRoot: string): void {
     } else if (stat.isFile()) {
       const relative = current.slice(backupDir.length).replace(/^[/\\]/u, '');
       if (!relative) continue;
+      if (relative.endsWith('.deleted')) {
+        // `.deleted` marker: the apply added this file over no prior
+        // bytes, so restoring means removing it.
+        try { rmSync(join(targetRoot, relative.slice(0, -'.deleted'.length)), { force: true }); } catch { /* best effort */ }
+        continue;
+      }
       const dest = join(targetRoot, relative);
       mkdirSync(join(dest, '..'), { recursive: true });
       copyFileSync(current, dest);

@@ -40,6 +40,21 @@ importers:
         specifier: ^3.0.8
         version: 3.2.7(@types/node@22.20.1)
 
+  examples/demo:
+    dependencies:
+      '@portable-agent-asset-hub/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@portable-agent-asset-hub/materializers':
+        specifier: workspace:*
+        version: link:../../packages/materializers
+      '@portable-agent-asset-hub/rest':
+        specifier: workspace:*
+        version: link:../../packages/rest
+      '@portable-agent-asset-hub/storage-sqlite':
+        specifier: workspace:*
+        version: link:../../packages/storage-sqlite
+
   packages/core: {}
 
   packages/materializers:

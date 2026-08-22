@@ -177,14 +177,19 @@ export function rollbackPlan(
       } else if (stat.isFile()) {
         const relative = current.slice(backupDir.length).replace(/^[/\\]/u, '');
         if (!relative) continue;
-        const dest = join(targetAbsolute, relative);
         if (current.endsWith('.deleted')) {
-          try { rmSync(dest, { force: true }); } catch { /* best effort */ }
+          // `.deleted` marker: the apply added this file over no prior
+          // bytes, so rollback removes the real file (marker suffix
+          // stripped), restoring the pre-apply absence.
+          const realRelative = relative.slice(0, -'.deleted'.length);
+          try { rmSync(join(targetAbsolute, realRelative), { force: true }); } catch { /* best effort */ }
+          restored.push(realRelative);
         } else {
+          const dest = join(targetAbsolute, relative);
           mkdirSync(join(dest, '..'), { recursive: true });
           copyFileSync(current, dest);
+          restored.push(relative);
         }
-        restored.push(relative);
       }
     }
 
@@ -280,6 +285,12 @@ export function restoreFromBackup(backupDir: string, targetRoot: string): string
     } else if (stat.isFile()) {
       const relative = current.slice(backupDir.length).replace(/^[/\\]/u, '');
       if (!relative) continue;
+      if (relative.endsWith('.deleted')) {
+        const realRelative = relative.slice(0, -'.deleted'.length);
+        try { rmSync(join(targetAbsolute, realRelative), { force: true }); } catch { /* best effort */ }
+        restored.push(realRelative);
+        continue;
+      }
       const dest = join(targetAbsolute, relative);
       mkdirSync(join(dest, '..'), { recursive: true });
       copyFileSync(current, dest);
