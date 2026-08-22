@@ -60,17 +60,25 @@ describe('generate-sdks.mjs contract', () => {
     const fakeOpenapiDir = join(fakeDir, 'openapi');
     rmSync(fakeOpenapiDir, { recursive: true, force: true });
     bootstrapOpenapi(fakeDir);
-    // Sanity: java probe says no on this machine.
-    const hasJava = (() => {
+    // Sanity: probe the full toolchain the script requires. Java alone is
+    // not enough — the script also fail-closes (exit 2, honest provenance)
+    // when openapi-generator-cli is absent or not the pinned 7.10.0, which
+    // is the normal state on CI runners that preinstall Java.
+    const hasToolchain = (() => {
       try {
         execFileSync('java', ['-version'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-        return true;
+      } catch {
+        return false;
+      }
+      try {
+        const version = execFileSync('openapi-generator-cli', ['version'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+        return /(\d+\.\d+\.\d+)/.exec(version)?.[1] === '7.10.0';
       } catch {
         return false;
       }
     })();
     const { status } = runScriptIn(fakeDir);
-    if (!hasJava) {
+    if (!hasToolchain) {
       expect(status).toBe(2);
       for (const target of ['packages/sdk-ts/generated', 'packages/sdk-python/generated']) {
         const path = join(fakeDir, `${target}/PROVENANCE.json`);
@@ -83,7 +91,7 @@ describe('generate-sdks.mjs contract', () => {
         expect((prov.contract_fixtures ?? []).length).toBeGreaterThan(0);
       }
     } else {
-      // Java IS present — generator is also expected to be present and generate code.
+      // Full pinned toolchain present — generation is expected to succeed.
       expect(status).toBe(0);
     }
   });
