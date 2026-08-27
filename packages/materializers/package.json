@@ -4,7 +4,12 @@
   "type": "module",
   "private": true,
   "license": "Apache-2.0",
-  "files": ["dist/**/*.js", "dist/**/*.d.ts", "README.md", "src/**/manifest.v1.json"],
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "src/**/manifest.v1.json"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

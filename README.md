@@ -28,11 +28,12 @@ explicitly not a hosted service.
 ## At a glance
 
 - **OpenAPI 3.1 contract** under [`openapi/openapi.yaml`](openapi/openapi.yaml)
-  with 23 operations across health, identity, profiles, memories, memory
-  blocks, events, skills, resources, catalog, audit, snapshots, replay,
-  materializations, and bindings. (The file is JSON-formatted — valid YAML —
-  and its path is pinned by the drift detector and the generated SDKs'
-  `PROVENANCE.json`, so it keeps the `.yaml` name.)
+  with 51 operations across health, capabilities, identity, profiles, memories,
+  memory blocks, events, skills, skill resources, the skill graph, mandatory
+  retrieval, relation proposals, explicit relation candidates, catalog, audit,
+  snapshots, replay, materializations, and bindings. (The file is
+  JSON-formatted — valid YAML — and its path is pinned by the drift detector
+  and the generated SDKs' `PROVENANCE.json`, so it keeps the `.yaml` name.)
 - **REST surface** at `/api/v1/...` (`@portable-agent-asset-hub/rest`) using
   the standard `node:http` server, with bearer auth, optional loopback
   `localMode`, `If-Match` CAS enforcement on mutating routes, `x-request-id`
@@ -43,9 +44,30 @@ explicitly not a hosted service.
 - **TypeScript and Python SDKs** generated from the same contract
   (`typescript-fetch` and `python`, OpenAPI Generator `7.10.0`), with a
   shared `PROVENANCE.json` per tree and pinned `contract_fixtures/`.
+- **Skills as first-class assets**: DB-owned skill entries, immutable integer
+  versions, byte-exact resources, and a skill-pack importer with secret
+  scanning. SQLite is the authority; `SKILL.md` is never relation truth.
+- **Versioned skill graph and mandatory retrieval**
+  (`docs/skill-graph-retrieval.md`): eight canonical relation types, bounded
+  structural expansion, immutable version resolution, and an append-only
+  `retrieval_events` audit with a redacted query.
+- **Governed relation proposals** (`docs/skill-relations.md`,
+  `docs/relation-proposal-workflow.md`): discovery and explicit
+  `related_skills` metadata produce *candidates*, never canonical edges. Review
+  → apply-preview → plan digest → governed apply is the only path into
+  `skill_relations`.
 - **Materializers** (`@portable-agent-asset-hub/materializers`) for Hermes
   (`./hermes`) and OpenClaw (`./openclaw`) with `preview`, `apply`, and
   `rollback` lifecycles driven by versioned manifests and a CAS-based lock.
+- **Runtime adapters** (`@portable-agent-asset-hub/runtime-adapters`,
+  `docs/runtime-adapters.md`) that attach a hub to Codex, Claude Code,
+  OpenCode, Hermes or OpenClaw under the same preview → digest → apply →
+  rollback contract.
+- **Skill export** (`@portable-agent-asset-hub/skill-export`) producing
+  deterministic focal and full exports with canonical relation manifests.
+- **Web Graph Explorer** (`@portable-agent-asset-hub/graph-ui`,
+  `docs/web-graph-explorer.md`): a read-only React/Cytoscape projection served
+  by a loopback BFF. It never opens SQLite and never writes.
 - **Migration surface** (`@portable-agent-asset-hub/migration`) with
   classifier, redactor, cutover, replay, retirement, and shadow flows.
 - **Storage adapters** under `@portable-agent-asset-hub/storage-files` and
@@ -131,47 +153,88 @@ storage adapters, and the same materializer contracts.
 | `@portable-agent-asset-hub/migration` | Migration / cutover surface: classifier, redactor, shadow, replay, retirement. | Operates on the same core and storage adapters. |
 | `@portable-agent-asset-hub/storage-files` | Filesystem-backed storage adapter. | Used for portable fixtures. |
 | `@portable-agent-asset-hub/storage-sqlite` | SQLite-backed storage adapter (the single owner). | See `docs/adr/0001-single-sqlite-owner.md`. |
+| `@portable-agent-asset-hub/runtime-adapters` | Attaches a hub to Codex, Claude Code, OpenCode, Hermes and OpenClaw. | `computePreview` / `applyPlan` / `rollbackPlan`; path containment, safe file modes, no secrets in descriptors. See `docs/runtime-adapters.md`. |
+| `@portable-agent-asset-hub/skill-export` | Deterministic focal and full skill export with canonical relation manifests. | Proposals are staging data and are never exported as canonical graph data. |
+| `@portable-agent-asset-hub/graph-ui` | Read-only Web Graph Explorer (React, Vite, Cytoscape.js) plus its loopback BFF. | Strictly a REST client; never opens SQLite. See `docs/web-graph-explorer.md`. |
 | `@portable-agent-asset-hub/sdk-ts` | Generated TypeScript SDK (`typescript-fetch`). | Source of truth is `openapi/openapi.yaml`; `generated/PROVENANCE.json` records the pinned tool. |
 | `@portable-agent-asset-hub/sdk-python` | Generated Python SDK (`python`). | Same generator, same pinned version, same contract fixtures. |
 
 ## API surface at a glance
 
-The 23 operations currently defined in `openapi/openapi.yaml`, grouped by
-MCP capability / safety class. Safety classes follow the OpenAPI
-`x-mcp.safety` extension: `safe`, `mutating`, `destructive`, or
-`diagnostic`.
+The 51 operations defined in `openapi/openapi.yaml`, grouped by MCP capability
+and safety class. Safety classes follow the OpenAPI `x-mcp.safety` extension:
+`safe`, `mutating`, `destructive`, or `diagnostic`. The "MCP tool" column
+reflects `x-mcp.exposed`: 34 operations are exposed as MCP tools; the graph and
+retrieval-explorer reads are a human REST surface and are deliberately not.
 
-| Method | Path | operationId | MCP capability | Safety | CAS | Idempotent |
-| --- | --- | --- | --- | --- | --- | --- |
-| GET | `/api/v1/health` | `getHealth` | `health.read` | safe | — | — |
-| GET | `/api/v1/status` | `getStatus` | `status.read` | safe | — | — |
-| GET | `/api/v1/admin/doctor` | `getDoctor` | `admin.doctor` | diagnostic | — | — |
-| GET | `/api/v1/identities` | `listIdentities` | `identity.read` | safe | — | — |
-| POST | `/api/v1/bindings` | `createBinding` | `binding.write` | mutating | yes | yes |
-| POST | `/api/v1/profiles` | `createProfile` | `profile.write` | mutating | — | yes |
-| GET | `/api/v1/memory-blocks` | `listMemoryBlocks` | `memory.read` | safe | — | — |
-| POST | `/api/v1/events` | `createEvent` | `event.write` | mutating | — | yes |
-| POST | `/api/v1/memories` | `createMemory` | `memory.write` | mutating | — | yes |
-| POST | `/api/v1/memories/{id}/supersede` | `supersedeMemory` | `memory.supersede` | mutating | yes | yes |
-| POST | `/api/v1/memories/{id}/forget` | `forgetMemory` | `memory.forget` | destructive | yes | yes |
-| GET | `/api/v1/skills` | `listSkills` | `skill.read` | safe | — | — |
-| GET | `/api/v1/skills/{id}/versions` | `listSkillVersions` | `skill.version.read` | safe | — | — |
-| GET | `/api/v1/resources/{path}` | `getResource` | `resource.read` | safe | — | — |
-| GET | `/api/v1/catalog` | `getCatalog` | `catalog.read` | safe | — | — |
-| POST | `/api/v1/catalog/sync/preview` | `previewCatalogSync` | `catalog.sync.preview` | mutating | — | yes |
-| POST | `/api/v1/catalog/sync/apply` | `applyCatalogSync` | `catalog.sync.apply` | mutating | yes | yes |
-| GET | `/api/v1/audit` | `listAudit` | `audit.read` | safe | — | — |
-| GET | `/api/v1/snapshots` | `listSnapshots` | `snapshot.read` | safe | — | — |
-| POST | `/api/v1/replay` | `replay` | `replay.run` | diagnostic | — | yes |
-| POST | `/api/v1/materializations/preview` | `previewMaterialization` | `materialization.preview` | safe | — | yes |
-| POST | `/api/v1/materializations/apply` | `applyMaterialization` | `materialization.apply` | mutating | yes | yes |
-| POST | `/api/v1/materializations/{run_id}/rollback` | `rollbackMaterialization` | `materialization.rollback` | destructive | yes | yes |
+| Method | Path | operationId | MCP capability | Safety | CAS | Idempotent | MCP tool |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/api/v1/health` | `getHealth` | `health.read` | safe | — | — | yes |
+| GET | `/api/v1/status` | `getStatus` | `status.read` | safe | — | — | yes |
+| GET | `/api/v1/capabilities` | `getCapabilities` | `capabilities.read` | safe | — | — | yes |
+| GET | `/api/v1/admin/doctor` | `getDoctor` | `admin.doctor` | diagnostic | — | — | yes |
+| GET | `/api/v1/identities` | `listIdentities` | `identity.read` | safe | — | — | yes |
+| POST | `/api/v1/bindings` | `createBinding` | `binding.write` | mutating | yes | yes | yes |
+| POST | `/api/v1/profiles` | `createProfile` | `profile.write` | mutating | — | yes | yes |
+| GET | `/api/v1/memory-blocks` | `listMemoryBlocks` | `memory.read` | safe | — | — | yes |
+| POST | `/api/v1/events` | `createEvent` | `event.write` | mutating | — | yes | yes |
+| GET | `/api/v1/memories/search` | `searchMemories` | `memory.read` | safe | — | — | yes |
+| GET | `/api/v1/memories/{id}` | `getMemory` | `memory.read` | safe | — | — | yes |
+| POST | `/api/v1/memories` | `createMemory` | `memory.write` | mutating | — | yes | yes |
+| POST | `/api/v1/memories/{id}/supersede` | `supersedeMemory` | `memory.supersede` | mutating | yes | yes | yes |
+| POST | `/api/v1/memories/{id}/forget` | `forgetMemory` | `memory.forget` | destructive | yes | yes | yes |
+| GET | `/api/v1/skills/search` | `searchSkills` | `skill.read` | safe | — | — | yes |
+| GET | `/api/v1/skills/{id}` | `getSkill` | `skill.read` | safe | — | — | yes |
+| GET | `/api/v1/skills/{id}/resources` | `listSkillResources` | `skill.resource.read` | safe | — | — | yes |
+| GET | `/api/v1/skills/{id}/resources/{resourcePath}` | `readSkillResource` | `skill.resource.read` | safe | — | — | yes |
+| GET | `/api/v1/resources/{path}` | `getResource` | `resource.read` | safe | — | — | yes |
+| GET | `/api/v1/catalog/search` | `searchCatalog` | `catalog.read` | safe | — | — | yes |
+| GET | `/api/v1/catalog` | `getCatalog` | `catalog.read` | safe | — | — | yes |
+| POST | `/api/v1/catalog/sync/preview` | `previewCatalogSync` | `catalog.sync.preview` | mutating | — | yes | yes |
+| POST | `/api/v1/catalog/sync/apply` | `applyCatalogSync` | `catalog.sync.apply` | mutating | yes | yes | yes |
+| GET | `/api/v1/audit` | `listAudit` | `audit.read` | safe | — | — | yes |
+| GET | `/api/v1/snapshots` | `listSnapshots` | `snapshot.read` | safe | — | — | yes |
+| POST | `/api/v1/replay` | `replay` | `replay.run` | diagnostic | — | yes | yes |
+| POST | `/api/v1/materializations/preview` | `previewMaterialization` | `materialization.preview` | safe | — | yes | yes |
+| POST | `/api/v1/materializations/apply` | `applyMaterialization` | `materialization.apply` | mutating | yes | yes | yes |
+| POST | `/api/v1/materializations/{run_id}/rollback` | `rollbackMaterialization` | `materialization.rollback` | destructive | yes | yes | yes |
+| GET | `/api/v1/skills/{id}/relations` | `getSkillRelations` | `skill.read` | safe | — | — | yes |
+| PUT | `/api/v1/skills/{id}/relations` | `replaceSkillRelations` | `write.skill` | mutating | yes | yes | yes |
+| GET | `/api/v1/skills/{id}/dependents` | `getSkillDependents` | `skill.read` | safe | — | — | yes |
+| POST | `/api/v1/skills/resolve` | `resolveSkillGraph` | `skill.read` | safe | — | — | yes |
+| POST | `/api/v1/retrieval/resolve` | `resolveRetrieval` | `skill.read` | safe | — | — | yes |
+| GET | `/api/v1/graph/skills` | `getGlobalSkillGraph` | `skill.read` | safe | — | yes | no |
+| GET | `/api/v1/skills/{id}/graph` | `getSkillGraph` | `skill.read` | safe | — | yes | no |
+| GET | `/api/v1/skills/{id}/impact` | `getSkillImpact` | `skill.read` | safe | — | yes | no |
+| GET | `/api/v1/retrieval-events` | `listRetrievalEvents` | `skill.read` | safe | — | yes | no |
+| GET | `/api/v1/retrieval-events/{id}/graph` | `getRetrievalEventGraph` | `skill.read` | safe | — | yes | no |
+| GET | `/api/v1/skill-relation-proposals` | `listSkillRelationProposals` | `skill.relation.proposal.read` | safe | — | — | no |
+| POST | `/api/v1/skill-relation-proposals` | `createManualSkillRelationProposal` | `skill.relation.proposal.create` | mutating | yes | yes | no |
+| GET | `/api/v1/skill-relation-proposals/{id}` | `getSkillRelationProposal` | `skill.relation.proposal.read` | safe | — | — | no |
+| POST | `/api/v1/skill-relation-proposals/discover` | `discoverSkillRelationProposals` | `skill.relation.proposal.create` | safe | — | — | no |
+| POST | `/api/v1/skill-relation-proposals/{id}/approve` | `approveSkillRelationProposal` | `skill.relation.proposal.review` | mutating | yes | — | no |
+| POST | `/api/v1/skill-relation-proposals/{id}/reject` | `rejectSkillRelationProposal` | `skill.relation.proposal.review` | mutating | yes | — | no |
+| POST | `/api/v1/skill-relation-proposals/apply-preview` | `previewSkillRelationProposalApply` | `skill.relation.proposal.apply` | safe | — | — | no |
+| POST | `/api/v1/skill-relation-proposals/reconcile-canonical-duplicates` | `reconcileSkillRelationProposalDuplicates` | `skill.relation.proposal.reconcile` | mutating | yes | yes | no |
+| POST | `/api/v1/skill-relation-proposals/apply` | `applySkillRelationProposals` | `skill.relation.proposal.apply` | mutating | yes | — | no |
+| GET | `/api/v1/skill-relation-candidates/explicit` | `listExplicitSkillRelationCandidates` | `skill.relation.candidate.read` | safe | — | yes | no |
+| POST | `/api/v1/skill-relation-candidates/explicit/impact` | `previewExplicitSkillRelationCandidatesImpact` | `skill.relation.candidate.read` | safe | — | yes | no |
+| POST | `/api/v1/skill-relation-candidates/explicit/stage` | `stageExplicitSkillRelationCandidates` | `skill.relation.candidate.stage` | mutating | yes | yes | no |
 
 > "CAS" indicates `x-cas-required: true` in the OpenAPI contract and means
 > the REST server will reject the request with `428 PRECONDITION_REQUIRED`
 > when the caller does not supply a matching `If-Match` header.
 > "Idempotent" mirrors the `x-idempotent` extension and signals operations
 > that are safe to retry under the core's idempotency tracking.
+
+### Removed in 0.2.0
+
+`listSkills` (`GET /api/v1/skills`) and `listSkillVersions`
+(`GET /api/v1/skills/{id}/versions`) were removed. The canonical skill surface
+is now read-only and consists of `searchSkills`, `getSkill`,
+`listSkillResources` and `readSkillResource`. The corresponding MCP tools
+`list_skills` and `list_skill_versions` disappear with them, so a client that
+hardcodes those names will fail at tool discovery. See [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Quickstart
 
@@ -190,11 +253,18 @@ pnpm test
 # 4. Watch the hub work end to end (profile -> preview -> apply ->
 #    drift 412 -> rollback), fully local. See docs/demo.md.
 node examples/demo/demo.mjs
+
+# 5. Optional: browse the canonical skill graph read-only.
+#    Needs a running REST hub; see docs/web-graph-explorer.md.
+pnpm graph-ui
 ```
 
-> `pnpm test` is preceded by `pnpm build` (`pretest` hook) and runs
+> `pnpm test` is preceded by `pnpm build` (`pretest` hook). It runs
 > `vitest run` against the contract, integration, E2E, and gate test files
-> under [`tests/`](tests/).
+> under [`tests/`](tests/), then the `graph-ui` suite through
+> `pnpm --filter`. `graph-ui` is deliberately outside the root `tsconfig.json`
+> project references — it compiles JSX under its own `tsconfig.json` and
+> `tsconfig.server.json` — so it always needs that separate leg.
 
 > Node prints `ExperimentalWarning: SQLite is an experimental feature`
 > during tests: the storage adapter uses the built-in `node:sqlite` module,
@@ -211,9 +281,9 @@ The repository ships two classes of validation:
 | Command | Purpose |
 | --- | --- |
 | `pnpm lint` | ESLint over the workspace (`--max-warnings 0`). |
-| `pnpm typecheck` | `tsc -b` across the project references. |
-| `pnpm test` | Builds first (`pretest`), then runs the vitest suite. |
-| `pnpm build` | Cleans `dist/`, runs `tsc -b --force`, copies S2 migrations. |
+| `pnpm typecheck` | `tsc -b` across the project references, then `graph-ui`. |
+| `pnpm test` | Builds first (`pretest`), then runs the vitest suite and the `graph-ui` suite. |
+| `pnpm build` | Cleans `dist/`, runs `tsc -b --force`, copies S2 migrations, builds `graph-ui`. |
 | `pnpm audit` | `pnpm audit --prod` over the production dependency set. |
 | `pnpm baseline:audit` | `node scripts/s0-audit.mjs` over the public fixture. |
 | `pnpm pack` | `node scripts/s0-pack.mjs` (publishable tarball). |
@@ -254,12 +324,13 @@ regression passes; later runs have separate IDs and evidence paths.
 This is a **portfolio / research** project, not a hosted service and not a
 promise of production support. The current public export has been validated
 through S6, including SDK generation, REST/MCP checks, and package
-reproducibility. The S0 gate enforces a public-surface policy that excludes
+reproducibility. The suite is 561 tests (541 in the workspace plus 20 in
+`graph-ui`). The S0 gate enforces a public-surface policy that excludes
 personal skills, profiles, credentials, sessions, and runtime state.
 
 ### Implemented
 
-- OpenAPI 3.1 contract with 23 operations, `x-mcp.*` extensions, and drift
+- OpenAPI 3.1 contract with 51 operations, `x-mcp.*` extensions, and drift
   detection (`pnpm s6:drift`).
 - REST surface at `/api/v1/...` with bearer auth, loopback `localMode`,
   `If-Match` CAS, and structured `HubError` responses.
@@ -270,6 +341,22 @@ personal skills, profiles, credentials, sessions, and runtime state.
 - Hermes and OpenClaw materializers under
   `@portable-agent-asset-hub/materializers` with `preview`, `apply`, and
   `rollback` lifecycles.
+- Skills as DB-owned assets: immutable integer versions, byte-exact
+  resources, catalog FTS, and a skill-pack importer with secret scanning
+  (migrations 0014–0016).
+- Versioned skill graph and mandatory retrieval with an append-only,
+  redacted `retrieval_events` audit (`docs/skill-graph-retrieval.md`).
+- Governed relation proposals and explicit `related_skills` candidates:
+  discovery suggests, review decides, only a matching plan digest applies
+  (migrations 0018–0019, `docs/skill-relations.md`).
+- Runtime adapters for Codex, Claude Code, OpenCode, Hermes and OpenClaw
+  (`docs/runtime-adapters.md`).
+- Deterministic focal and full skill export
+  (`@portable-agent-asset-hub/skill-export`).
+- Read-only Web Graph Explorer behind a loopback BFF
+  (`docs/web-graph-explorer.md`).
+- Runtime credential bindings and the `GET /api/v1/capabilities` handshake
+  (migration 0017).
 - Migration surface: classifier, redactor, shadow, replay, retirement,
   and cutover.
 - Storage adapters under `@portable-agent-asset-hub/storage-files` and
@@ -280,6 +367,10 @@ personal skills, profiles, credentials, sessions, and runtime state.
 ### Not implemented (in this public export)
 
 - A hosted service, a managed runtime, or any kind of SLA.
+- OpenTelemetry / Grafana observability and the Docker stack. That work
+  exists but is not yet consolidated, so it is deliberately out of 0.2.0.
+- Automatic canonicalization of relation candidates. Every edge in
+  `skill_relations` is the result of an explicit human review.
 - CI coverage of the staged gates: the GitHub Actions workflow runs the
   fast checks and the demo only; gates `s0`–`s10` are local scripts.
 - Personal skills, profiles, cookies, tokens, sessions, `state.db`, or
@@ -330,6 +421,10 @@ checklist.
   `listen`).
 - `packages/mcp/` — MCP facade and generated tool metadata.
 - `packages/materializers/` — Hermes and OpenClaw materializer contracts.
+- `packages/runtime-adapters/` — Codex, Claude Code, OpenCode, Hermes and
+  OpenClaw attach adapters.
+- `packages/skill-export/` — deterministic skill export.
+- `packages/graph-ui/` — read-only Web Graph Explorer and its loopback BFF.
 - `packages/migration/` — migration and cutover surface.
 - `packages/storage-files/`, `packages/storage-sqlite/` — storage adapters
   (single owner per ADR 0001).
@@ -361,6 +456,20 @@ checklist.
   — what the portable v1 contract explicitly leaves out.
 - [`docs/adr/0003-tencent-extraction-boundary.md`](docs/adr/0003-tencent-extraction-boundary.md)
   — extraction boundary for upstream material.
+- [`docs/architecture.md`](docs/architecture.md) — the current system map,
+  per-subsystem implementation table, and relation flow.
+- [`docs/skill-graph-retrieval.md`](docs/skill-graph-retrieval.md) — the
+  versioned skill graph, relation semantics, and mandatory retrieval.
+- [`docs/skill-relations.md`](docs/skill-relations.md) — the single
+  relation-model document: authority, proposals, explicit metadata, discovery.
+- [`docs/relation-proposal-workflow.md`](docs/relation-proposal-workflow.md)
+  — the governed discovery → review → preview → apply lifecycle.
+- [`docs/runtime-adapters.md`](docs/runtime-adapters.md) — attaching a hub to
+  Codex, Claude Code, OpenCode, Hermes or OpenClaw.
+- [`docs/web-graph-explorer.md`](docs/web-graph-explorer.md) — the read-only
+  graph UI, its loopback BFF, and its security posture.
+- [`docs/canonical-storage.md`](docs/canonical-storage.md) — storage-mode
+  resolution, canonical vs temporary, backup and doctor.
 - [`docs/demo.md`](docs/demo.md) — the end-to-end walkthrough
   (`examples/demo/demo.mjs`) and SDK usage snippets.
 - [`docs/engineering-log.md`](docs/engineering-log.md) — staged-gate

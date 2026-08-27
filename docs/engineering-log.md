@@ -130,6 +130,78 @@ and that behavior itself is under test
 (`tests/s6-generate-sdks.test.ts`). Drift between the contract and the
 generated trees is detected by `pnpm s6:drift`.
 
+## 0.2.0 — skills, skill graph and governed relations
+
+The 0.2.0 surface was developed in a private repository and lifted here as a
+single consolidated cut. Two decisions shaped what shipped.
+
+**The cut is the private repository's HEAD, not its working tree.** The working
+tree carried a mid-flight migration (`0020_relation_proposal_auto_approval`)
+that had bumped the migration runner to 20 while three committed tests still
+asserted 19 — an internally inconsistent state. HEAD was self-consistent,
+telemetry-free, and complete through migration 0019, so that is what was
+ported. The OpenTelemetry/Grafana stack, the Docker stack, the relation
+auto-approval slice and a graph-ui component refactor all live only in that
+working tree and are therefore absent from 0.2.0. They are not rejected work;
+they are unconsolidated work.
+
+**The port was a three-way merge, not a copy.** The private repository's initial
+commit is a true merge base for the 0.1.0 public export: of the 384 shared
+files, 356 were byte-identical at that base and 28 differed — and those 28 were
+exactly the sanitization and licensing edits made during the export. That made
+the bulk of the merge mechanical (`git merge-file --diff3` per file) and
+isolated the files needing judgement.
+
+Three of those needed a genuine hand-merge, because the public repository was
+*ahead*: `packages/materializers/src/apply.ts` and `rollback.ts` carried the
+0.1.0 added-file rollback fix that the private HEAD predated, and
+`packages/rest/src/app.ts` carried the 405 + `Allow` route table, the explicit
+201-on-create set and the typed `OperationId`. Taking the private version
+wholesale would have silently reintroduced two fixed bugs. The merged `app.ts`
+keeps the public hardening and layers on the private capability gate,
+`getCapabilities`, `paramNames` path decoding and the malformed-percent-encoding
+guard.
+
+Four scripts were kept at the public version for the same reason — they carry
+the de-personalization done at export time (`generate-s0-artifacts.mjs`,
+`s0-trust-anchor.mjs`, `s0-audit.mjs`, `package-private-policy.mjs`) — while
+`generate-sdks.mjs` was merged: the private tree's diff-clean normalization on
+top of the public `PATH:${cliName}` provenance form. The SDKs were then
+*regenerated* rather than copied, so `PROVENANCE.json` records the sanitized
+resolution natively instead of being scrubbed after the fact.
+
+### RED found during the port
+
+- **Missing project references.** `storage-sqlite` imports `storage-files`, and
+  `rest` imports both, but neither `tsconfig.json` declared the reference. The
+  private repository masked this with per-package `build` scripts; a clean
+  `tsc -b` did not. Fixed by declaring the references.
+- **`bin` shim pointed at the wrong `dist`.** 0.1.0 moved `rest` to build into
+  its own `dist/`; the ported `bin/agent-memory-rest.mjs` still resolved the
+  repository-root `dist/packages/rest/`. The launcher-backed suites timed out
+  until the shim was repointed and its now-dead workspace symlink block removed.
+- **A test that raced itself.** `tests/s6-generate-sdks.test.ts` pointed the
+  generator at the real repository root, and `runGenerator` wipes
+  `packages/sdk-*/generated` before it writes. With the pinned toolchain present
+  that window is seconds long and raced `tests/s6-sdk-drift.test.ts` reading the
+  same tracked files from a sibling worker. It reproduced roughly one run in two
+  under `CI=true`. The destructive invocation is now confined to the fail-closed
+  branch, where the script exits 2 without regenerating anything.
+
+### Verification
+
+Green: `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test` (541 workspace
++ 20 graph-ui), `pnpm s0:gate`, `pnpm s6:drift`, reproducible MCP tool
+generation, `pnpm s6:generate`, and `node examples/demo/demo.mjs`. Three
+consecutive `CI=true` full-suite runs were green, confirming the race fix.
+
+Not green, and not caused by the port: `s2:gate` through `s5:gate` all chain
+into the `S1-copy` step, which runs the S1 slice gate. That gate reads a pinned
+upstream checkout at `/tmp/tencentdb-agent-memory-review`, whose `.git`
+directory is missing `HEAD` and `config` on the machine used for this port. The
+`slices/` tree is byte-identical to 0.1.0. Every other step of those gates
+passes.
+
 ## Recording policy
 
 Payload bodies and secret values are never recorded in gate evidence or in
