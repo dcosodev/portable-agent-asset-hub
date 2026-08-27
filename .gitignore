@@ -12,3 +12,8 @@ dist-package/
 logs/
 caches/
 .DS_Store
+
+# Local agent orchestration state (plans, scratch). Never published.
+.hermes/
+# graph-ui compiles its server bundle here; it is build output, not source.
+packages/*/dist-server/
