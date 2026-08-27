@@ -17,8 +17,9 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictBool, StrictStr
-from typing import Any, ClassVar, Dict, List
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
+from typing import Any, ClassVar, Dict, List, Optional
+from openapi_client.models.get_status200_response_storage import GetStatus200ResponseStorage
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -28,8 +29,10 @@ class GetStatus200Response(BaseModel):
     """ # noqa: E501
     ok: StrictBool
     service: StrictStr
+    schema_version: Optional[StrictInt] = Field(default=None, alias="schemaVersion")
+    storage: Optional[GetStatus200ResponseStorage] = None
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["ok", "service"]
+    __properties: ClassVar[List[str]] = ["ok", "service", "schemaVersion", "storage"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -72,6 +75,9 @@ class GetStatus200Response(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of storage
+        if self.storage:
+            _dict['storage'] = self.storage.to_dict()
         # puts key-value pairs in additional_properties in the top level
         if self.additional_properties is not None:
             for _key, _value in self.additional_properties.items():
@@ -90,7 +96,9 @@ class GetStatus200Response(BaseModel):
 
         _obj = cls.model_validate({
             "ok": obj.get("ok"),
-            "service": obj.get("service")
+            "service": obj.get("service"),
+            "schemaVersion": obj.get("schemaVersion"),
+            "storage": GetStatus200ResponseStorage.from_dict(obj["storage"]) if obj.get("storage") is not None else None
         })
         # store additional fields in additional_properties
         for _key in obj.keys():
@@ -98,5 +106,3 @@ class GetStatus200Response(BaseModel):
                 _obj.additional_properties[_key] = obj.get(_key)
 
         return _obj
-
-

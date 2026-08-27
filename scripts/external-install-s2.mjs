@@ -11,7 +11,7 @@ const registry = 'http://127.0.0.1:9';
 
 async function pack(name) {
   await exec('pnpm', ['--filter', `@portable-agent-asset-hub/${name}`, 'pack', '--pack-destination', temp], { cwd: root });
-  const prefix = name === 'core' ? 'portable-agent-asset-hub-core-' : 'portable-agent-asset-hub-storage-sqlite-';
+  const prefix = name === 'core' ? 'portable-agent-asset-hub-core-' : `portable-agent-asset-hub-${name}-`;
   const file = (await readdir(temp)).find((entry) => entry.startsWith(prefix) && entry.endsWith('.tgz'));
   if (!file) throw new Error(`package artifact missing: ${name}`);
   return join(temp, file);
@@ -19,6 +19,17 @@ async function pack(name) {
 
 try {
   const corePath = await pack('core');
+  const rawFilesPath = await pack('storage-files');
+  const filesEditRoot = join(temp, 'storage-files-edit');
+  await mkdir(join(filesEditRoot, 'package'), { recursive: true });
+  await exec('tar', ['-xzf', rawFilesPath, '-C', filesEditRoot]);
+  const filesManifestPath = join(filesEditRoot, 'package', 'package.json');
+  const filesManifest = JSON.parse(await readFile(filesManifestPath, 'utf8'));
+  filesManifest.dependencies['@portable-agent-asset-hub/core'] = `file:${corePath}`;
+  await writeFile(filesManifestPath, JSON.stringify(filesManifest, null, 2));
+  const filesRepacked = await exec('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temp], { cwd: join(filesEditRoot, 'package') });
+  const filesPath = join(temp, JSON.parse(filesRepacked.stdout)[0].filename);
+
   const rawStoragePath = await pack('storage-sqlite');
   const editRoot = join(temp, 'storage-edit');
   await mkdir(join(editRoot, 'package'), { recursive: true });
@@ -26,6 +37,7 @@ try {
   const manifestPath = join(editRoot, 'package', 'package.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
   manifest.dependencies['@portable-agent-asset-hub/core'] = `file:${corePath}`;
+  manifest.dependencies['@portable-agent-asset-hub/storage-files'] = `file:${filesPath}`;
   await writeFile(manifestPath, JSON.stringify(manifest, null, 2));
   const repacked = await exec('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temp], { cwd: join(editRoot, 'package') });
   const storagePath = join(temp, JSON.parse(repacked.stdout)[0].filename);

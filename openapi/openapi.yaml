@@ -80,6 +80,38 @@
         }
       }
     },
+    "/api/v1/capabilities": {
+      "get": {
+        "operationId": "getCapabilities",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "capabilities.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "getHubCapabilities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/doctor": {
       "get": {
         "operationId": "getDoctor",
@@ -310,6 +342,103 @@
         }
       }
     },
+    "/api/v1/memories/search": {
+      "get": {
+        "operationId": "searchMemories",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "memory.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "searchMemories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponseArray"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/memories/{id}": {
+      "get": {
+        "operationId": "getMemory",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "memory.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "getMemory",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ]
+      }
+    },
     "/api/v1/memories": {
       "post": {
         "operationId": "createMemory",
@@ -452,21 +581,55 @@
         ]
       }
     },
-    "/api/v1/skills": {
+    "/api/v1/skills/search": {
       "get": {
-        "operationId": "listSkills",
+        "operationId": "searchSkills",
         "x-mcp.exposed": true,
         "x-mcp.capability": "skill.read",
         "x-mcp.safety": "safe",
         "x-idempotent": false,
         "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "listSkills",
+            "description": "searchSkills",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "./components/schemas.yaml#/ObjectResponseArray"
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "./components/schemas.yaml#/SkillSearchHit"
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -484,21 +647,139 @@
         }
       }
     },
-    "/api/v1/skills/{id}/versions": {
+    "/api/v1/skills/{id}": {
       "get": {
-        "operationId": "listSkillVersions",
+        "operationId": "getSkill",
         "x-mcp.exposed": true,
-        "x-mcp.capability": "skill.version.read",
+        "x-mcp.capability": "skill.read",
         "x-mcp.safety": "safe",
         "x-idempotent": false,
         "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "listSkillVersions",
+            "description": "getSkill",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "./components/schemas.yaml#/ObjectResponseArray"
+                  "$ref": "./components/schemas.yaml#/SkillVersion"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skills/{id}/resources": {
+      "get": {
+        "operationId": "listSkillResources",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "skill.resource.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "listSkillResources",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "./components/schemas.yaml#/SkillResourceMeta"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skills/{id}/resources/{resourcePath}": {
+      "get": {
+        "operationId": "readSkillResource",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "skill.resource.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "resourcePath",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "readSkillResource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/SkillResourceRecord"
                 }
               }
             }
@@ -531,6 +812,74 @@
               "application/json": {
                 "schema": {
                   "$ref": "./components/schemas.yaml#/ObjectResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/search": {
+      "get": {
+        "operationId": "searchCatalog",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "catalog.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "repository",
+                "skill",
+                "document",
+                "tool"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "searchCatalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ObjectResponseArray"
                 }
               }
             }
@@ -918,6 +1267,1038 @@
             "$ref": "./components/parameters.yaml#/IfMatch"
           }
         ]
+      }
+    },
+    "/api/v1/skills/{id}/relations": {
+      "get": {
+        "operationId": "getSkillRelations",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "skill.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "description": "Exact source version. Omit to read the current head; zero is invalid.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/SkillRelationListResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "replaceSkillRelations",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "write.skill",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": true,
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "$ref": "./components/parameters.yaml#/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "expectedVersion",
+                  "relations"
+                ],
+                "properties": {
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "relations": {
+                    "type": "array",
+                    "maxItems": 128,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "type",
+                        "targetSkillId"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "requires",
+                            "uses",
+                            "extends",
+                            "supersedes",
+                            "conflicts_with",
+                            "related_to",
+                            "produces",
+                            "consumes"
+                          ]
+                        },
+                        "targetSkillId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "targetVersion": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "targetVersionConstraint": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128
+                        },
+                        "metadata": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/SkillVersion"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skills/{id}/dependents": {
+      "get": {
+        "operationId": "getSkillDependents",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "skill.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/SkillRelationListResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skills/resolve": {
+      "post": {
+        "operationId": "resolveSkillGraph",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "skill.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "description": "Resolve the bounded, version-snapshotted dependency graph for one skill version.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "skill"
+                ],
+                "properties": {
+                  "skill": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "limits": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "maxDepth": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 32
+                      },
+                      "maxResolvedSkills": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 256
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/ResolvedSkillGraph"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/retrieval/resolve": {
+      "post": {
+        "operationId": "resolveRetrieval",
+        "x-mcp.exposed": true,
+        "x-mcp.capability": "skill.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "description": "Consult the canonical registry before procedural, technical, operational, configuration, deployment, debugging, migration, or maintenance work. A no-match result permits general knowledge; the retrieval call is still mandatory.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "query"
+                ],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 8192
+                  },
+                  "profile": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "default": "default"
+                  },
+                  "limits": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "maxCandidates": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100
+                      },
+                      "maxGraphDepth": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 32
+                      },
+                      "maxResolvedSkills": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 256
+                      },
+                      "maxBodyBytes": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 16777216
+                      },
+                      "canonicalThreshold": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "supportingThreshold": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/RetrievalResolution"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/graph/skills": {
+      "get": {
+        "operationId": "getGlobalSkillGraph",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "maxNodes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            }
+          },
+          {
+            "name": "maxEdges",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16384
+            }
+          },
+          {
+            "name": "versions",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "heads",
+                "history"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "getGlobalSkillGraph",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/SkillGraphResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skills/{id}/graph": {
+      "get": {
+        "operationId": "getSkillGraph",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dependencies",
+                "dependents",
+                "both"
+              ]
+            }
+          },
+          {
+            "name": "depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32
+            }
+          },
+          {
+            "name": "maxNodes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            }
+          },
+          {
+            "name": "maxEdges",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16384
+            }
+          },
+          {
+            "name": "versions",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "heads",
+                "history"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "getSkillGraph",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/SkillGraphResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skills/{id}/impact": {
+      "get": {
+        "operationId": "getSkillImpact",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "name": "depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32
+            }
+          },
+          {
+            "name": "maxNodes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            }
+          },
+          {
+            "name": "maxEdges",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16384
+            }
+          },
+          {
+            "name": "versions",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "heads",
+                "history"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "getSkillImpact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/SkillGraphResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/retrieval-events": {
+      "get": {
+        "operationId": "listRetrievalEvents",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "includeQuery",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "listRetrievalEvents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/RetrievalEventList"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/retrieval-events/{id}/graph": {
+      "get": {
+        "operationId": "getRetrievalEventGraph",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "getRetrievalEventGraph",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/schemas.yaml#/RetrievalEventGraphResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./components/errors.yaml#/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skill-relation-proposals": {
+      "get": {
+        "operationId": "listSkillRelationProposals",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.proposal.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createManualSkillRelationProposal",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.proposal.create",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": true,
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["sourceSkillId", "targetSkillId", "relationType"], "properties": { "sourceSkillId": { "type": "string", "minLength": 1 }, "targetSkillId": { "type": "string", "minLength": 1 }, "relationType": { "type": "string", "enum": ["requires", "uses", "extends", "supersedes", "conflicts_with", "related_to", "produces", "consumes"] }, "constraint": { "type": ["string", "null"] } } } } } },
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } }, "default": { "description": "Error" } }
+      }
+    },
+    "/api/v1/skill-relation-proposals/{id}": {
+      "get": {
+        "operationId": "getSkillRelationProposal",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.proposal.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/api/v1/skill-relation-proposals/discover": {
+      "post": {
+        "operationId": "discoverSkillRelationProposals",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.proposal.create",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/api/v1/skill-relation-proposals/{id}/approve": {
+      "post": {
+        "operationId": "approveSkillRelationProposal",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.proposal.review",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": false,
+        "x-cas-required": true,
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/api/v1/skill-relation-proposals/{id}/reject": {
+      "post": {
+        "operationId": "rejectSkillRelationProposal",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.proposal.review",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": false,
+        "x-cas-required": true,
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/api/v1/skill-relation-proposals/apply-preview": {
+      "post": {
+        "operationId": "previewSkillRelationProposalApply",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.proposal.apply",
+        "x-mcp.safety": "safe",
+        "x-idempotent": false,
+        "x-cas-required": false,
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/api/v1/skill-relation-proposals/reconcile-canonical-duplicates": {
+      "post": {
+        "operationId": "reconcileSkillRelationProposalDuplicates",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.proposal.reconcile",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": true,
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "additionalProperties": true }
+              }
+            }
+          },
+          "default": { "description": "Error" }
+        }
+      }
+    },
+    "/api/v1/skill-relation-proposals/apply": {
+      "post": {
+        "operationId": "applySkillRelationProposals",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.proposal.apply",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": false,
+        "x-cas-required": true,
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/api/v1/skill-relation-candidates/explicit": {
+      "get": {
+        "operationId": "listExplicitSkillRelationCandidates",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.candidate.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": ["READY_FOR_REVIEW", "ALREADY_STAGED", "ALREADY_CANONICAL", "UNRESOLVED", "AMBIGUOUS"]
+            }
+          },
+          {
+            "in": "query",
+            "name": "reciprocal",
+            "schema": { "type": "string", "enum": ["true", "false"] }
+          },
+          {
+            "in": "query",
+            "name": "skillId",
+            "schema": { "type": "string" }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 200 }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "additionalProperties": true }
+              }
+            }
+          },
+          "default": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/api/v1/skill-relation-candidates/explicit/impact": {
+      "post": {
+        "operationId": "previewExplicitSkillRelationCandidatesImpact",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.candidate.read",
+        "x-mcp.safety": "safe",
+        "x-idempotent": true,
+        "x-cas-required": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["pairKeys"], "properties": { "pairKeys": { "type": "array", "items": { "type": "string" } } } }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" },
+          "default": { "description": "Error" }
+        }
+      }
+    },
+    "/api/v1/skill-relation-candidates/explicit/stage": {
+      "post": {
+        "operationId": "stageExplicitSkillRelationCandidates",
+        "x-mcp.exposed": false,
+        "x-mcp.capability": "skill.relation.candidate.stage",
+        "x-mcp.safety": "mutating",
+        "x-idempotent": true,
+        "x-cas-required": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["pairKeys"], "properties": { "pairKeys": { "type": "array", "items": { "type": "string" } } } }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "ok" },
+          "default": { "description": "Error" }
+        }
       }
     }
   },

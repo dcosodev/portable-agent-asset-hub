@@ -36,7 +36,13 @@ class TestGetStatus200Response(unittest.TestCase):
         if include_optional:
             return GetStatus200Response(
                 ok = True,
-                service = ''
+                service = '',
+                schema_version = 56,
+                storage = openapi_client.models.get_status_200_response_storage.getStatus_200_response_storage(
+                    mode = 'canonical',
+                    source = '',
+                    database_name = '',
+                    database_path = '', )
             )
         else:
             return GetStatus200Response(

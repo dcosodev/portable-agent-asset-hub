@@ -10,7 +10,14 @@ const source = resolve(new URL('..', import.meta.url).pathname);
 const tempRoots = [];
 const ignored = new Set(['node_modules', '.git', 'dist', 'artifacts', '.pah-pack']);
 const forbidden = /(^|\/)(tests?|src|docs|scripts|node_modules|\.git|\.hermes|\.openclaw|artifacts)(\/|$)|(^|\/)docs\/baseline(\/|$)|(?:^|\/)(?:.*\.tsbuildinfo)$/i;
+function stableJson(value) {
+  if (Array.isArray(value)) return value.map(stableJson);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, stableJson(item)]));
+  return value;
+}
+
 import { isPrivatePackageBytes } from './package-private-policy.mjs';
+
 async function copyWorkspace(destination) {
   await cp(source, destination, {
     recursive: true,
@@ -37,7 +44,8 @@ async function packageContents(tgz, destination) {
         if (forbidden.test(rel) || rel.startsWith('/') || rel.includes('Users/')) throw new Error(`forbidden package content: ${rel}`);
         const bytes = await readFile(absolute);
         if (isPrivatePackageBytes(bytes.toString('utf8'))) throw new Error(`private content in package bytes: ${rel}`);
-        entries.push({ path: rel, bytes: bytes.byteLength, sha256: createHash('sha256').update(bytes).digest('hex') });
+        const comparable = rel === 'package.json' ? Buffer.from(`${JSON.stringify(stableJson(JSON.parse(bytes.toString('utf8'))))}\n`) : bytes;
+        entries.push({ path: rel, bytes: comparable.byteLength, sha256: createHash('sha256').update(comparable).digest('hex') });
       }
     }
   }

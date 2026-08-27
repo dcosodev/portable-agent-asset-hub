@@ -242,7 +242,10 @@ async function main() {
     }
   }
 
-  const generatedAt = new Date().toISOString();
+  const sourceDateEpoch = process.env.SOURCE_DATE_EPOCH;
+  const generatedAt = sourceDateEpoch && /^\d+$/u.test(sourceDateEpoch)
+    ? new Date(Number(sourceDateEpoch) * 1000).toISOString()
+    : '1970-01-01T00:00:00.000Z';
   const relativeSource = 'openapi/openapi.yaml';
   const relativeCapabilityMatrix = 'schemas/mcp-capabilities.v1.json';
   const body = renderFile({

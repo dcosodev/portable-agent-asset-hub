@@ -89,5 +89,3 @@ class Error(BaseModel):
             "request_id": obj.get("request_id")
         })
         return _obj
-
-

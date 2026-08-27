@@ -83,5 +83,3 @@ class Health(BaseModel):
             "ok": obj.get("ok")
         })
         return _obj
-
-

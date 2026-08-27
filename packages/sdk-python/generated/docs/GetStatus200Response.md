@@ -5,8 +5,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ok** | **bool** |  | 
-**service** | **str** |  | 
+**ok** | **bool** |  |
+**service** | **str** |  |
+**schema_version** | **int** |  | [optional]
+**storage** | [**GetStatus200ResponseStorage**](GetStatus200ResponseStorage.md) |  | [optional]
 
 ## Example
 
@@ -26,5 +28,3 @@ get_status200_response_dict = get_status200_response_instance.to_dict()
 get_status200_response_from_dict = GetStatus200Response.from_dict(get_status200_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

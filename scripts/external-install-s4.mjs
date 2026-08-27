@@ -17,13 +17,15 @@ async function pack(name) {
   return join(temp, file);
 }
 
-async function repackWithCore(name, rawPath, corePath) {
+async function repackWithOverrides(name, rawPath, overrides) {
   const editRoot = join(temp, `${name}-edit`);
   await mkdir(editRoot, { recursive: true });
   await exec('tar', ['-xzf', rawPath, '-C', editRoot]);
   const manifestPath = join(editRoot, 'package', 'package.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  manifest.dependencies['@portable-agent-asset-hub/core'] = `file:${corePath}`;
+  for (const [dependency, filePath] of Object.entries(overrides)) {
+    manifest.dependencies[dependency] = `file:${filePath}`;
+  }
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   const packed = await exec('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temp], {
     cwd: join(editRoot, 'package'), maxBuffer: 20 * 1024 * 1024,
@@ -33,8 +35,11 @@ async function repackWithCore(name, rawPath, corePath) {
 
 try {
   const corePath = await pack('core');
-  const storagePath = await repackWithCore('storage-sqlite', await pack('storage-sqlite'), corePath);
-  const filesPath = await repackWithCore('storage-files', await pack('storage-files'), corePath);
+  const filesPath = await repackWithOverrides('storage-files', await pack('storage-files'), { '@portable-agent-asset-hub/core': corePath });
+  const storagePath = await repackWithOverrides('storage-sqlite', await pack('storage-sqlite'), {
+    '@portable-agent-asset-hub/core': corePath,
+    '@portable-agent-asset-hub/storage-files': filesPath,
+  });
   const app = join(temp, 'consumer');
   await mkdir(app);
   await writeFile(join(app, 'package.json'), `${JSON.stringify({

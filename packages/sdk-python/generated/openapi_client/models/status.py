@@ -17,8 +17,9 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, StrictBool, StrictStr
-from typing import Any, ClassVar, Dict, List
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
+from typing import Any, ClassVar, Dict, List, Optional
+from openapi_client.models.status_storage import StatusStorage
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -28,7 +29,9 @@ class Status(BaseModel):
     """ # noqa: E501
     ok: StrictBool
     service: StrictStr
-    __properties: ClassVar[List[str]] = ["ok", "service"]
+    schema_version: Optional[StrictInt] = Field(default=None, alias="schemaVersion")
+    storage: Optional[StatusStorage] = None
+    __properties: ClassVar[List[str]] = ["ok", "service", "schemaVersion", "storage"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -69,6 +72,9 @@ class Status(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of storage
+        if self.storage:
+            _dict['storage'] = self.storage.to_dict()
         return _dict
 
     @classmethod
@@ -82,8 +88,8 @@ class Status(BaseModel):
 
         _obj = cls.model_validate({
             "ok": obj.get("ok"),
-            "service": obj.get("service")
+            "service": obj.get("service"),
+            "schemaVersion": obj.get("schemaVersion"),
+            "storage": StatusStorage.from_dict(obj["storage"]) if obj.get("storage") is not None else None
         })
         return _obj
-
-

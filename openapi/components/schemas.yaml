@@ -1,1 +1,1144 @@
-{"Health": {"type": "object", "additionalProperties": false, "required": ["ok"], "properties": {"ok": {"type": "boolean"}}}, "Status": {"type": "object", "additionalProperties": false, "required": ["ok", "service"], "properties": {"ok": {"type": "boolean"}, "service": {"type": "string"}}}, "ObjectResponse": {"type": "object", "additionalProperties": true}, "ObjectResponseArray": {"type": "array", "items": {"$ref": "./schemas.yaml#/ObjectResponse"}}}
+{
+  "GraphMetadata": {
+    "additionalProperties": true,
+    "properties": {
+      "edges": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "generatedAt": {
+        "type": "string"
+      },
+      "includeHistory": {
+        "type": "boolean"
+      },
+      "limits": {
+        "additionalProperties": false,
+        "properties": {
+          "maxDepth": {
+            "type": "integer"
+          },
+          "maxEdges": {
+            "type": "integer"
+          },
+          "maxNodes": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "maxDepth",
+          "maxNodes",
+          "maxEdges"
+        ],
+        "type": "object"
+      },
+      "nodes": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "truncated": {
+        "type": "boolean"
+      },
+      "truncatedEdges": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "truncatedNodes": {
+        "minimum": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "nodes",
+      "edges",
+      "truncatedNodes",
+      "truncatedEdges",
+      "limits",
+      "truncated",
+      "generatedAt",
+      "includeHistory"
+    ],
+    "type": "object"
+  },
+  "GraphRelationEdge": {
+    "additionalProperties": false,
+    "properties": {
+      "constraint": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "direction": {
+        "enum": [
+          "dependencies",
+          "dependents",
+          "bidirectional"
+        ],
+        "type": "string"
+      },
+      "reason": {
+        "enum": [
+          "direct_match",
+          "dependency"
+        ],
+        "type": "string"
+      },
+      "source": {
+        "type": "string"
+      },
+      "sourceVersion": {
+        "minimum": 1,
+        "type": "integer"
+      },
+      "target": {
+        "type": "string"
+      },
+      "targetVersion": {
+        "minimum": 1,
+        "type": "integer"
+      },
+      "type": {
+        "enum": [
+          "requires",
+          "uses",
+          "extends",
+          "supersedes",
+          "conflicts_with",
+          "related_to",
+          "produces",
+          "consumes"
+        ],
+        "type": "string"
+      }
+    },
+    "required": [
+      "source",
+      "sourceVersion",
+      "type",
+      "target",
+      "targetVersion",
+      "constraint",
+      "direction"
+    ],
+    "type": "object"
+  },
+  "GraphSkillNode": {
+    "additionalProperties": false,
+    "properties": {
+      "bodySha256": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "createdAt": {
+        "type": "string"
+      },
+      "history": {
+        "items": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "id": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "kind": {
+        "enum": [
+          "skill",
+          "tool"
+        ],
+        "type": "string"
+      },
+      "lifecycle": {
+        "enum": [
+          "candidate",
+          "active",
+          "stale",
+          "rejected"
+        ],
+        "type": "string"
+      },
+      "logicalKey": {
+        "type": "string"
+      },
+      "metadata": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "name": {
+        "type": "string"
+      },
+      "owner": {
+        "type": "string"
+      },
+      "resources": {
+        "items": {
+          "$ref": "./schemas.yaml#/SkillResourceMeta"
+        },
+        "type": "array"
+      },
+      "scope": {
+        "additionalProperties": false,
+        "properties": {
+          "agentId": {
+            "type": "string"
+          },
+          "ownerUserId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ownerUserId",
+          "agentId"
+        ],
+        "type": "object"
+      },
+      "selection": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "totalSize": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "updatedAt": {
+        "type": "string"
+      },
+      "version": {
+        "minimum": 1,
+        "type": "integer"
+      },
+      "skillId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "skillId",
+      "version",
+      "name",
+      "kind",
+      "logicalKey",
+      "lifecycle",
+      "totalSize",
+      "resources",
+      "bodySha256"
+    ],
+    "type": "object"
+  },
+  "Health": {
+    "additionalProperties": false,
+    "properties": {
+      "ok": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "ok"
+    ],
+    "type": "object"
+  },
+  "ObjectResponse": {
+    "additionalProperties": true,
+    "type": "object"
+  },
+  "ObjectResponseArray": {
+    "items": {
+      "$ref": "./schemas.yaml#/ObjectResponse"
+    },
+    "type": "array"
+  },
+  "ResolvedSkillGraph": {
+    "additionalProperties": false,
+    "properties": {
+      "limits": {
+        "additionalProperties": false,
+        "properties": {
+          "maxDepth": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxResolvedSkills": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "maxDepth",
+          "maxResolvedSkills"
+        ],
+        "type": "object"
+      },
+      "resolved": {
+        "items": {
+          "additionalProperties": false,
+          "properties": {
+            "constraint": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "depth": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "parent": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "skillId": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "minimum": 1,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "skillId",
+                    "version"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "relation": {
+              "type": "string"
+            },
+            "resolvedVersion": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "skillId": {
+              "type": "string"
+            },
+            "version": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "skillId",
+            "version",
+            "relation",
+            "parent",
+            "depth",
+            "constraint",
+            "resolvedVersion"
+          ],
+          "type": "object"
+        },
+        "type": "array"
+      },
+      "root": {
+        "additionalProperties": false,
+        "properties": {
+          "skillId": {
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "skillId",
+          "version"
+        ],
+        "type": "object"
+      }
+    },
+    "required": [
+      "root",
+      "resolved",
+      "limits"
+    ],
+    "type": "object"
+  },
+  "RetrievalEventGraphResponse": {
+    "allOf": [
+      {
+        "$ref": "./schemas.yaml#/SkillGraphResponse"
+      },
+      {
+        "additionalProperties": true,
+        "properties": {
+          "memories": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "root": {
+            "additionalProperties": false,
+            "properties": {
+              "requestId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "requestId"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "root",
+          "memories"
+        ],
+        "type": "object"
+      }
+    ]
+  },
+  "RetrievalEventList": {
+    "additionalProperties": false,
+    "properties": {
+      "items": {
+        "items": {
+          "$ref": "./schemas.yaml#/RetrievalEventSummary"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "type": "object"
+  },
+  "RetrievalEventSummary": {
+    "additionalProperties": true,
+    "properties": {
+      "classification": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "counts": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "createdAt": {
+        "type": "string"
+      },
+      "noMatch": {
+        "type": "boolean"
+      },
+      "policy": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "profile": {
+        "type": "string"
+      },
+      "querySha256": {
+        "type": "string"
+      },
+      "redactedQuery": {
+        "type": "string"
+      },
+      "requestId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "requestId",
+      "profile",
+      "classification",
+      "policy",
+      "createdAt",
+      "noMatch",
+      "counts",
+      "querySha256"
+    ],
+    "type": "object"
+  },
+  "RetrievalResolution": {
+    "additionalProperties": false,
+    "properties": {
+      "candidatesConsidered": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "classification": {
+        "additionalProperties": false,
+        "properties": {
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "personalContextRequired": {
+            "type": "boolean"
+          },
+          "primary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "primary",
+          "labels",
+          "personalContextRequired"
+        ],
+        "type": "object"
+      },
+      "limits": {
+        "additionalProperties": false,
+        "properties": {
+          "canonicalThreshold": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "maxBodyBytes": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxCandidates": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxGraphDepth": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxResolvedSkills": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "supportingThreshold": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "maxCandidates",
+          "maxGraphDepth",
+          "maxResolvedSkills",
+          "maxBodyBytes",
+          "canonicalThreshold",
+          "supportingThreshold"
+        ],
+        "type": "object"
+      },
+      "materialization": {
+        "additionalProperties": false,
+        "properties": {
+          "maxBodyBytes": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "selectedBytes": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "selectedBytes",
+          "maxBodyBytes"
+        ],
+        "type": "object"
+      },
+      "memories": {
+        "items": {
+          "additionalProperties": false,
+          "properties": {
+            "confidence": {
+              "type": "number"
+            },
+            "importance": {
+              "type": "number"
+            },
+            "kind": {
+              "type": "string"
+            },
+            "memoryId": {
+              "type": "string"
+            },
+            "version": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "memoryId",
+            "version",
+            "kind",
+            "confidence",
+            "importance"
+          ],
+          "type": "object"
+        },
+        "type": "array"
+      },
+      "memoryCandidatesConsidered": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "noMatch": {
+        "type": "boolean"
+      },
+      "policy": {
+        "additionalProperties": false,
+        "properties": {
+          "memoryRetrievalRequired": {
+            "type": "boolean"
+          },
+          "ruleVersion": {
+            "type": "string"
+          },
+          "skillRetrievalRequired": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "skillRetrievalRequired",
+          "memoryRetrievalRequired",
+          "ruleVersion"
+        ],
+        "type": "object"
+      },
+      "query": {
+        "additionalProperties": false,
+        "properties": {
+          "digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "terms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "digest",
+          "terms"
+        ],
+        "type": "object"
+      },
+      "requestId": {
+        "type": "string"
+      },
+      "skills": {
+        "items": {
+          "additionalProperties": false,
+          "properties": {
+            "depth": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "parent": {
+              "type": "string"
+            },
+            "reason": {
+              "enum": [
+                "direct_match",
+                "dependency"
+              ],
+              "type": "string"
+            },
+            "relation": {
+              "type": "string"
+            },
+            "score": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            "skillId": {
+              "type": "string"
+            },
+            "tier": {
+              "enum": [
+                "canonical",
+                "supporting",
+                "dependency"
+              ],
+              "type": "string"
+            },
+            "version": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "skillId",
+            "version",
+            "score",
+            "tier",
+            "reason",
+            "depth"
+          ],
+          "type": "object"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "requestId",
+      "classification",
+      "policy",
+      "query",
+      "candidatesConsidered",
+      "memoryCandidatesConsidered",
+      "skills",
+      "memories",
+      "noMatch",
+      "limits",
+      "materialization"
+    ],
+    "type": "object"
+  },
+  "SkillGraphResponse": {
+    "additionalProperties": true,
+    "properties": {
+      "edges": {
+        "items": {
+          "$ref": "./schemas.yaml#/GraphRelationEdge"
+        },
+        "type": "array"
+      },
+      "metadata": {
+        "$ref": "./schemas.yaml#/GraphMetadata"
+      },
+      "mode": {
+        "type": "string"
+      },
+      "nodes": {
+        "items": {
+          "$ref": "./schemas.yaml#/GraphSkillNode"
+        },
+        "type": "array"
+      },
+      "root": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version"
+        ],
+        "type": "object"
+      }
+    },
+    "required": [
+      "nodes",
+      "edges",
+      "metadata"
+    ],
+    "type": "object"
+  },
+  "SkillRelation": {
+    "additionalProperties": false,
+    "properties": {
+      "createdAt": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "metadata": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "resolvedTargetVersion": {
+        "minimum": 1,
+        "type": "integer"
+      },
+      "sourceSkillId": {
+        "type": "string"
+      },
+      "sourceVersion": {
+        "minimum": 1,
+        "type": "integer"
+      },
+      "targetSkillId": {
+        "type": "string"
+      },
+      "targetVersionConstraint": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "type": {
+        "enum": [
+          "requires",
+          "uses",
+          "extends",
+          "supersedes",
+          "conflicts_with",
+          "related_to",
+          "produces",
+          "consumes"
+        ],
+        "type": "string"
+      }
+    },
+    "required": [
+      "sourceSkillId",
+      "sourceVersion",
+      "type",
+      "targetSkillId",
+      "targetVersionConstraint",
+      "resolvedTargetVersion",
+      "metadata",
+      "createdAt"
+    ],
+    "type": "object"
+  },
+  "SkillRelationListResponse": {
+    "additionalProperties": false,
+    "properties": {
+      "items": {
+        "items": {
+          "$ref": "#/components/schemas/SkillRelation"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "type": "object"
+  },
+  "SkillResourceMeta": {
+    "additionalProperties": false,
+    "properties": {
+      "mime": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "mode": {
+        "enum": [
+          420,
+          493
+        ],
+        "type": "integer"
+      },
+      "relativePath": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "sha256": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "size": {
+        "minimum": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "relativePath",
+      "mode",
+      "mime",
+      "size",
+      "sha256"
+    ],
+    "type": "object"
+  },
+  "SkillResourceRecord": {
+    "additionalProperties": false,
+    "properties": {
+      "bytes": {
+        "description": "Base64-encoded resource bytes.",
+        "type": "string"
+      },
+      "encoding": {
+        "const": "base64",
+        "type": "string"
+      },
+      "mime": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "mode": {
+        "enum": [
+          420,
+          493
+        ],
+        "type": "integer"
+      },
+      "relativePath": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "sha256": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "size": {
+        "minimum": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "relativePath",
+      "mode",
+      "mime",
+      "size",
+      "sha256",
+      "bytes",
+      "encoding"
+    ],
+    "type": "object"
+  },
+  "SkillSearchHit": {
+    "additionalProperties": false,
+    "properties": {
+      "bodySha256": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "createdAt": {
+        "type": "string"
+      },
+      "id": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "kind": {
+        "enum": [
+          "skill",
+          "tool"
+        ],
+        "type": "string"
+      },
+      "lifecycle": {
+        "enum": [
+          "candidate",
+          "active",
+          "stale",
+          "rejected"
+        ],
+        "type": "string"
+      },
+      "logicalKey": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "metadata": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "name": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "resources": {
+        "items": {
+          "$ref": "./schemas.yaml#/SkillResourceMeta"
+        },
+        "type": "array"
+      },
+      "scope": {
+        "additionalProperties": false,
+        "properties": {
+          "agentId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "ownerUserId": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "ownerUserId",
+          "agentId"
+        ],
+        "type": "object"
+      },
+      "summary": {
+        "type": "string"
+      },
+      "totalSize": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "updatedAt": {
+        "type": "string"
+      },
+      "version": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "scope",
+      "logicalKey",
+      "kind",
+      "name",
+      "lifecycle",
+      "version",
+      "bodySha256",
+      "totalSize",
+      "metadata",
+      "resources",
+      "createdAt",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
+  "SkillVersion": {
+    "additionalProperties": false,
+    "properties": {
+      "body": {
+        "description": "UTF-8 body bytes serialized as a JSON string.",
+        "type": "string"
+      },
+      "bodySha256": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "createdAt": {
+        "type": "string"
+      },
+      "id": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "kind": {
+        "enum": [
+          "skill",
+          "tool"
+        ],
+        "type": "string"
+      },
+      "lifecycle": {
+        "enum": [
+          "candidate",
+          "active",
+          "stale",
+          "rejected"
+        ],
+        "type": "string"
+      },
+      "logicalKey": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "metadata": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "name": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "resources": {
+        "items": {
+          "$ref": "./schemas.yaml#/SkillResourceMeta"
+        },
+        "type": "array"
+      },
+      "scope": {
+        "additionalProperties": false,
+        "properties": {
+          "agentId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "ownerUserId": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "ownerUserId",
+          "agentId"
+        ],
+        "type": "object"
+      },
+      "summary": {
+        "type": "string"
+      },
+      "totalSize": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "updatedAt": {
+        "type": "string"
+      },
+      "version": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "id",
+      "scope",
+      "logicalKey",
+      "kind",
+      "name",
+      "lifecycle",
+      "version",
+      "body",
+      "bodySha256",
+      "totalSize",
+      "metadata",
+      "resources",
+      "createdAt",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
+  "Status": {
+    "additionalProperties": false,
+    "properties": {
+      "ok": {
+        "type": "boolean"
+      },
+      "service": {
+        "type": "string"
+      },
+      "schemaVersion": {
+        "type": "integer"
+      },
+      "storage": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": { "enum": ["canonical", "temporary", "test", "unknown"] },
+          "source": { "type": "string" },
+          "databaseName": { "type": "string" },
+          "databasePath": { "type": "string" }
+        },
+        "required": ["mode", "source"],
+        "type": "object"
+      }
+    },
+    "required": [
+      "ok",
+      "service"
+    ],
+    "type": "object"
+  },
+  "RelationProposal": {
+    "type": "object",
+    "additionalProperties": true
+  },
+  "RelationProposalPreview": {
+    "type": "object",
+    "additionalProperties": true
+  },
+  "RelationDiscoveryResult": {
+    "type": "object",
+    "additionalProperties": true
+  }
+}

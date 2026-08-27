@@ -5,8 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**error** | [**GetStatusDefaultResponseError**](GetStatusDefaultResponseError.md) |  | 
-**request_id** | **str** |  | 
+**error** | [**GetStatusDefaultResponseError**](GetStatusDefaultResponseError.md) |  |
+**request_id** | **str** |  |
 
 ## Example
 
@@ -26,5 +26,3 @@ get_status_default_response_dict = get_status_default_response_instance.to_dict(
 get_status_default_response_from_dict = GetStatusDefaultResponse.from_dict(get_status_default_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

@@ -36,7 +36,13 @@ class TestStatus(unittest.TestCase):
         if include_optional:
             return Status(
                 ok = True,
-                service = ''
+                service = '',
+                schema_version = 56,
+                storage = openapi_client.models.status_storage.Status_storage(
+                    mode = 'canonical',
+                    source = '',
+                    database_name = '',
+                    database_path = '', )
             )
         else:
             return Status(

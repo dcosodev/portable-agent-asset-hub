@@ -175,7 +175,7 @@ class Configuration:
         username: Optional[str]=None,
         password: Optional[str]=None,
         access_token: Optional[str]=None,
-        server_index: Optional[int]=None, 
+        server_index: Optional[int]=None,
         server_variables: Optional[ServerVariablesT]=None,
         server_operation_index: Optional[Dict[int, int]]=None,
         server_operation_variables: Optional[Dict[int, ServerVariablesT]]=None,

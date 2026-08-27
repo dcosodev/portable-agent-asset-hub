@@ -76,8 +76,8 @@ configuration = openapi_client.Configuration(
 with openapi_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = openapi_client.DefaultApi(api_client)
-    if_match = 'if_match_example' # str | 
-    body = None # object | 
+    if_match = 'if_match_example' # str |
+    body = None # object |
     x_request_id = 'x_request_id_example' # str |  (optional)
 
     try:
@@ -95,42 +95,126 @@ All URIs are relative to *http://127.0.0.1*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**apply_catalog_sync**](docs/DefaultApi.md#apply_catalog_sync) | **POST** /api/v1/catalog/sync/apply | 
-*DefaultApi* | [**apply_materialization**](docs/DefaultApi.md#apply_materialization) | **POST** /api/v1/materializations/apply | 
-*DefaultApi* | [**create_binding**](docs/DefaultApi.md#create_binding) | **POST** /api/v1/bindings | 
-*DefaultApi* | [**create_event**](docs/DefaultApi.md#create_event) | **POST** /api/v1/events | 
-*DefaultApi* | [**create_memory**](docs/DefaultApi.md#create_memory) | **POST** /api/v1/memories | 
-*DefaultApi* | [**create_profile**](docs/DefaultApi.md#create_profile) | **POST** /api/v1/profiles | 
-*DefaultApi* | [**forget_memory**](docs/DefaultApi.md#forget_memory) | **POST** /api/v1/memories/{id}/forget | 
-*DefaultApi* | [**get_catalog**](docs/DefaultApi.md#get_catalog) | **GET** /api/v1/catalog | 
-*DefaultApi* | [**get_doctor**](docs/DefaultApi.md#get_doctor) | **GET** /api/v1/admin/doctor | 
-*DefaultApi* | [**get_health**](docs/DefaultApi.md#get_health) | **GET** /api/v1/health | 
-*DefaultApi* | [**get_resource**](docs/DefaultApi.md#get_resource) | **GET** /api/v1/resources/{path} | 
-*DefaultApi* | [**get_status**](docs/DefaultApi.md#get_status) | **GET** /api/v1/status | 
-*DefaultApi* | [**list_audit**](docs/DefaultApi.md#list_audit) | **GET** /api/v1/audit | 
-*DefaultApi* | [**list_identities**](docs/DefaultApi.md#list_identities) | **GET** /api/v1/identities | 
-*DefaultApi* | [**list_memory_blocks**](docs/DefaultApi.md#list_memory_blocks) | **GET** /api/v1/memory-blocks | 
-*DefaultApi* | [**list_skill_versions**](docs/DefaultApi.md#list_skill_versions) | **GET** /api/v1/skills/{id}/versions | 
-*DefaultApi* | [**list_skills**](docs/DefaultApi.md#list_skills) | **GET** /api/v1/skills | 
-*DefaultApi* | [**list_snapshots**](docs/DefaultApi.md#list_snapshots) | **GET** /api/v1/snapshots | 
-*DefaultApi* | [**preview_catalog_sync**](docs/DefaultApi.md#preview_catalog_sync) | **POST** /api/v1/catalog/sync/preview | 
-*DefaultApi* | [**preview_materialization**](docs/DefaultApi.md#preview_materialization) | **POST** /api/v1/materializations/preview | 
-*DefaultApi* | [**replay**](docs/DefaultApi.md#replay) | **POST** /api/v1/replay | 
-*DefaultApi* | [**rollback_materialization**](docs/DefaultApi.md#rollback_materialization) | **POST** /api/v1/materializations/{run_id}/rollback | 
-*DefaultApi* | [**supersede_memory**](docs/DefaultApi.md#supersede_memory) | **POST** /api/v1/memories/{id}/supersede | 
+*DefaultApi* | [**apply_catalog_sync**](docs/DefaultApi.md#apply_catalog_sync) | **POST** /api/v1/catalog/sync/apply |
+*DefaultApi* | [**apply_materialization**](docs/DefaultApi.md#apply_materialization) | **POST** /api/v1/materializations/apply |
+*DefaultApi* | [**apply_skill_relation_proposals**](docs/DefaultApi.md#apply_skill_relation_proposals) | **POST** /api/v1/skill-relation-proposals/apply |
+*DefaultApi* | [**approve_skill_relation_proposal**](docs/DefaultApi.md#approve_skill_relation_proposal) | **POST** /api/v1/skill-relation-proposals/{id}/approve |
+*DefaultApi* | [**create_binding**](docs/DefaultApi.md#create_binding) | **POST** /api/v1/bindings |
+*DefaultApi* | [**create_event**](docs/DefaultApi.md#create_event) | **POST** /api/v1/events |
+*DefaultApi* | [**create_manual_skill_relation_proposal**](docs/DefaultApi.md#create_manual_skill_relation_proposal) | **POST** /api/v1/skill-relation-proposals |
+*DefaultApi* | [**create_memory**](docs/DefaultApi.md#create_memory) | **POST** /api/v1/memories |
+*DefaultApi* | [**create_profile**](docs/DefaultApi.md#create_profile) | **POST** /api/v1/profiles |
+*DefaultApi* | [**discover_skill_relation_proposals**](docs/DefaultApi.md#discover_skill_relation_proposals) | **POST** /api/v1/skill-relation-proposals/discover |
+*DefaultApi* | [**forget_memory**](docs/DefaultApi.md#forget_memory) | **POST** /api/v1/memories/{id}/forget |
+*DefaultApi* | [**get_capabilities**](docs/DefaultApi.md#get_capabilities) | **GET** /api/v1/capabilities |
+*DefaultApi* | [**get_catalog**](docs/DefaultApi.md#get_catalog) | **GET** /api/v1/catalog |
+*DefaultApi* | [**get_doctor**](docs/DefaultApi.md#get_doctor) | **GET** /api/v1/admin/doctor |
+*DefaultApi* | [**get_global_skill_graph**](docs/DefaultApi.md#get_global_skill_graph) | **GET** /api/v1/graph/skills |
+*DefaultApi* | [**get_health**](docs/DefaultApi.md#get_health) | **GET** /api/v1/health |
+*DefaultApi* | [**get_memory**](docs/DefaultApi.md#get_memory) | **GET** /api/v1/memories/{id} |
+*DefaultApi* | [**get_resource**](docs/DefaultApi.md#get_resource) | **GET** /api/v1/resources/{path} |
+*DefaultApi* | [**get_retrieval_event_graph**](docs/DefaultApi.md#get_retrieval_event_graph) | **GET** /api/v1/retrieval-events/{id}/graph |
+*DefaultApi* | [**get_skill**](docs/DefaultApi.md#get_skill) | **GET** /api/v1/skills/{id} |
+*DefaultApi* | [**get_skill_dependents**](docs/DefaultApi.md#get_skill_dependents) | **GET** /api/v1/skills/{id}/dependents |
+*DefaultApi* | [**get_skill_graph**](docs/DefaultApi.md#get_skill_graph) | **GET** /api/v1/skills/{id}/graph |
+*DefaultApi* | [**get_skill_impact**](docs/DefaultApi.md#get_skill_impact) | **GET** /api/v1/skills/{id}/impact |
+*DefaultApi* | [**get_skill_relation_proposal**](docs/DefaultApi.md#get_skill_relation_proposal) | **GET** /api/v1/skill-relation-proposals/{id} |
+*DefaultApi* | [**get_skill_relations**](docs/DefaultApi.md#get_skill_relations) | **GET** /api/v1/skills/{id}/relations |
+*DefaultApi* | [**get_status**](docs/DefaultApi.md#get_status) | **GET** /api/v1/status |
+*DefaultApi* | [**list_audit**](docs/DefaultApi.md#list_audit) | **GET** /api/v1/audit |
+*DefaultApi* | [**list_explicit_skill_relation_candidates**](docs/DefaultApi.md#list_explicit_skill_relation_candidates) | **GET** /api/v1/skill-relation-candidates/explicit |
+*DefaultApi* | [**list_identities**](docs/DefaultApi.md#list_identities) | **GET** /api/v1/identities |
+*DefaultApi* | [**list_memory_blocks**](docs/DefaultApi.md#list_memory_blocks) | **GET** /api/v1/memory-blocks |
+*DefaultApi* | [**list_retrieval_events**](docs/DefaultApi.md#list_retrieval_events) | **GET** /api/v1/retrieval-events |
+*DefaultApi* | [**list_skill_relation_proposals**](docs/DefaultApi.md#list_skill_relation_proposals) | **GET** /api/v1/skill-relation-proposals |
+*DefaultApi* | [**list_skill_resources**](docs/DefaultApi.md#list_skill_resources) | **GET** /api/v1/skills/{id}/resources |
+*DefaultApi* | [**list_snapshots**](docs/DefaultApi.md#list_snapshots) | **GET** /api/v1/snapshots |
+*DefaultApi* | [**preview_catalog_sync**](docs/DefaultApi.md#preview_catalog_sync) | **POST** /api/v1/catalog/sync/preview |
+*DefaultApi* | [**preview_explicit_skill_relation_candidates_impact**](docs/DefaultApi.md#preview_explicit_skill_relation_candidates_impact) | **POST** /api/v1/skill-relation-candidates/explicit/impact |
+*DefaultApi* | [**preview_materialization**](docs/DefaultApi.md#preview_materialization) | **POST** /api/v1/materializations/preview |
+*DefaultApi* | [**preview_skill_relation_proposal_apply**](docs/DefaultApi.md#preview_skill_relation_proposal_apply) | **POST** /api/v1/skill-relation-proposals/apply-preview |
+*DefaultApi* | [**read_skill_resource**](docs/DefaultApi.md#read_skill_resource) | **GET** /api/v1/skills/{id}/resources/{resourcePath} |
+*DefaultApi* | [**reconcile_skill_relation_proposal_duplicates**](docs/DefaultApi.md#reconcile_skill_relation_proposal_duplicates) | **POST** /api/v1/skill-relation-proposals/reconcile-canonical-duplicates |
+*DefaultApi* | [**reject_skill_relation_proposal**](docs/DefaultApi.md#reject_skill_relation_proposal) | **POST** /api/v1/skill-relation-proposals/{id}/reject |
+*DefaultApi* | [**replace_skill_relations**](docs/DefaultApi.md#replace_skill_relations) | **PUT** /api/v1/skills/{id}/relations |
+*DefaultApi* | [**replay**](docs/DefaultApi.md#replay) | **POST** /api/v1/replay |
+*DefaultApi* | [**resolve_retrieval**](docs/DefaultApi.md#resolve_retrieval) | **POST** /api/v1/retrieval/resolve |
+*DefaultApi* | [**resolve_skill_graph**](docs/DefaultApi.md#resolve_skill_graph) | **POST** /api/v1/skills/resolve |
+*DefaultApi* | [**rollback_materialization**](docs/DefaultApi.md#rollback_materialization) | **POST** /api/v1/materializations/{run_id}/rollback |
+*DefaultApi* | [**search_catalog**](docs/DefaultApi.md#search_catalog) | **GET** /api/v1/catalog/search |
+*DefaultApi* | [**search_memories**](docs/DefaultApi.md#search_memories) | **GET** /api/v1/memories/search |
+*DefaultApi* | [**search_skills**](docs/DefaultApi.md#search_skills) | **GET** /api/v1/skills/search |
+*DefaultApi* | [**stage_explicit_skill_relation_candidates**](docs/DefaultApi.md#stage_explicit_skill_relation_candidates) | **POST** /api/v1/skill-relation-candidates/explicit/stage |
+*DefaultApi* | [**supersede_memory**](docs/DefaultApi.md#supersede_memory) | **POST** /api/v1/memories/{id}/supersede |
 
 
 ## Documentation For Models
 
+ - [CreateManualSkillRelationProposalRequest](docs/CreateManualSkillRelationProposalRequest.md)
  - [Error](docs/Error.md)
+ - [GetGlobalSkillGraph200Response](docs/GetGlobalSkillGraph200Response.md)
+ - [GetGlobalSkillGraph200ResponseEdgesInner](docs/GetGlobalSkillGraph200ResponseEdgesInner.md)
+ - [GetGlobalSkillGraph200ResponseMetadata](docs/GetGlobalSkillGraph200ResponseMetadata.md)
+ - [GetGlobalSkillGraph200ResponseMetadataLimits](docs/GetGlobalSkillGraph200ResponseMetadataLimits.md)
+ - [GetGlobalSkillGraph200ResponseNodesInner](docs/GetGlobalSkillGraph200ResponseNodesInner.md)
+ - [GetGlobalSkillGraph200ResponseNodesInnerScope](docs/GetGlobalSkillGraph200ResponseNodesInnerScope.md)
+ - [GetGlobalSkillGraph200ResponseRoot](docs/GetGlobalSkillGraph200ResponseRoot.md)
  - [GetHealth200Response](docs/GetHealth200Response.md)
  - [GetHealthDefaultResponse](docs/GetHealthDefaultResponse.md)
  - [GetHealthDefaultResponseError](docs/GetHealthDefaultResponseError.md)
+ - [GetRetrievalEventGraph200Response](docs/GetRetrievalEventGraph200Response.md)
+ - [GetRetrievalEventGraph200ResponseAllOfMetadata](docs/GetRetrievalEventGraph200ResponseAllOfMetadata.md)
+ - [GetRetrievalEventGraph200ResponseAllOfRoot](docs/GetRetrievalEventGraph200ResponseAllOfRoot.md)
+ - [GetRetrievalEventGraph200ResponseAllOfRoot1](docs/GetRetrievalEventGraph200ResponseAllOfRoot1.md)
+ - [GetSkill200Response](docs/GetSkill200Response.md)
+ - [GetSkillDependents200Response](docs/GetSkillDependents200Response.md)
+ - [GetSkillGraph200Response](docs/GetSkillGraph200Response.md)
+ - [GetSkillGraph200ResponseEdgesInner](docs/GetSkillGraph200ResponseEdgesInner.md)
+ - [GetSkillGraph200ResponseMetadata](docs/GetSkillGraph200ResponseMetadata.md)
+ - [GetSkillGraph200ResponseMetadataLimits](docs/GetSkillGraph200ResponseMetadataLimits.md)
+ - [GetSkillGraph200ResponseNodesInner](docs/GetSkillGraph200ResponseNodesInner.md)
+ - [GetSkillGraph200ResponseNodesInnerScope](docs/GetSkillGraph200ResponseNodesInnerScope.md)
+ - [GetSkillGraph200ResponseRoot](docs/GetSkillGraph200ResponseRoot.md)
+ - [GetSkillRelations200Response](docs/GetSkillRelations200Response.md)
  - [GetStatus200Response](docs/GetStatus200Response.md)
+ - [GetStatus200ResponseStorage](docs/GetStatus200ResponseStorage.md)
  - [GetStatusDefaultResponse](docs/GetStatusDefaultResponse.md)
  - [GetStatusDefaultResponseError](docs/GetStatusDefaultResponseError.md)
  - [Health](docs/Health.md)
+ - [ListRetrievalEvents200Response](docs/ListRetrievalEvents200Response.md)
+ - [ListRetrievalEvents200ResponseItemsInner](docs/ListRetrievalEvents200ResponseItemsInner.md)
+ - [ListSkillResources200Response](docs/ListSkillResources200Response.md)
+ - [ListSkillResources200ResponseItemsInner](docs/ListSkillResources200ResponseItemsInner.md)
+ - [PreviewExplicitSkillRelationCandidatesImpactRequest](docs/PreviewExplicitSkillRelationCandidatesImpactRequest.md)
+ - [ReadSkillResource200Response](docs/ReadSkillResource200Response.md)
+ - [ReplaceSkillRelations200Response](docs/ReplaceSkillRelations200Response.md)
+ - [ReplaceSkillRelations200ResponseResourcesInner](docs/ReplaceSkillRelations200ResponseResourcesInner.md)
+ - [ReplaceSkillRelations200ResponseScope](docs/ReplaceSkillRelations200ResponseScope.md)
+ - [ReplaceSkillRelationsRequest](docs/ReplaceSkillRelationsRequest.md)
+ - [ReplaceSkillRelationsRequestRelationsInner](docs/ReplaceSkillRelationsRequestRelationsInner.md)
+ - [ResolveRetrieval200Response](docs/ResolveRetrieval200Response.md)
+ - [ResolveRetrieval200ResponseClassification](docs/ResolveRetrieval200ResponseClassification.md)
+ - [ResolveRetrieval200ResponseLimits](docs/ResolveRetrieval200ResponseLimits.md)
+ - [ResolveRetrieval200ResponseMaterialization](docs/ResolveRetrieval200ResponseMaterialization.md)
+ - [ResolveRetrieval200ResponseMemoriesInner](docs/ResolveRetrieval200ResponseMemoriesInner.md)
+ - [ResolveRetrieval200ResponsePolicy](docs/ResolveRetrieval200ResponsePolicy.md)
+ - [ResolveRetrieval200ResponseQuery](docs/ResolveRetrieval200ResponseQuery.md)
+ - [ResolveRetrieval200ResponseSkillsInner](docs/ResolveRetrieval200ResponseSkillsInner.md)
+ - [ResolveRetrievalRequest](docs/ResolveRetrievalRequest.md)
+ - [ResolveRetrievalRequestLimits](docs/ResolveRetrievalRequestLimits.md)
+ - [ResolveSkillGraph200Response](docs/ResolveSkillGraph200Response.md)
+ - [ResolveSkillGraph200ResponseLimits](docs/ResolveSkillGraph200ResponseLimits.md)
+ - [ResolveSkillGraph200ResponseResolvedInner](docs/ResolveSkillGraph200ResponseResolvedInner.md)
+ - [ResolveSkillGraph200ResponseResolvedInnerParent](docs/ResolveSkillGraph200ResponseResolvedInnerParent.md)
+ - [ResolveSkillGraph200ResponseResolvedInnerParentOneOf](docs/ResolveSkillGraph200ResponseResolvedInnerParentOneOf.md)
+ - [ResolveSkillGraphRequest](docs/ResolveSkillGraphRequest.md)
+ - [ResolveSkillGraphRequestLimits](docs/ResolveSkillGraphRequestLimits.md)
+ - [SearchSkills200Response](docs/SearchSkills200Response.md)
+ - [SearchSkills200ResponseItemsInner](docs/SearchSkills200ResponseItemsInner.md)
+ - [SearchSkills200ResponseItemsInnerResourcesInner](docs/SearchSkills200ResponseItemsInnerResourcesInner.md)
+ - [SearchSkills200ResponseItemsInnerScope](docs/SearchSkills200ResponseItemsInnerScope.md)
  - [Status](docs/Status.md)
+ - [StatusStorage](docs/StatusStorage.md)
 
 
 <a id="documentation-for-authorization"></a>
@@ -145,7 +229,3 @@ Authentication schemes defined for the API:
 
 
 ## Author
-
-
-
-

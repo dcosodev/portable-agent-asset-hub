@@ -36,16 +36,16 @@ class TestGetStatusDefaultResponse(unittest.TestCase):
         if include_optional:
             return GetStatusDefaultResponse(
                 error = openapi_client.models.get_status_default_response_error.getStatus_default_response_error(
-                    code = '', 
-                    message = '', 
+                    code = '',
+                    message = '',
                     status = 56, ),
                 request_id = ''
             )
         else:
             return GetStatusDefaultResponse(
                 error = openapi_client.models.get_status_default_response_error.getStatus_default_response_error(
-                    code = '', 
-                    message = '', 
+                    code = '',
+                    message = '',
                     status = 56, ),
                 request_id = '',
         )

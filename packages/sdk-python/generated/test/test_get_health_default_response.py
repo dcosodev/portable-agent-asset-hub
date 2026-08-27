@@ -36,16 +36,16 @@ class TestGetHealthDefaultResponse(unittest.TestCase):
         if include_optional:
             return GetHealthDefaultResponse(
                 error = openapi_client.models.get_health_default_response_error.getHealth_default_response_error(
-                    code = '', 
-                    message = '', 
+                    code = '',
+                    message = '',
                     status = 56, ),
                 request_id = ''
             )
         else:
             return GetHealthDefaultResponse(
                 error = openapi_client.models.get_health_default_response_error.getHealth_default_response_error(
-                    code = '', 
-                    message = '', 
+                    code = '',
+                    message = '',
                     status = 56, ),
                 request_id = '',
         )

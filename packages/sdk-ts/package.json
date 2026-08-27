@@ -1,1 +1,20 @@
-{"name":"@portable-agent-asset-hub/sdk-ts","version":"0.1.0","type":"module","private":true,"license":"Apache-2.0","files":["dist/**/*.js","dist/**/*.d.ts","generated/**"],"main":"./dist/index.js","types":"./dist/index.d.ts","exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"}}}
+{
+  "name": "@portable-agent-asset-hub/sdk-ts",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "generated/**"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  }
+}

@@ -8,7 +8,7 @@
 //     and for chained external refs that loop back into the same file.
 //   * Every operation has a unique operationId and the required x-*
 //     extensions.
-//   * The set of operations matches the canonical 23-operation set
+//   * The set of operations matches the canonical operation set
 //     declared below — accidental renames or additions show up as
 //     failures instead of silently shipping.
 //   * Components declared under components.{schemas,parameters,
@@ -36,25 +36,46 @@ import { fileURLToPath } from 'node:url';
 const REQUIRED_GEN_VERSION = '7.10.0';
 const REQUIRED_OPERATION_EXTENSIONS = ['x-mcp.exposed', 'x-mcp.capability', 'x-mcp.safety', 'x-idempotent', 'x-cas-required'];
 const KNOWN_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
-// Canonical 23-operation set. The drift detector refuses to pass unless the
+// Canonical operation set. The drift detector refuses to pass unless the
 // spec declares exactly these operationIds — in any order — so accidental
 // renames or additions show up as failures instead of silently shipping.
+//   Phase 1 added the four skill operations on top of the 22 pre-existing
+// ones (searchSkills, getSkill, listSkillResources, readSkillResource).
+// The legacy `listSkills` and `listSkillVersions` were removed from the
+// contract — the canonical skill surface now is read-only and consists
+// exactly of these four.
 const EXPECTED_OPERATION_IDS = Object.freeze([
   'getHealth',
   'getStatus',
+  'getCapabilities',
   'getDoctor',
   'listIdentities',
   'createBinding',
   'createProfile',
   'listMemoryBlocks',
   'createEvent',
+  'searchMemories',
+  'getMemory',
   'createMemory',
   'supersedeMemory',
   'forgetMemory',
-  'listSkills',
-  'listSkillVersions',
+  'searchSkills',
+  'getSkill',
+  'listSkillResources',
+  'readSkillResource',
+  'getSkillRelations',
+  'replaceSkillRelations',
+  'getSkillDependents',
+  'resolveSkillGraph',
+  'resolveRetrieval',
+  'getGlobalSkillGraph',
+  'getSkillGraph',
+  'getSkillImpact',
+  'listRetrievalEvents',
+  'getRetrievalEventGraph',
   'getResource',
   'getCatalog',
+  'searchCatalog',
   'previewCatalogSync',
   'applyCatalogSync',
   'listAudit',
@@ -63,6 +84,18 @@ const EXPECTED_OPERATION_IDS = Object.freeze([
   'previewMaterialization',
   'applyMaterialization',
   'rollbackMaterialization',
+  'listSkillRelationProposals',
+  'createManualSkillRelationProposal',
+  'getSkillRelationProposal',
+  'discoverSkillRelationProposals',
+  'approveSkillRelationProposal',
+  'rejectSkillRelationProposal',
+  'previewSkillRelationProposalApply',
+  'applySkillRelationProposals',
+  'reconcileSkillRelationProposalDuplicates',
+  'listExplicitSkillRelationCandidates',
+  'previewExplicitSkillRelationCandidatesImpact',
+  'stageExplicitSkillRelationCandidates',
 ]);
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -242,7 +275,7 @@ async function main() {
   }
   if (operations.length === 0) errors.push('openapi.yaml declares no operations');
 
-  // 1b. Enforce the canonical 23-operation set only for the real repository.
+  // 1b. Enforce the canonical 26-operation set only for the real repository.
   // Fixture roots intentionally contain smaller contracts for focused tests.
   const actualRepoRoot = resolve(here, '..');
   const declaredIds = new Set(seenOperationIds);
@@ -255,7 +288,7 @@ async function main() {
     }
     for (const id of declaredIds) {
       if (!expectedIds.has(id)) {
-        errors.push(`unexpected operationId "${id}" (not in the canonical set of 23)`);
+        errors.push(`unexpected operationId "${id}" (not in the canonical set)`);
       }
     }
   }

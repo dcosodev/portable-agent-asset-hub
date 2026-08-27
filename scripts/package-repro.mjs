@@ -1,4 +1,4 @@
-import { cp, copyFile, mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
+import { cp, copyFile, mkdir, mkdtemp, readdir, rm, symlink } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 
 const exec = promisify(execFile);
 const root = resolve(new URL('..', import.meta.url).pathname);
-const packageNames = ['core', 'storage-sqlite', 'storage-files'];
+const packageNames = ['core', 'storage-files', 'storage-sqlite'];
 
 async function logicalDigest(tgz) {
   const { stdout } = await exec('tar', ['-tzf', tgz]);
@@ -41,6 +41,17 @@ async function buildPackage(name, outputRoot) {
     recursive: true,
     filter: (path) => !path.includes('/dist') && !path.includes('tsconfig.tsbuildinfo'),
   });
+  for (const dependency of packageNames) {
+    if (dependency === name) continue;
+    const dependencyRoot = join(outputRoot, dependency);
+    try { await readdir(dependencyRoot); } catch { continue; }
+    const scopeRoot = join(outputRoot, 'node_modules', '@portable-agent-asset-hub');
+    await mkdir(scopeRoot, { recursive: true });
+    const link = join(scopeRoot, dependency);
+    try { await symlink(dependencyRoot, link, 'dir'); } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+    }
+  }
   await exec('pnpm', [
     'exec', 'tsc', '-p', join(packageRoot, 'tsconfig.json'),
     '--typeRoots', join(root, 'node_modules/@types'),
@@ -71,7 +82,7 @@ try {
     if (!first.entries.some((entry) => entry.path === 'package/dist/index.d.ts')) throw new Error(`${name}:MISSING_TYPES`);
     const forbidden = first.entries.filter((entry) => entry.path.endsWith('.tsbuildinfo') || (entry.path.endsWith('.ts') && !entry.path.endsWith('.d.ts')));
     if (forbidden.length > 0) throw new Error(`${name}:FORBIDDEN_PACKAGE_ENTRIES:${forbidden.map((entry) => entry.path).join(',')}`);
-    if (name === 'storage-sqlite' && first.entries.filter((entry) => entry.path.endsWith('.sql')).length !== 13) {
+    if (name === 'storage-sqlite' && first.entries.filter((entry) => entry.path.endsWith('.sql')).length !== 19) {
       throw new Error('storage-sqlite:MIGRATION_SET_INCOMPLETE');
     }
     if (name === 'storage-files' && !first.entries.some((entry) => entry.path === 'package/dist/index.js')) throw new Error('storage-files:MISSING_JS');

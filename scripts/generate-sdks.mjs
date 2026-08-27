@@ -32,6 +32,10 @@ const TS_TARGETS = [
   { language: 'python', output: 'packages/sdk-python/generated' },
 ];
 
+const GENERATED_TEXT_EXTENSIONS = new Set([
+  '.gitignore', '.md', '.npmignore', '.json', '.py', '.ts', '.txt', '.yaml', '.yml',
+]);
+
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = process.env.GEN_REPO_ROOT ?? resolve(here, '..');
 const OPENAPI_SPEC = process.env.GEN_OPENAPI_SPEC ?? OPENAPI_SPEC_DEFAULT;
@@ -177,7 +181,25 @@ function runGenerator(cli, specPath, target) {
     };
   }
 
+  normalizeGeneratedTextTree(outputAbs);
   return { ok: true, output: outputAbs, language: target.language };
+}
+
+/** Normalize generator-owned text so repeated generation is diff-clean. */
+function normalizeGeneratedTextTree(root) {
+  for (const entry of readdirSync(root, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    const path = resolve(root, entry.name);
+    if (entry.isDirectory()) {
+      normalizeGeneratedTextTree(path);
+      continue;
+    }
+    if (!entry.isFile()) continue;
+    const suffix = entry.name.startsWith('.') ? entry.name : entry.name.slice(entry.name.lastIndexOf('.'));
+    if (!GENERATED_TEXT_EXTENSIONS.has(suffix)) continue;
+    const original = readFileSync(path, 'utf8');
+    const normalized = original.replaceAll('\r\n', '\n').replace(/[ \t]+$/gmu, '').replace(/\n+$/u, '\n');
+    if (normalized !== original) writeFileSync(path, normalized);
+  }
 }
 
 /**

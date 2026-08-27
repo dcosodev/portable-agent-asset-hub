@@ -38,6 +38,18 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
+    def test_apply_skill_relation_proposals(self) -> None:
+        """Test case for apply_skill_relation_proposals
+
+        """
+        pass
+
+    def test_approve_skill_relation_proposal(self) -> None:
+        """Test case for approve_skill_relation_proposal
+
+        """
+        pass
+
     def test_create_binding(self) -> None:
         """Test case for create_binding
 
@@ -46,6 +58,12 @@ class TestDefaultApi(unittest.TestCase):
 
     def test_create_event(self) -> None:
         """Test case for create_event
+
+        """
+        pass
+
+    def test_create_manual_skill_relation_proposal(self) -> None:
+        """Test case for create_manual_skill_relation_proposal
 
         """
         pass
@@ -62,8 +80,20 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
+    def test_discover_skill_relation_proposals(self) -> None:
+        """Test case for discover_skill_relation_proposals
+
+        """
+        pass
+
     def test_forget_memory(self) -> None:
         """Test case for forget_memory
+
+        """
+        pass
+
+    def test_get_capabilities(self) -> None:
+        """Test case for get_capabilities
 
         """
         pass
@@ -80,14 +110,68 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
+    def test_get_global_skill_graph(self) -> None:
+        """Test case for get_global_skill_graph
+
+        """
+        pass
+
     def test_get_health(self) -> None:
         """Test case for get_health
 
         """
         pass
 
+    def test_get_memory(self) -> None:
+        """Test case for get_memory
+
+        """
+        pass
+
     def test_get_resource(self) -> None:
         """Test case for get_resource
+
+        """
+        pass
+
+    def test_get_retrieval_event_graph(self) -> None:
+        """Test case for get_retrieval_event_graph
+
+        """
+        pass
+
+    def test_get_skill(self) -> None:
+        """Test case for get_skill
+
+        """
+        pass
+
+    def test_get_skill_dependents(self) -> None:
+        """Test case for get_skill_dependents
+
+        """
+        pass
+
+    def test_get_skill_graph(self) -> None:
+        """Test case for get_skill_graph
+
+        """
+        pass
+
+    def test_get_skill_impact(self) -> None:
+        """Test case for get_skill_impact
+
+        """
+        pass
+
+    def test_get_skill_relation_proposal(self) -> None:
+        """Test case for get_skill_relation_proposal
+
+        """
+        pass
+
+    def test_get_skill_relations(self) -> None:
+        """Test case for get_skill_relations
 
         """
         pass
@@ -104,6 +188,12 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
+    def test_list_explicit_skill_relation_candidates(self) -> None:
+        """Test case for list_explicit_skill_relation_candidates
+
+        """
+        pass
+
     def test_list_identities(self) -> None:
         """Test case for list_identities
 
@@ -116,14 +206,20 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
-    def test_list_skill_versions(self) -> None:
-        """Test case for list_skill_versions
+    def test_list_retrieval_events(self) -> None:
+        """Test case for list_retrieval_events
 
         """
         pass
 
-    def test_list_skills(self) -> None:
-        """Test case for list_skills
+    def test_list_skill_relation_proposals(self) -> None:
+        """Test case for list_skill_relation_proposals
+
+        """
+        pass
+
+    def test_list_skill_resources(self) -> None:
+        """Test case for list_skill_resources
 
         """
         pass
@@ -140,8 +236,44 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
+    def test_preview_explicit_skill_relation_candidates_impact(self) -> None:
+        """Test case for preview_explicit_skill_relation_candidates_impact
+
+        """
+        pass
+
     def test_preview_materialization(self) -> None:
         """Test case for preview_materialization
+
+        """
+        pass
+
+    def test_preview_skill_relation_proposal_apply(self) -> None:
+        """Test case for preview_skill_relation_proposal_apply
+
+        """
+        pass
+
+    def test_read_skill_resource(self) -> None:
+        """Test case for read_skill_resource
+
+        """
+        pass
+
+    def test_reconcile_skill_relation_proposal_duplicates(self) -> None:
+        """Test case for reconcile_skill_relation_proposal_duplicates
+
+        """
+        pass
+
+    def test_reject_skill_relation_proposal(self) -> None:
+        """Test case for reject_skill_relation_proposal
+
+        """
+        pass
+
+    def test_replace_skill_relations(self) -> None:
+        """Test case for replace_skill_relations
 
         """
         pass
@@ -152,8 +284,44 @@ class TestDefaultApi(unittest.TestCase):
         """
         pass
 
+    def test_resolve_retrieval(self) -> None:
+        """Test case for resolve_retrieval
+
+        """
+        pass
+
+    def test_resolve_skill_graph(self) -> None:
+        """Test case for resolve_skill_graph
+
+        """
+        pass
+
     def test_rollback_materialization(self) -> None:
         """Test case for rollback_materialization
+
+        """
+        pass
+
+    def test_search_catalog(self) -> None:
+        """Test case for search_catalog
+
+        """
+        pass
+
+    def test_search_memories(self) -> None:
+        """Test case for search_memories
+
+        """
+        pass
+
+    def test_search_skills(self) -> None:
+        """Test case for search_skills
+
+        """
+        pass
+
+    def test_stage_explicit_skill_relation_candidates(self) -> None:
+        """Test case for stage_explicit_skill_relation_candidates
 
         """
         pass

@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ok** | **bool** |  | 
+**ok** | **bool** |  |
 
 ## Example
 
@@ -25,5 +25,3 @@ get_health200_response_dict = get_health200_response_instance.to_dict()
 get_health200_response_from_dict = GetHealth200Response.from_dict(get_health200_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

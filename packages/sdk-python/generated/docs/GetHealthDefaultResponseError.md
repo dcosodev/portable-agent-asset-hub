@@ -5,9 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**code** | **str** |  | 
-**message** | **str** |  | 
-**status** | **int** |  | 
+**code** | **str** |  |
+**message** | **str** |  |
+**status** | **int** |  |
 
 ## Example
 
@@ -27,5 +27,3 @@ get_health_default_response_error_dict = get_health_default_response_error_insta
 get_health_default_response_error_from_dict = GetHealthDefaultResponseError.from_dict(get_health_default_response_error_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-
