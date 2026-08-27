@@ -4,7 +4,11 @@
   "type": "module",
   "private": true,
   "license": "Apache-2.0",
-  "files": ["dist/**/*.js", "dist/**/*.d.ts", "README.md"],
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

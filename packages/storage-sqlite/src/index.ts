@@ -14,8 +14,15 @@ import { EventRepository } from './repositories/event.js';
 import { IdempotencyRepository } from './repositories/idempotency.js';
 import { IdentityRepository } from './repositories/identity.js';
 import { MemoryRepository } from './repositories/memory.js';
+import { CredentialRepository } from './repositories/credential.js';
+import { SqliteExplicitRelationSource } from './repositories/explicit-relations.js';
 import { transaction } from './transaction.js';
+// NOTE: HubDatabase is intentionally not re-exported from the public
+// surface; tests that need to open a parallel connection use the
+// @portable-agent-asset-hub/storage-sqlite/internal entry point.
 export { backupDatabase };
+export { SkillPackApplyCoordinator, type SkillPackApplyCoordinatorOptions } from './skill-pack-coordinator.js';
+export { SqliteExplicitRelationSource };
 
 type Transaction = StorageTransaction;
 export type StorageDiagnostics = {
@@ -27,15 +34,39 @@ export type StorageDiagnostics = {
     memoryVersions: number;
     memorySources: number;
     memoryFts: number;
+    canonicalRelations: number;
+    relationProposals: number;
+    approvedProposals: number;
+    rejectedProposals: number;
+    staleProposals: number;
+    isolatedSkills: number;
   };
 };
 
 export class SqliteStore implements Storage {
   readonly #database: HubDatabase;
+  readonly #databasePath: string;
 
   public constructor(path: string) {
+    this.#databasePath = path;
     this.#database = new HubDatabase(path);
   }
+
+  /** Returns the absolute filesystem path to the underlying SQLite database.
+   * Intended for diagnostics, tests, and tooling. */
+  public get databasePath(): string {
+    return this.#databasePath;
+  }
+
+  public createCredential(input: Parameters<CredentialRepository['create']>[0]): ReturnType<CredentialRepository['create']> {
+    return this.#database.withConnection((db) => { db.exec('BEGIN IMMEDIATE'); try { const value = new CredentialRepository(db).create(input); db.exec('COMMIT'); return value; } catch (error) { db.exec('ROLLBACK'); throw error; } });
+  }
+  public authenticateCredential(token: string, requestId: string, requested?: readonly string[]): ActorContext | null {
+    return this.#database.withConnection((db) => { db.exec('BEGIN IMMEDIATE'); try { const value = new CredentialRepository(db).authenticate(token, requestId, requested); db.exec('COMMIT'); return value; } catch (error) { db.exec('ROLLBACK'); throw error; } });
+  }
+  public revokeCredential(id: string): void { this.#database.withConnection((db) => { db.exec('BEGIN IMMEDIATE'); try { new CredentialRepository(db).revoke(id); db.exec('COMMIT'); } catch (error) { db.exec('ROLLBACK'); throw error; } }); }
+  public rotateCredential(id: string): ReturnType<CredentialRepository['rotate']> { return this.#database.withConnection((db) => { db.exec('BEGIN IMMEDIATE'); try { const value = new CredentialRepository(db).rotate(id); db.exec('COMMIT'); return value; } catch (error) { db.exec('ROLLBACK'); throw error; } }); }
+  public listCredentials(): ReturnType<CredentialRepository['list']> { return this.#database.withConnection((db) => new CredentialRepository(db).list()); }
 
   public transaction<T>(actor: ActorContext, fn: (tx: Transaction) => T): T {
     return this.#database.withConnection((db) => transaction(db, actor, fn, (audit) => {
@@ -105,6 +136,12 @@ export class SqliteStore implements Storage {
           memoryVersions: count('memory_versions'),
           memorySources: count('memory_sources'),
           memoryFts: count('memory_fts'),
+          canonicalRelations: count('skill_relations'),
+          relationProposals: count('skill_relation_proposals'),
+          approvedProposals: Number((db.prepare("SELECT COUNT(*) AS count FROM skill_relation_proposals WHERE status='approved'").get() as { count: number }).count),
+          rejectedProposals: Number((db.prepare("SELECT COUNT(*) AS count FROM skill_relation_proposals WHERE status='rejected'").get() as { count: number }).count),
+          staleProposals: Number((db.prepare("SELECT COUNT(*) AS count FROM skill_relation_proposals WHERE status='stale'").get() as { count: number }).count),
+          isolatedSkills: Number((db.prepare(`SELECT COUNT(*) AS count FROM skill_entries e WHERE e.lifecycle='active' AND NOT EXISTS (SELECT 1 FROM skill_relations r WHERE r.owner_user_id=e.owner_user_id AND r.scope_agent_id=e.scope_agent_id AND (r.source_skill_id=e.id OR r.target_skill_id=e.id))`).get() as { count: number }).count),
         },
       };
     });

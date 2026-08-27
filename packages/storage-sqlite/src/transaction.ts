@@ -4,12 +4,14 @@ import { AuditRepository } from './repositories/audit.js';
 import { SqliteMaterializationRepository, SqliteProfileRepository } from './profile-repository.js';
 import { SqliteCatalogRepository } from './catalog-repository.js';
 import { SqliteCatalogSyncRepository } from './catalog-sync-repository.js';
+import { SqliteSkillRepository } from './repositories/skill.js';
+import { SqliteRelationProposalRepository } from './repositories/relation-proposal.js';
 
 export function transaction<T>(
   db: DatabaseSync,
   actor: ActorContext,
   fn: (tx: StorageTransaction) => T,
-  repositories: (audit: AuditRepository, assertActive: () => void) => Omit<StorageTransaction, 'audit' | 'profiles' | 'materializations' | 'catalog' | 'catalogSync'>,
+  repositories: (audit: AuditRepository, assertActive: () => void) => Omit<StorageTransaction, 'audit' | 'profiles' | 'materializations' | 'catalog' | 'catalogSync' | 'skills' | 'relationProposals'>,
 ): T {
   db.exec('BEGIN IMMEDIATE');
   let active = true;
@@ -26,6 +28,8 @@ export function transaction<T>(
       materializations: new SqliteMaterializationRepository(db, actor, audit, assertActive),
       catalog: new SqliteCatalogRepository(db, actor, audit, assertActive),
       catalogSync: new SqliteCatalogSyncRepository(db, actor, audit, assertActive),
+      skills: new SqliteSkillRepository(db, actor, audit, assertActive),
+      relationProposals: new SqliteRelationProposalRepository(db, actor, audit, assertActive),
     });
     db.exec('COMMIT');
     active = false;

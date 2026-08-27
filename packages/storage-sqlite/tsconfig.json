@@ -1,1 +1,19 @@
-{"extends":"../../tsconfig.base.json","compilerOptions":{"rootDir":"src","outDir":"dist","tsBuildInfoFile":"dist/tsconfig.tsbuildinfo"},"references":[{"path":"../core"}],"include":["src/**/*.ts"]}
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+  },
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../storage-files"
+    }
+  ],
+  "include": [
+    "src/**/*.ts"
+  ]
+}
