@@ -49,7 +49,7 @@ function lookupEntry(toolName: string, registry: ToolRegistry, catalog: readonly
 
 function toToolName(operationId: string): string {
   // listMemoryBlocks -> list_memory_blocks
-  return operationId
+  return operationId === 'getCapabilities' ? 'get_hub_capabilities' : operationId
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
     .replace(/_+/g, '_')
     .toLowerCase();

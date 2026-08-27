@@ -30,6 +30,17 @@ export const GENERATED_TOOLS: readonly ToolCatalogEntry[] = [
     "idempotent": false
   },
   {
+    "operationId": "getCapabilities",
+    "capability": "capabilities.read",
+    "safety": "safe",
+    "rest": {
+      "method": "GET",
+      "path": "/api/v1/capabilities"
+    },
+    "cas": false,
+    "idempotent": false
+  },
+  {
     "operationId": "getDoctor",
     "capability": "admin.doctor",
     "safety": "diagnostic",
@@ -96,6 +107,28 @@ export const GENERATED_TOOLS: readonly ToolCatalogEntry[] = [
     "idempotent": true
   },
   {
+    "operationId": "searchMemories",
+    "capability": "memory.read",
+    "safety": "safe",
+    "rest": {
+      "method": "GET",
+      "path": "/api/v1/memories/search"
+    },
+    "cas": false,
+    "idempotent": false
+  },
+  {
+    "operationId": "getMemory",
+    "capability": "memory.read",
+    "safety": "safe",
+    "rest": {
+      "method": "GET",
+      "path": "/api/v1/memories/{id}"
+    },
+    "cas": false,
+    "idempotent": false
+  },
+  {
     "operationId": "createMemory",
     "capability": "memory.write",
     "safety": "mutating",
@@ -129,23 +162,45 @@ export const GENERATED_TOOLS: readonly ToolCatalogEntry[] = [
     "idempotent": true
   },
   {
-    "operationId": "listSkills",
+    "operationId": "searchSkills",
     "capability": "skill.read",
     "safety": "safe",
     "rest": {
       "method": "GET",
-      "path": "/api/v1/skills"
+      "path": "/api/v1/skills/search"
     },
     "cas": false,
     "idempotent": false
   },
   {
-    "operationId": "listSkillVersions",
-    "capability": "skill.version.read",
+    "operationId": "getSkill",
+    "capability": "skill.read",
     "safety": "safe",
     "rest": {
       "method": "GET",
-      "path": "/api/v1/skills/{id}/versions"
+      "path": "/api/v1/skills/{id}"
+    },
+    "cas": false,
+    "idempotent": false
+  },
+  {
+    "operationId": "listSkillResources",
+    "capability": "skill.resource.read",
+    "safety": "safe",
+    "rest": {
+      "method": "GET",
+      "path": "/api/v1/skills/{id}/resources"
+    },
+    "cas": false,
+    "idempotent": false
+  },
+  {
+    "operationId": "readSkillResource",
+    "capability": "skill.resource.read",
+    "safety": "safe",
+    "rest": {
+      "method": "GET",
+      "path": "/api/v1/skills/{id}/resources/{resourcePath}"
     },
     "cas": false,
     "idempotent": false
@@ -157,6 +212,17 @@ export const GENERATED_TOOLS: readonly ToolCatalogEntry[] = [
     "rest": {
       "method": "GET",
       "path": "/api/v1/resources/{path}"
+    },
+    "cas": false,
+    "idempotent": false
+  },
+  {
+    "operationId": "searchCatalog",
+    "capability": "catalog.read",
+    "safety": "safe",
+    "rest": {
+      "method": "GET",
+      "path": "/api/v1/catalog/search"
     },
     "cas": false,
     "idempotent": false
@@ -259,6 +325,61 @@ export const GENERATED_TOOLS: readonly ToolCatalogEntry[] = [
     },
     "cas": true,
     "idempotent": true
+  },
+  {
+    "operationId": "getSkillRelations",
+    "capability": "skill.read",
+    "safety": "safe",
+    "rest": {
+      "method": "GET",
+      "path": "/api/v1/skills/{id}/relations"
+    },
+    "cas": false,
+    "idempotent": false
+  },
+  {
+    "operationId": "replaceSkillRelations",
+    "capability": "write.skill",
+    "safety": "mutating",
+    "rest": {
+      "method": "PUT",
+      "path": "/api/v1/skills/{id}/relations"
+    },
+    "cas": true,
+    "idempotent": true
+  },
+  {
+    "operationId": "getSkillDependents",
+    "capability": "skill.read",
+    "safety": "safe",
+    "rest": {
+      "method": "GET",
+      "path": "/api/v1/skills/{id}/dependents"
+    },
+    "cas": false,
+    "idempotent": false
+  },
+  {
+    "operationId": "resolveSkillGraph",
+    "capability": "skill.read",
+    "safety": "safe",
+    "rest": {
+      "method": "POST",
+      "path": "/api/v1/skills/resolve"
+    },
+    "cas": false,
+    "idempotent": false
+  },
+  {
+    "operationId": "resolveRetrieval",
+    "capability": "skill.read",
+    "safety": "safe",
+    "rest": {
+      "method": "POST",
+      "path": "/api/v1/retrieval/resolve"
+    },
+    "cas": false,
+    "idempotent": false
   }
 ];
 
@@ -266,7 +387,7 @@ export const GENERATED_METADATA: GeneratedToolMetadata = Object.freeze({
   generator: "@portable-agent-asset-hub/mcp/generate-mcp-tools",
   version: "0.1.0",
   source: "openapi/openapi.yaml",
-  generatedAt: "2026-08-21T14:07:36.844Z",
+  generatedAt: "1970-01-01T00:00:00.000Z",
   capabilityMatrix: "schemas/mcp-capabilities.v1.json",
   operationCount: GENERATED_TOOLS.length,
   tools: GENERATED_TOOLS as ToolCatalogEntry[],

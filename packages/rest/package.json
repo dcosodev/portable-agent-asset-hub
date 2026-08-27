@@ -1,1 +1,33 @@
-{"name":"@portable-agent-asset-hub/rest","version":"0.1.0","type":"module","private":true,"license":"Apache-2.0","files":["dist/**/*.js","dist/**/*.d.ts","openapi/**"],"main":"./dist/index.js","types":"./dist/index.d.ts","exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"}},"dependencies":{"@portable-agent-asset-hub/core":"workspace:*"}}
+{
+  "name": "@portable-agent-asset-hub/rest",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "bin/agent-memory-rest.mjs",
+    "openapi/**"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "agent-memory-rest": "./bin/agent-memory-rest.mjs"
+  },
+  "scripts": {
+    "build": "tsc -b --force",
+    "rest-entry": "node ./bin/agent-memory-rest.mjs"
+  },
+  "dependencies": {
+    "@portable-agent-asset-hub/core": "workspace:*",
+    "@portable-agent-asset-hub/storage-files": "workspace:*",
+    "@portable-agent-asset-hub/storage-sqlite": "workspace:*"
+  }
+}

@@ -28,7 +28,7 @@ export function buildToolRegistry(overrides: readonly ToolCatalogEntry[] = []): 
 }
 
 export function toolNameForOperation(operationId: string): string {
-  return operationId
+  return operationId === 'getCapabilities' ? 'get_hub_capabilities' : operationId
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
     .replace(/_+/g, '_')
     .toLowerCase();

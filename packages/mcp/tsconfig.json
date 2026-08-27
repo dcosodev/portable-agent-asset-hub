@@ -4,8 +4,12 @@
     "rootDir": "src",
     "outDir": "../../dist/packages/mcp"
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts"
+  ],
   "references": [
-    { "path": "../core/tsconfig.json" }
+    {
+      "path": "../core"
+    }
   ]
 }

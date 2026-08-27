@@ -28,6 +28,47 @@ export type McpServerOptions = {
 const SERVER_INFO = { name: 'portable-agent-asset-hub-mcp', version: '0.1.0' };
 const PROTOCOL_VERSION = '2024-11-05';
 
+/**
+ * Truthful, generic input schema for every tool surfaced via `tools/list`.
+ *
+ * The MCP layer is a thin facade over REST: the actual per-operation
+ * payloads are defined by the OpenAPI contract, not invented here. Every
+ * tool accepts the same four optional wrapper fields that `extractArgs`
+ * already understands (`params`, `query`, `body`, `headers`); `body`
+ * carries the operation-specific payload, `params` carries path
+ * placeholders (e.g. `id`), `query` carries URL query parameters, and
+ * `headers` carries request headers (CAS `if-match`, `idempotency-key`,
+ * etc.). `additionalProperties: true` is preserved so a well-formed
+ * tool call that happens to include an extra wrapper field (forward
+ * compatibility) is not rejected at the JSON-RPC layer.
+ */
+const WRAPPER_INPUT_SCHEMA = {
+  type: 'object',
+  additionalProperties: true,
+  properties: {
+    params: {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+      description: 'Path parameter overrides keyed by route placeholder name (e.g. { id }).',
+    },
+    query: {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+      description: 'URL query parameters forwarded to the REST endpoint.',
+    },
+    body: {
+      type: 'object',
+      additionalProperties: true,
+      description: 'JSON request body matching the OpenAPI operation schema for this tool.',
+    },
+    headers: {
+      type: 'object',
+      additionalProperties: { type: 'string' },
+      description: 'Request headers (e.g. If-Match for CAS, Idempotency-Key).',
+    },
+  },
+} as const;
+
 export type McpServerHandle = {
   identity: ProcessIdentity;
   stop(): void;
@@ -69,8 +110,8 @@ export function buildMcpServer(options: McpServerOptions): {
           return {
             tools: visible.map((entry) => ({
               name: toolNameFor(entry.operationId),
-              description: `REST ${entry.rest.method} ${entry.rest.path} (${entry.safety})`,
-              inputSchema: { type: 'object', additionalProperties: true, properties: {} },
+              description: toolDescription(entry),
+              inputSchema: WRAPPER_INPUT_SCHEMA,
             })),
           };
         }
@@ -112,8 +153,19 @@ function extractArgs(value: unknown): { params?: Record<string, string>; query?:
   return args;
 }
 
+function toolDescription(entry: ToolCatalogEntry): string {
+  const specific: Record<string, string> = {
+    resolveRetrieval: 'Consulta obligatoriamente el registro canónico antes de ejecutar tareas procedurales, técnicas, operacionales, de configuración, despliegue, debugging, migración o mantenimiento. Si no hay un match suficientemente relevante, continúa con conocimiento general sin inventarlo.',
+    resolveSkillGraph: 'Resuelve de forma determinista y acotada las dependencias versionadas de una skill seleccionada; úsala tras discovery o para explicar el contexto estructural requerido.',
+    getSkillRelations: 'Obtiene las relaciones declaradas por una versión concreta de skill sin cargar su body.',
+    getSkillDependents: 'Obtiene las skills head que dependen de la skill objetivo, respetando scope y permisos.',
+    replaceSkillRelations: 'Reemplaza mediante CAS el conjunto completo de relaciones; crea una nueva versión inmutable y nunca muta semántica histórica.',
+  };
+  return specific[entry.operationId] ?? `REST ${entry.rest.method} ${entry.rest.path} (${entry.safety})`;
+}
+
 function toolNameFor(operationId: string): string {
-  return operationId.replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/_+/g, '_').toLowerCase();
+  return operationId === 'getCapabilities' ? 'get_hub_capabilities' : operationId.replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/_+/g, '_').toLowerCase();
 }
 
 function defaultTransport(options: McpServerOptions): Transport {
