@@ -38,6 +38,7 @@ export default tseslint.config(
     ignores: [
       'dist/**',
       'packages/*/dist/**',
+      'packages/*/dist-*/**',
       'packages/sdk-ts/generated/**',
       'packages/sdk-python/generated/**',
       'slices/**',
@@ -51,6 +52,29 @@ export default tseslint.config(
   },
   {
     files: ['scripts/**/*.mjs', 'examples/**/*.mjs'],
+    languageOptions: { globals: nodeGlobals },
+    rules: { 'no-console': 'off' },
+  },
+  {
+    // Bin shims under each package's `bin/` directory are thin Node
+    // entrypoints: they import the compiled artifact and delegate to
+    // it. They use bare Node globals (`process`, `console`, etc.)
+    // because that is the contract of a `bin` script — anything more
+    // elaborate belongs in `scripts/` or the package's `src/`. We
+    // extend the same Node globals profile used for `scripts/**/*.mjs`
+    // rather than disabling `no-undef` globally, so other lint
+    // concerns (e.g. unused vars, type-aware rules in `src/`) still
+    // apply uniformly.
+    files: ['packages/*/bin/**/*.mjs'],
+    languageOptions: { globals: nodeGlobals },
+  },
+  {
+    // FASE 4 runtime-adapters fixture scripts (`fake-rest.mjs`,
+    // `mcp-entry.mjs`) are short Node entry points used by the
+    // vitest suite. Like `scripts/**/*.mjs` they use bare Node
+    // globals (`process`, `console`) so we extend the same globals
+    // profile rather than disabling `no-undef` globally.
+    files: ['tests/runtime-adapters/fixtures/**/*.mjs'],
     languageOptions: { globals: nodeGlobals },
     rules: { 'no-console': 'off' },
   },

@@ -14,6 +14,8 @@ export default defineConfig({
     '@portable-agent-asset-hub/sdk-ts': new URL('./packages/sdk-ts/src/index.ts', import.meta.url).pathname,
     '@portable-agent-asset-hub/mcp': new URL('./packages/mcp/src/index.ts', import.meta.url).pathname,
     '@portable-agent-asset-hub/migration': new URL('./packages/migration/src/index.ts', import.meta.url).pathname,
+    '@portable-agent-asset-hub/runtime-adapters': new URL('./packages/runtime-adapters/src/index.ts', import.meta.url).pathname,
+    '@portable-agent-asset-hub/skill-export': new URL('./packages/skill-export/src/index.ts', import.meta.url).pathname,
   } },
   test: { include: ['tests/**/*.test.ts'] },
 });

@@ -9,6 +9,8 @@
     { "path": "packages/rest/tsconfig.json" },
     { "path": "packages/sdk-ts/tsconfig.json" },
     { "path": "packages/mcp/tsconfig.json" },
-    { "path": "packages/migration/tsconfig.json" }
+    { "path": "packages/migration/tsconfig.json" },
+    { "path": "packages/runtime-adapters/tsconfig.json" },
+    { "path": "packages/skill-export/tsconfig.json" }
   ]
 }

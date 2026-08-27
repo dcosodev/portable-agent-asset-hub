@@ -1,0 +1,24 @@
+{
+  "name": "@portable-agent-asset-hub/skill-export",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@portable-agent-asset-hub/core": "workspace:*",
+    "@portable-agent-asset-hub/storage-sqlite": "workspace:*"
+  }
+}
