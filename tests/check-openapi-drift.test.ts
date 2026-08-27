@@ -4,7 +4,7 @@
 // gate that decides whether the OpenAPI surface, REST routes, and drift
 // detection are still in parity. These tests pin three things:
 //
-//   1. Salida OK on the real repo: 23 operations, 23 REST routes, refs
+//   1. Salida OK on the real repo: 26 operations, 26 REST routes, refs
 //      resolved, no errors, artifact written.
 //
 //   2. The errors.yaml <-> schemas.yaml logical alias is honored:
@@ -235,15 +235,15 @@ describe('check-openapi-drift.mjs detector', () => {
       expect(status).toBe(0);
       expect(report.ok).toBe(true);
       expect(report.reason).toBe('no_drift_detected');
-      expect(report.operations).toBe(23);
-      expect(report.rest_routes).toBe(23);
+      expect(report.operations).toBe(51);
+      expect(report.rest_routes).toBe(51);
       expect(report.refs_resolved).toBeGreaterThan(0);
       expect(report.duplicate_operation_ids ?? []).toEqual([]);
       expect(report.errors ?? []).toEqual([]);
-      // The 23 canonical operationIds must all be present.
-      expect(new Set(report.operation_ids ?? []).size).toBe(23);
-      // The 23 REST routes must all be present.
-      expect(new Set(report.rest_operation_ids ?? []).size).toBe(23);
+      // The 39 canonical operationIds must all be present.
+      expect(new Set(report.operation_ids ?? []).size).toBe(51);
+      // The 39 REST routes must all be present.
+      expect(new Set(report.rest_operation_ids ?? []).size).toBe(51);
     });
 
     it('writes_artifact_to_artifacts_openapi_drift_json', () => {
@@ -252,8 +252,8 @@ describe('check-openapi-drift.mjs detector', () => {
       expect(existsSync(artifactPath)).toBe(true);
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8')) as DriftReport;
       expect(artifact.ok).toBe(true);
-      expect(artifact.operations).toBe(23);
-      expect(artifact.rest_routes).toBe(23);
+      expect(artifact.operations).toBe(51);
+      expect(artifact.rest_routes).toBe(51);
     });
   });
 

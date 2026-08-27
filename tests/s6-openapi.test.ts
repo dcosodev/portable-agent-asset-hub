@@ -86,7 +86,7 @@ describe('S6 OpenAPI tracer bullet', () => {
         .filter(([m]) => ['get', 'post', 'put', 'patch', 'delete'].includes(m))
         .map(([method, op]) => ({ path, method, op })),
     );
-    expect(operations).toHaveLength(23);
+    expect(operations).toHaveLength(51);
     for (const { path, method, op } of operations) {
       for (const key of required) {
         expect(key in op, `missing ${key} on ${method.toUpperCase()} ${path}`).toBe(true);

@@ -188,8 +188,8 @@ describe('check-openapi-drift.mjs contract (fixture-based)', () => {
     const { status, report } = runDrift(repoRoot);
     expect(status).toBe(0);
     expect(report.ok).toBe(true);
-    expect(report.operations).toBe(23);
-    expect(report.rest_routes).toBe(23);
+    expect(report.operations).toBe(51);
+    expect(report.rest_routes).toBe(51);
     expect(report.refs_resolved).toBeGreaterThan(0);
   });
 });

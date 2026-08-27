@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { backupDatabase, SqliteStore } from '@portable-agent-asset-hub/storage-sqlite';
+import { createActorContext } from '@portable-agent-asset-hub/core';
 import { HubDatabase } from '../../packages/storage-sqlite/src/database.js';
 import { loadMigrations, migrate } from '../../packages/storage-sqlite/src/migrations/runner.js';
 
@@ -37,7 +38,7 @@ describe('S2 migrations, doctor, backup, schemas and owner boundary', () => {
       expect(driftDb.doctor().ok).toBe(false);
       expect(() => driftDb.withConnection((connection) => migrate(connection, join(process.cwd(), 'packages/storage-sqlite/src/migrations')))).toThrow();
       driftDb.close();
-      expect(loadMigrations(join(process.cwd(), 'packages/storage-sqlite/src/migrations'))).toHaveLength(13);
+      expect(loadMigrations(join(process.cwd(), 'packages/storage-sqlite/src/migrations'))).toHaveLength(19);
     } finally { await rm(dir, { recursive: true, force: true }); }
   });
 
@@ -48,6 +49,35 @@ describe('S2 migrations, doctor, backup, schemas and owner boundary', () => {
       db.withConnection((connection) => connection.prepare("INSERT INTO idempotency(key,actor_id,operation,request_digest,response_json,status,created_at) VALUES('k','usr_a','op','d','{}',102,'now')").run());
       expect(db.doctor().ok).toBe(false);
     } finally { db.close(); await rm(dir, { recursive: true, force: true }); }
+  });
+
+  it('doctor verifies skill heads, hashes, resources, orphans and FTS', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 's2-skill-doctor-'));
+    const path = join(dir, 'db.sqlite');
+    const actor = createActorContext({ userId: 'usr_local', agentId: 'agt_local', role: 'admin', capabilities: ['admin'] });
+    const store = new SqliteStore(path);
+    try {
+      store.transaction(actor, (tx) => tx.skills.writeSkill({
+        id: 'skl_doctor',
+        scope: actor.scope,
+        logicalKey: 'skill:doctor',
+        kind: 'skill',
+        name: 'doctor-skill',
+        lifecycle: 'active',
+        body: Buffer.from('doctor body'),
+        metadata: {},
+        resources: [{ relativePath: 'probe.txt', mode: 0o644, mime: 'text/plain', bytes: Buffer.from('probe') }],
+      }, { reason: 'test.doctor', requestId: 'req_skill_doctor' }));
+      const report = store.doctor();
+      for (const name of ['skillHeads', 'skillVersions', 'skillResources', 'skillOrphans', 'skillFtsHeadOnly']) expect(report.checks[name]).toBe(true);
+    } finally { store.close(); }
+    const corrupted = new HubDatabase(path);
+    try {
+      corrupted.withConnection((connection) => connection.prepare(`UPDATE skill_resources SET sha256='${'0'.repeat(64)}' WHERE id='skl_doctor'`).run());
+      const report = corrupted.doctor();
+      expect(report.ok).toBe(false);
+      expect(report.errors).toContain('skillResources');
+    } finally { corrupted.close(); await rm(dir, { recursive: true, force: true }); }
   });
 
   it('backup_restore_manifest_and_fresh_process_are_verified', async () => {

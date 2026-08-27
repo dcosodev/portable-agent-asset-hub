@@ -28,11 +28,14 @@ const DOMAINS: Array<{ module: string; export: string }> = [
   { module: 'sync', export: 'syncRoutes' },
   { module: 'materializations', export: 'materializationRoutes' },
   { module: 'events', export: 'eventRoutes' },
+  { module: 'relation-proposals', export: 'relationProposalRoutes' },
+  { module: 'explicit-relations', export: 'explicitRelationRoutes' },
 ];
 
 const EXPECTED_OPERATION_IDS: ReadonlySet<string> = new Set([
   'getHealth',
   'getStatus',
+  'getCapabilities',
   'getDoctor',
   'listAudit',
   'listSnapshots',
@@ -41,33 +44,70 @@ const EXPECTED_OPERATION_IDS: ReadonlySet<string> = new Set([
   'createBinding',
   'createProfile',
   'listMemoryBlocks',
+  'searchMemories',
+  'getMemory',
   'createMemory',
   'supersedeMemory',
   'forgetMemory',
-  'listSkills',
-  'listSkillVersions',
+  'searchSkills',
+  'getSkill',
+  'listSkillResources',
+  'readSkillResource',
+  'getSkillRelations',
+  'replaceSkillRelations',
+  'getSkillDependents',
+  'resolveSkillGraph',
+  'resolveRetrieval',
+  'getGlobalSkillGraph',
+  'getSkillGraph',
+  'getSkillImpact',
+  'listRetrievalEvents',
+  'getRetrievalEventGraph',
   'getResource',
   'getCatalog',
+  'searchCatalog',
   'previewCatalogSync',
   'applyCatalogSync',
   'previewMaterialization',
   'applyMaterialization',
   'rollbackMaterialization',
   'createEvent',
+  'listSkillRelationProposals',
+  'createManualSkillRelationProposal',
+  'getSkillRelationProposal',
+  'discoverSkillRelationProposals',
+  'approveSkillRelationProposal',
+  'rejectSkillRelationProposal',
+  'previewSkillRelationProposalApply',
+  'applySkillRelationProposals',
+  'reconcileSkillRelationProposalDuplicates',
+  'listExplicitSkillRelationCandidates',
+  'previewExplicitSkillRelationCandidatesImpact',
+  'stageExplicitSkillRelationCandidates',
 ]);
 
 function extractRoutesFromModule(modulePath: string): RouteEntry[] {
   const source = readFileSync(modulePath, 'utf8');
   const entries: RouteEntry[] = [];
-  const re = /\{\s*method:\s*'([^']+)'\s*,\s*pattern:\s*(\/.*?\/)\s*,\s*operationId:\s*'([^']+)'\s*,\s*cas:\s*(true|false)\s*\}/g;
+  // Match each route entry. The shape has been stable since S6: `{ method,
+  // pattern, operationId, cas, [paramNames] }`. The `paramNames` field is
+  // optional (single-capture routes may omit it) and the entry may span
+  // multiple lines, so we collapse whitespace inside the braces before
+  // matching the canonical fields.
+  const entryRe = /\{[^{}]*\}/g;
   let match: RegExpExecArray | null;
-  while ((match = re.exec(source)) !== null) {
+  while ((match = entryRe.exec(source)) !== null) {
+    const block = match[0].replace(/\s+/g, ' ');
+    const method = /method:\s*'([^']+)'/.exec(block);
+    const pattern = /pattern:\s*(\/.*\/[gimsuy]*)/.exec(block);
+    const operationId = /operationId:\s*'([^']+)'/.exec(block);
+    const cas = /cas:\s*(true|false)/.exec(block);
+    if (!method || !pattern || !operationId || !cas) continue;
     entries.push({
-      method: match[1]!,
-      // Normalize to source form so equality works across flags
-      pattern: match[2]!,
-      operationId: match[3]!,
-      cas: match[4] === 'true',
+      method: method[1]!,
+      pattern: pattern[1]!,
+      operationId: operationId[1]!,
+      cas: cas[1] === 'true',
     });
   }
   return entries;
@@ -79,10 +119,11 @@ describe('S6 REST routes modularization (structural)', () => {
       const path = resolve(restSrc, 'routes', `${module}.ts`);
       const source = readFileSync(path, 'utf8');
       // Each module must declare and export the named *Routes const.
-      const declRe = new RegExp(`export\\s+const\\s+${exportName}\\s*[:=]`, 'm');
+      const declRe = new RegExp(`export\\s+const\\s+${exportName}\\b`, 'm');
       expect(declRe.test(source), `module ${module}.ts must export const ${exportName}`).toBe(true);
-      // And it must be a non-empty array literal of route entries.
-      const arrayRe = new RegExp(`export\\s+const\\s+${exportName}\\s*=\\s*\\[`, 'm');
+      // And it must be a non-empty array literal of route entries. The
+      // declaration may include a type annotation: `export const name: T[] = [`.
+      const arrayRe = new RegExp(`export\\s+const\\s+${exportName}\\b[^=]*=\\s*\\[`, 'm');
       expect(arrayRe.test(source), `module ${module}.ts must declare ${exportName} as an array`).toBe(true);
     }
   });
@@ -113,7 +154,7 @@ describe('S6 REST routes modularization (structural)', () => {
     expect(spreadCount, 'app.ts must spread each *Routes module into the final routes table').toBe(DOMAINS.length);
   });
 
-  it('s6_all_23_operation_ids_present_across_modules', () => {
+  it('s6_all_39_operation_ids_present_across_modules', () => {
     const all = new Set<string>();
     const perModule: Record<string, string[]> = {};
     for (const { module } of DOMAINS) {
@@ -122,7 +163,7 @@ describe('S6 REST routes modularization (structural)', () => {
       perModule[module] = ops;
       for (const op of ops) all.add(op);
     }
-    expect(all.size, 'no operationId may be duplicated across domain modules').toBe(23);
+    expect(all.size, 'no operationId may be duplicated across domain modules').toBe(51);
     const missing = [...EXPECTED_OPERATION_IDS].filter((op) => !all.has(op)).sort();
     const extra = [...all].filter((op) => !EXPECTED_OPERATION_IDS.has(op)).sort();
     expect(missing, `missing operationIds: ${missing.join(',')}`).toEqual([]);

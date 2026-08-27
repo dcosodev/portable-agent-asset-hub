@@ -97,9 +97,25 @@ beforeAll(async () => {
   // `@portable-agent-asset-hub/core` import inside the compiled MCP
   // server resolves. See the comments above `fixtureRoot` for the
   // resolution rationale.
-  rmSync(fixtureLink, { force: true });
+  //
+  // Race-tolerant creation: `tests/mcp/stdio-entry-smoke.test.ts`
+  // creates the same symlink in its own `beforeAll`. When vitest runs
+  // the two files in parallel we may race the symlink creation; both
+  // tests point the link at the same target, so it is safe to ignore
+  // `EEXIST` and let whichever side lost the race proceed without the
+  // symlink existing at that exact instant. We deliberately do NOT
+  // `rmSync` the link first — that would clobber the other file's
+  // link and reintroduce the flake `afterAll`-side of which test
+  // finishes first would then delete the symlink the other still
+  // needs to spawn its child.
   mkdirSync(resolve(fixtureLink, '..'), { recursive: true });
-  symlinkSync(corePackageDir, fixtureLink, 'dir');
+  try {
+    symlinkSync(corePackageDir, fixtureLink, 'dir');
+  } catch (error) {
+    if (!(error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'EEXIST')) {
+      throw error;
+    }
+  }
 
   // Materialise a tiny ESM entry that re-exports the compiled server.
   // The shim exists so the child can be configured per-test (base URL,
@@ -123,7 +139,13 @@ beforeAll(async () => {
 afterAll(async () => {
   if (child && !child.killed) child.kill('SIGKILL');
   if (server) await new Promise<void>((res) => server.close(() => res()));
-  rmSync(fixtureLink, { force: true });
+  // Leave the workspace symlink in place: when vitest runs this file
+  // in parallel with `tests/mcp/stdio-entry-smoke.test.ts`, the other
+  // file's child may still need it. The shared link is owned by the
+  // test process group, not by any one file's lifecycle — when both
+  // tests finish, the next `pnpm build` clean step wipes the dist
+  // tree and the symlink with it. We do, however, always wipe our
+  // per-run shim directory.
   // Wipe the per-run shim directory created by `mkdtempSync` (which
   // would otherwise linger in the repo root as `.tmp-s7-mcp-*`).
   if (mcpEntryDir) rmSync(mcpEntryDir, { force: true, recursive: true });
@@ -158,11 +180,18 @@ describe('MCP stdio smoke against real REST (S7)', () => {
     expect(initialized.error ?? null).toBeNull();
 
     const tools = await sendRpc(child, { jsonrpc: '2.0', id: 3, method: 'tools/list' });
-    const toolList = (tools.result as { tools: Array<{ name: string }> }).tools;
+    const toolList = (tools.result as { tools: Array<{ name: string; description?: string; inputSchema?: { type?: string } }> }).tools;
     const toolNames = toolList.map((t) => t.name);
     expect(toolNames).toContain('get_health');
     expect(toolNames).toContain('create_memory');
     expect(toolNames).toContain('supersede_memory');
+    expect(toolNames).toContain('get_skill_relations');
+    expect(toolNames).toContain('get_skill_dependents');
+    expect(toolNames).toContain('resolve_skill_graph');
+    expect(toolNames).toContain('resolve_retrieval');
+    const retrievalTool = toolList.find((tool) => tool.name === 'resolve_retrieval');
+    expect(retrievalTool?.description).toContain('obligatoriamente');
+    expect(retrievalTool?.inputSchema?.type).toBe('object');
     // `forget_memory` and `apply_materialization` are not exercised by this
     // smoke. Whether they are visible depends on the actor's granted
     // capabilities — `write.memory` unlocks `forget_memory` per

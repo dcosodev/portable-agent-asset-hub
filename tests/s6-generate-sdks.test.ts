@@ -129,7 +129,6 @@ describe('generate-sdks.mjs contract', () => {
   });
 
   it('real_repo_provenance_is_honest_about_java_absence', () => {
-    const r = runScriptIn(repoRoot);
     const hasJava = (() => {
       try {
         execFileSync('java', ['-version'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -138,7 +137,17 @@ describe('generate-sdks.mjs contract', () => {
         return false;
       }
     })();
+    // This is the ONLY test that points the generator at the real repository
+    // root, and `runGenerator` wipes `packages/sdk-*/generated` before it
+    // writes. When the pinned toolchain is present that wipe-then-generate
+    // window is seconds long and races `tests/s6-sdk-drift.test.ts`, which
+    // reads those same tracked files from a sibling worker. The success path
+    // is already covered deterministically against a scratch repo by
+    // `writes_honest_provenance_when_java_absent_and_exits_fail_closed`, so
+    // here we only run the real-repo invocation in the fail-closed case —
+    // where the script exits 2 without regenerating anything.
     if (!hasJava) {
+      const r = runScriptIn(repoRoot);
       expect(r.status).toBe(2);
       const tsPath = join(repoRoot, 'packages/sdk-ts/generated/PROVENANCE.json');
       const pyPath = join(repoRoot, 'packages/sdk-python/generated/PROVENANCE.json');
@@ -150,9 +159,14 @@ describe('generate-sdks.mjs contract', () => {
       expect(py.version).toBe('7.10.0');
       expect(ts.contract_fixtures).toEqual(py.contract_fixtures);
     } else {
-      // If Java IS available and a CLI happens to be on PATH at exactly the pinned
-      // version, the run may succeed; either way the contract is satisfied.
-      expect(r.status === 0 || r.status === 2).toBe(true);
+      // Java IS available: assert the committed trees carry honest, pinned
+      // provenance without invoking the generator against the live tree.
+      for (const target of ['packages/sdk-ts/generated', 'packages/sdk-python/generated']) {
+        const prov = JSON.parse(readFileSync(join(repoRoot, target, 'PROVENANCE.json'), 'utf8')) as Provenance;
+        expect(prov.generator).toBe('OpenAPI Generator');
+        expect(prov.version).toBe('7.10.0');
+        expect(prov.source).toBe('openapi/openapi.yaml');
+      }
     }
   });
 });

@@ -26,6 +26,7 @@ interface OperationInfo {
   safety: string;
   'x-mcp.capability': string;
   'x-mcp.safety': string;
+  'x-mcp.exposed'?: boolean;
 }
 
 function loadOpenapi(): { paths: Record<string, Record<string, OperationInfo>> } {
@@ -54,7 +55,7 @@ describe('MCP schema matches OpenAPI (S7)', () => {
     const registry = buildToolRegistry([]);
     for (const methods of Object.values(spec.paths)) {
       for (const op of Object.values(methods)) {
-        if (!op.operationId) continue;
+        if (!op.operationId || op['x-mcp.exposed'] === false) continue;
         const tool = registry.byOperationId.get(op.operationId);
         expect(tool, `registry missing tool for ${op.operationId}`).toBeDefined();
         expect(tool!.capability, `capability mismatch for ${op.operationId}`).toBe(op['x-mcp.capability']);
