@@ -7,6 +7,7 @@ export interface CatalogRepository {
  listSources(scope:CatalogScope): CatalogSource[];
  stats(scope:CatalogScope): CatalogStats;
  getByLogicalKey(key:string,scope:CatalogScope): CatalogEntry;
+ search(scope:CatalogScope,query:string,limit?:number,kind?:CatalogEntry['kind']):CatalogEntry[];
  upsert(entry:Omit<CatalogEntry,'createdAt'|'updatedAt'>, expectedVersion:number|undefined, meta:MutationMeta): CatalogEntry;
  addSource(source:CatalogSource, meta:MutationMeta):CatalogSource;
  link(entryId:string,sourceId:string,scope:CatalogScope,meta:MutationMeta):void;

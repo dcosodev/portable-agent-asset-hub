@@ -6,6 +6,8 @@ import type { EventRepository } from '../events/service.js';
 import type { MemoryRepository } from '../memory/service.js';
 import type { ImportPreview, Profile, ProfileBlock, ProfileScope } from '../profiles/types.js';
 import type { CatalogRepository, CatalogSyncRepository } from '../catalog/contracts.js';
+import type { SkillRepository } from '../skills/types.js';
+import type { RelationProposalRepository } from '../skills/relation-proposals.js';
 
 export type MutationMeta = { reason: string; requestId: string };
 export interface ProfileRepository {
@@ -35,6 +37,8 @@ export interface StorageTransaction {
   materializations: MaterializationRepository;
   catalog: CatalogRepository;
   catalogSync: CatalogSyncRepository;
+  skills: SkillRepository;
+  relationProposals: RelationProposalRepository;
 }
 
 export interface IdentityRepository {

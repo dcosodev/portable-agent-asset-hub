@@ -8,7 +8,8 @@ export type ErrorCode =
   | 'MIGRATION_GAP'
   | 'IDEMPOTENCY_CONFLICT'
   | 'IDEMPOTENCY_IN_PROGRESS'
-  | 'PRECONDITION_FAILED';
+  | 'PRECONDITION_FAILED'
+  | 'NOT_IMPLEMENTED';
 
 export class HubError extends Error {
   public readonly name = 'HubError';
