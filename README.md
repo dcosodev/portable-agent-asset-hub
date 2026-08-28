@@ -498,3 +498,7 @@ SLA. Bug reports should use the
 [bug report template](.github/ISSUE_TEMPLATE/bug_report.md); feature
 requests should use the
 [feature request template](.github/ISSUE_TEMPLATE/feature_request.md).
+
+---
+
+<sub>History squashed at open-sourcing; developed privately before the initial public release.</sub>
