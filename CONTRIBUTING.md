@@ -6,12 +6,34 @@ Thank you for considering a contribution. This project follows a contract-first,
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm docs:check
 pnpm lint
+pnpm --filter @portable-agent-asset-hub/graph-ui lint
 pnpm typecheck
 pnpm test
+pnpm s6:drift
 ```
 
-For changes touching a staged surface, also run the relevant gate and include the fresh exit code and a concise artifact summary. S6 requires Java 17 and OpenAPI Generator `7.10.0`; missing external tools must remain an explicit blocker rather than being hidden with a fallback.
+These are what CI runs, plus the demo (`node examples/demo/demo.mjs`) and a
+check that regenerating the MCP tool metadata is a no-op. Run them from a clean
+checkout when the change touches the build graph: `pnpm install
+--frozen-lockfile && pnpm build` must succeed without any pre-existing `dist/`
+in the workspace.
+
+Additional gates by surface:
+
+| Touching | Also run | Needs |
+|---|---|---|
+| telemetry, spans, metrics, attributes | `pnpm observability:lint`, `pnpm observability:contract` | nothing |
+| the Docker or Compose stack | `pnpm docker:contract` | nothing |
+| either of the above, before release | `pnpm docker:smoke` | a running Docker daemon |
+| documentation or a document's links | `pnpm docs:check` | nothing |
+| the OpenAPI contract or the SDKs | `pnpm s6:drift`, `node scripts/generate-sdks.mjs` | Java 17 + OpenAPI Generator `7.10.0` |
+
+Include the fresh exit code and a concise artifact summary for whatever you
+ran. Missing external tools must remain an explicit blocker rather than being
+hidden with a fallback: do not weaken a gate to make it pass in an environment
+that cannot run it.
 
 ## Change expectations
 
