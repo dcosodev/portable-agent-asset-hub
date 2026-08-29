@@ -111,6 +111,33 @@ export type ExplicitCandidateListResult = {
   nextCursor: string | null;
 };
 
+export type AutoApprovableExplicitCandidatesResult = {
+  eligible: ExplicitRelationCandidate[];
+  rejected: Array<{ pairKey: string; reason: string }>;
+};
+
+/**
+ * Select only explicit candidates whose evidence is strong enough for the
+ * governed auto-review stage. This function never applies canonical changes.
+ */
+export function autoApprovableExplicitCandidates(
+  candidates: ExplicitRelationCandidate[],
+): AutoApprovableExplicitCandidatesResult {
+  const eligible: ExplicitRelationCandidate[] = [];
+  const rejected: Array<{ pairKey: string; reason: string }> = [];
+  for (const candidate of candidates) {
+    let reason: string | undefined;
+    if (candidate.targetSkillId === null) reason = 'target is unresolved';
+    else if (candidate.status === 'AMBIGUOUS') reason = 'candidate target is ambiguous';
+    else if (candidate.status === 'UNRESOLVED') reason = 'candidate target is unresolved';
+    else if (candidate.status !== 'READY_FOR_REVIEW') reason = `candidate status is ${candidate.status}`;
+    else if (!candidate.reciprocal || !candidate.sourceDeclaresTarget || !candidate.targetDeclaredSource) reason = 'candidate is not reciprocal';
+    if (reason) rejected.push({ pairKey: candidate.pairKey, reason });
+    else eligible.push(candidate);
+  }
+  return { eligible, rejected };
+}
+
 export type ExplicitSkillHead = {
   id: string;
   logicalKey: string;

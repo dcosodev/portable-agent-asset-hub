@@ -19,3 +19,4 @@ export * from './graph-service.js';
 export * from './relation-proposals.js';
 export * from './relation-identity.js';
 export * from './explicit-relations.js';
+export * from './relation-calibration.js';
