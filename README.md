@@ -2,11 +2,19 @@
 
 Portable, auditable hub for versioned agent assets and runtime materialization.
 
-The hub exposes a canonical OpenAPI contract that drives a REST surface, an MCP
-facade, a TypeScript and Python SDK pair, and versioned materializers for
-supported agent runtimes (Hermes and OpenClaw). It is published as a portfolio
-and research artifact: the implementation is reproducible, fail-closed, and
-explicitly not a hosted service.
+One canonical OpenAPI contract drives every surface: a REST API, an MCP stdio
+facade, a TypeScript and Python SDK pair, and runtime adapters that attach the
+same hub to **five agent runtimes — Codex, Claude Code, OpenCode, Hermes and
+OpenClaw** — under one `preview → digest → apply → rollback` lifecycle.
+
+That is the point of the project. Agent assets today are per-tool: skills live
+in one harness's directory layout, in another's config format, and nothing
+reconciles them. Here the assets live once in SQLite, versioned and auditable,
+and each runtime is a *projection* of that authority rather than a fork of it.
+Adding a sixth runtime means writing a renderer, not another source of truth.
+
+It is published as a portfolio and research artifact: reproducible,
+fail-closed, and explicitly not a hosted service.
 
 ## Badges
 
