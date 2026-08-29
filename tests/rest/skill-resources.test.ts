@@ -43,8 +43,7 @@
 //   authority, the launcher is stateless.
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { spawn, type ChildProcess } from 'node:child_process';
-import { createServer } from 'node:net';
+import type { ChildProcess } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { once } from 'node:events';
@@ -55,6 +54,7 @@ import {
   type SkillResource,
 } from '@portable-agent-asset-hub/core';
 import { SqliteStore } from '@portable-agent-asset-hub/storage-sqlite';
+import { spawnRestLauncher, type LauncherHandle } from '../fixtures/rest-launcher';
 
 const repoRoot = resolve(import.meta.dirname, '../..');
 const bin = join(repoRoot, 'packages/rest/bin/agent-memory-rest.mjs');
@@ -68,52 +68,9 @@ afterEach(() => {
   for (const root of tempRoots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
-async function allocateFreePort(): Promise<number> {
-  return new Promise((resolvePort, reject) => {
-    const probe = createServer();
-    probe.once('error', reject);
-    probe.listen(0, '127.0.0.1', () => {
-      const address = probe.address();
-      if (!address || typeof address === 'string') {
-        probe.close(() => reject(new Error('probe did not return numeric address')));
-        return;
-      }
-      const port = address.port;
-      probe.close(() => resolvePort(port));
-    });
-  });
-}
 
-async function waitReady(child: ChildProcess): Promise<{ url: string; dbPath: string }> {
-  let stderr = '';
-  return new Promise((resolveReady, reject) => {
-    const timer = setTimeout(() => reject(new Error(`launcher readiness timeout: ${stderr}`)), 10_000);
-    if (!child.stderr) throw new Error('launcher stderr pipe missing');
-    child.stderr.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString('utf8');
-      const line = stderr.split('\n').find((entry) => entry.startsWith('AGENT_MEMORY_READY '));
-      if (!line) return;
-      clearTimeout(timer);
-      resolveReady({ ...JSON.parse(line.slice('AGENT_MEMORY_READY '.length)) as { url: string; dbPath: string } });
-    });
-    child.once('error', reject);
-  });
-}
 
-type LauncherHandle = { child: ChildProcess; url: string; dbPath: string; port: number };
 
-async function spawnLauncher(dbPath: string): Promise<LauncherHandle> {
-  const port = await allocateFreePort();
-  const child = spawn(process.execPath, [bin], {
-    cwd: repoRoot,
-    env: { ...process.env, AGENT_MEMORY_DB_PATH: dbPath, PORT: String(port), HOST: '127.0.0.1' },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-  children.push(child);
-  const ready = await waitReady(child);
-  expect(ready.dbPath).toBe(dbPath);
-  return { child, url: ready.url, dbPath, port };
-}
 
 async function shutdownLauncher(handle: LauncherHandle): Promise<void> {
   handle.child.kill('SIGTERM');
@@ -230,6 +187,11 @@ type SkillResourceWire = {
   encoding: 'base64';
   bytes: string;
 };
+async function spawnLauncher(dbPath: string): Promise<LauncherHandle> {
+  const handle = await spawnRestLauncher({ bin, repoRoot, dbPath, children });
+  expect(handle.dbPath).toBe(dbPath);
+  return handle;
+}
 
 describe('GET /api/v1/skills/search (real SQLite-backed launcher)', () => {
   it('returns active FTS results ranked by bm25 and honors the limit query', async () => {
