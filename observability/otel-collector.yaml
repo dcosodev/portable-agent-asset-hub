@@ -1,0 +1,90 @@
+# OpenTelemetry Collector for the portable-agent-asset-hub Docker stack.
+#
+# All listeners bind 0.0.0.0 INSIDE the container so the Compose DNS names
+# reach them through the internal bridge. Host-side port publications are
+# declared in observability/compose.yaml and are loopback-only.
+#
+# Receivers:
+#   - OTLP/HTTP on 0.0.0.0:4318 — the canonical ingest path from hub-rest.
+#
+# Exporters:
+#   - otlp/tempo → tempo:4317 (gRPC)
+#   - prometheus → 0.0.0.0:9464 (Prom scrape endpoint consumed by prometheus)
+#   - debug → stdout (only used during local triage; cheap and bounded)
+#
+# Processors:
+#   - memory_limiter (bounded backpressure; never silently drops traces)
+#   - batch (flush every 500ms or 8192 records)
+#
+# Health extension is enabled on 0.0.0.0:13133 so the Compose healthcheck
+# can poll it without touching the OTLP path.
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 10s
+      max_elapsed_time: 60s
+    sending_queue:
+      enabled: true
+      num_consumers: 4
+      queue_size: 1000
+  prometheus:
+    endpoint: 0.0.0.0:9464
+    resource_to_telemetry_conversion:
+      # The Hub metric kernel already applies a closed label allowlist.
+      # Promoting process/host resources would add PID, hostname and command
+      # labels that change on every container recreation.
+      enabled: false
+    const_labels:
+      monitor: portable-agent-asset-hub-docker
+  debug:
+    verbosity: basic
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+processors:
+  batch:
+    timeout: 500ms
+    send_batch_size: 8192
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 25
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+    check_collector_pipeline:
+      enabled: true
+      interval: 30s
+      exporter_failure_threshold: 5
+
+service:
+  telemetry:
+    logs:
+      level: info
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/tempo, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus, debug]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug]

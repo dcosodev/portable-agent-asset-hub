@@ -60,7 +60,11 @@
     "observability:lint": "node scripts/observability-lint.mjs",
     "observability:contract": "pnpm vitest run tests/telemetry/privacy-contract.test.ts tests/telemetry/cardinality-contract.test.ts tests/telemetry/fail-open.test.ts tests/telemetry/config.test.ts tests/telemetry/noop.test.ts",
     "observability:cardinality": "pnpm vitest run tests/telemetry/cardinality-contract.test.ts",
-    "observability:e2e": "pnpm vitest run tests/telemetry/otlp-process-smoke.test.ts"
+    "observability:e2e": "pnpm vitest run tests/telemetry/otlp-process-smoke.test.ts",
+    "observability:gate": "node scripts/observability-gate.mjs",
+    "docker:contract": "node scripts/docker-stack-contract.mjs",
+    "docker:smoke": "node scripts/docker-stack-smoke.mjs",
+    "docker:gate": "pnpm docker:contract && pnpm docker:smoke"
   },
   "dependencies": {
     "@portable-agent-asset-hub/core": "workspace:*",

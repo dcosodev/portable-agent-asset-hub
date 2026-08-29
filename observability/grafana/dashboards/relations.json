@@ -1,0 +1,47 @@
+{
+  "title": "Relations",
+  "uid": "hub-relations",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["hub", "relations"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Proposal lifecycle rate",
+      "id": 1,
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (operation_id) (rate(hub_requests_total{operation_id=~\"createManualSkillRelationProposal|approveSkillRelationProposal|rejectSkillRelationProposal|reconcileSkillRelationProposalDuplicates|listSkillRelationProposals|getSkillRelationProposal\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Forbidden denials (5m)",
+      "id": 2,
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(hub_request_errors_total{error_code_bounded=\"FORBIDDEN\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Version conflicts (5m)",
+      "id": 3,
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(hub_request_errors_total{error_code_bounded=\"CONFLICT\"}[5m]))"
+        }
+      ]
+    }
+  ]
+}

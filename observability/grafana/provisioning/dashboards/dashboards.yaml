@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: hub-dashboards
+    orgId: 1
+    folder: portable-agent-asset-hub
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

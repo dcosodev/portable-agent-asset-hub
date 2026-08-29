@@ -1,0 +1,99 @@
+# Local-only files and noisy directories that must never enter the build
+# context. Each line is a `.dockerignore` pattern matched by Go's
+# `dockerignore` rules — wildcards and `!`-negations are honoured.
+#
+# The list is deliberately aggressive: anything we don't ship ends up as
+# build cache bloat, a layer-size surprise, or (worst case) a hidden
+# secret committed to the image. When in doubt, exclude.
+
+# VCS metadata
+.git
+.gitignore
+.gitattributes
+
+# Host-installed dependencies (rebuilt in the builder from pnpm-lock.yaml)
+node_modules
+**/node_modules
+
+# Build outputs we ship via COPY from the builder, not the host context
+dist
+**/dist
+
+# Local artifacts the build pipeline writes during a run
+artifacts
+**/artifacts
+
+# Editor / IDE state
+.idea
+.vscode
+.DS_Store
+*.swp
+*.swo
+
+# Environment files — must NEVER ship inside an image. They routinely
+# hold bearer tokens, database paths and canonical storage locations.
+.env
+.env.*
+!.env.example
+
+# Local SQLite databases. The runtime creates its own at /data/hub.sqlite.
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+*.db-wal
+hub.sqlite
+hub.db
+
+# Backups produced by scripts/hub-backup.mjs and friends.
+backups
+**/backups
+*.backup
+*.tar.gz
+
+# Knowledge vaults and curated content snapshots the user maintains.
+knowledge-vault
+**/knowledge-vault
+**/knowledge
+slices
+**/slices
+
+# Per-package build caches we don't need in the builder.
+**/.turbo
+**/.cache
+**/.next
+**/.parcel-cache
+
+# Test fixtures that may contain secrets, intentionally-bad JWTs, or
+# canonical user data.
+tests/fixtures
+**/tests/fixtures
+
+# OpenAPI generator / external install helpers we never want baked in.
+openapitools.json
+openapitools-openapi-generator-cli-*.tgz
+portable-agent-asset-hub-*.tgz
+
+# Documentation and license files we ship via the published package
+# manifest already; keep them out of the Docker build context.
+docs
+schemas
+third_party
+README.md
+THIRD_PARTY_NOTICES.md
+CONTRIBUTING.md
+
+# The very script that orchestrates the docker build is pointless to copy.
+.dockerignore
+Dockerfile
+
+# Compose / OTEL config files we deliberately bind-mount in compose.yaml.
+observability
+**/observability
+
+# Worktree bookkeeping.
+.husky
+**/.husky
+.hg
+.svn

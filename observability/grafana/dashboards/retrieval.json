@@ -1,0 +1,47 @@
+{
+  "title": "Retrieval",
+  "uid": "hub-retrieval",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["hub", "retrieval"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Retrieval events per operation",
+      "id": 1,
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (operation_id) (rate(hub_requests_total{operation_id=~\"resolveRetrieval|listRetrievalEvents|getRetrievalEventGraph\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Selected skills per retrieval (p50)",
+      "id": 2,
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(hub_request_duration_ms_bucket[10m])))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "No-match ratio (5m)",
+      "id": 3,
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(hub_request_errors_total[5m])) / clamp_min(sum(rate(hub_requests_total[5m])), 1)"
+        }
+      ]
+    }
+  ]
+}

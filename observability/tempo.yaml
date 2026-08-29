@@ -1,0 +1,41 @@
+# Tempo local profile for the portable-agent-asset-hub Docker stack.
+#
+# `-target=all` runs every Tempo subsystem (distributor, ingester,
+# compactor, querier, query-frontend) inside the single binary so we do
+# not need a separate query-frontend container.
+#
+# Listeners bind 0.0.0.0 INSIDE the container so the OpenTelemetry
+# Collector's `otlp/tempo` exporter (and the Grafana datasource) can
+# reach them through the Compose DNS name.
+#
+# Storage is local (filesystem), retention is 5 minutes on the WAL.
+# This is dev-only and intentionally small.
+
+server:
+  http_listen_address: 0.0.0.0
+  http_listen_port: 3200
+  grpc_listen_address: 0.0.0.0
+  grpc_listen_port: 9095
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+
+ingester:
+  max_block_duration: 5m
+  trace_idle_period: 10s
+
+compactor:
+  compaction:
+    block_retention: 48h
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/blocks
+    wal:
+      path: /var/tempo/wal

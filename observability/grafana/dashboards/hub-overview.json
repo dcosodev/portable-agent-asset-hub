@@ -1,0 +1,73 @@
+{
+  "title": "Hub overview",
+  "uid": "hub-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["hub", "overview"],
+  "timezone": "browser",
+  "refresh": "15s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Requests by operation",
+      "id": 1,
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (operation_id) (rate(hub_requests_total[1m]))",
+          "legendFormat": "{{operation_id}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Request duration p95",
+      "id": 2,
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, operation_id) (rate(hub_request_duration_ms_bucket[5m])))",
+          "legendFormat": "p95 {{operation_id}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Error ratio (5m)",
+      "id": 3,
+      "gridPos": { "x": 0, "y": 8, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(hub_request_errors_total[5m])) / clamp_min(sum(rate(hub_requests_total[5m])), 1)"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Total requests (1m)",
+      "id": 4,
+      "gridPos": { "x": 8, "y": 8, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(hub_requests_total[1m]))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Status classes (1m)",
+      "id": 5,
+      "gridPos": { "x": 16, "y": 8, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (status_class) (increase(hub_requests_total[1m]))"
+        }
+      ]
+    }
+  ]
+}

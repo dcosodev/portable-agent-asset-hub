@@ -1,0 +1,47 @@
+{
+  "title": "Health",
+  "uid": "hub-health",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["hub", "health"],
+  "timezone": "browser",
+  "refresh": "15s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Uptime (s)",
+      "id": 1,
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "time() - process_start_time_seconds{service_name=\"portable-agent-asset-hub\"}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Total requests (1m)",
+      "id": 2,
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(hub_requests_total[1m]))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Auth mode (last)",
+      "id": 3,
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "count by (auth_mode) (last_over_time(hub_requests_total[5m]))"
+        }
+      ]
+    }
+  ]
+}
