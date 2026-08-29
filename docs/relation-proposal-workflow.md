@@ -47,6 +47,24 @@ filters only prioritize the queue.
 ## Compatibility and portability
 
 Migration 0019 adds nullable/defaulted fields for pre-existing proposals, so an
-old proposal resolves to exactly its original values. The existing export
-includes `skill-relations.json`; import and export do not depend on relations
-declared in frontmatter.
+old proposal resolves to exactly its original values. Migration 0020 adds
+`approval_mode` and `auto_approve_rule`, which record *how* a proposal was
+approved. Both default closed: every pre-existing row upgrades to
+`approval_mode = 'human'`, and approval provenance is orthogonal to workflow
+status, so an approved proposal stays approved across the upgrade. The existing
+export includes `skill-relations.json`; import and export do not depend on
+relations declared in frontmatter.
+
+## Auto-approval is not implemented
+
+The 0020 columns and the two eligibility predicates in
+`packages/core/src/skills/` (`autoApprovableExplicitCandidates`,
+`isAutoApproveUnlocked`) are foundations, not a feature. Nothing calls them:
+there is no persisted opt-in, no versioned policy, no attributable runtime
+decision, no kill switch and no API surface, and a test asserts each symbol has
+exactly one reference in the source tree so it cannot acquire a production
+caller unnoticed.
+
+Nothing in this repository writes `approval_mode = 'auto'`. Review, preview,
+`planDigest`, `reviewedDigest` and governed apply remain the only path from a
+proposal to a canonical relation.

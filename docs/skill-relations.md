@@ -48,7 +48,7 @@ REST endpoints:
 - `POST /api/v1/skill-relation-candidates/explicit/impact`
 - `POST /api/v1/skill-relation-candidates/explicit/stage`
 
-Graph Explorer provides the Explicit Relations queue, status/direction filters, candidate inspector, explicit metadata layer toggle, Stage selected and read-only impact preview. Canonical apply is still performed only through the reviewed proposal apply flow.
+Graph Explorer provides the Explicit Relations queue, status/direction filters, candidate inspector, explicit metadata layer toggle, Stage selected and read-only impact preview. The BFF forwards the two POST routes above on loopback as part of its anchored mutation allowlist, and refuses them entirely in LAN mode; see [`web-graph-explorer.md`](web-graph-explorer.md). Staging produces a reviewable proposal, never a canonical relation: canonical apply is still performed only through the reviewed proposal apply flow.
 
 ## Discovery
 
