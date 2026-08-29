@@ -2,6 +2,101 @@
 
 All notable public changes will be documented here.
 
+## 0.3.0 — 2026-08-29
+
+Third public release. No breaking changes: the HTTP contract stays at the same
+51 operations with identical shapes, and the generated SDKs are unchanged. The
+release is internal — telemetry, an observability stack, a restructured Graph
+Explorer, and two real bug fixes.
+
+The database schema moves from 19 to 20. Existing databases upgrade in place.
+
+### Fixed
+
+- **A repeated catalog apply no longer fails with `404 source or entry not
+  found`.** `catalog_sources` carries both a surrogate `id` and the logical
+  identity `UNIQUE(owner, scope, kind, locator)`. `addSource` wrote with
+  `INSERT OR IGNORE` and returned the *proposed* row even when SQLite had
+  discarded it, so `link` looked up an id that did not exist. Because
+  `applyPreview` derives the source id from `{kind, rootId, locator}`, applying
+  the same content under a different root id was enough to trigger it.
+  `addSource` now reads the persisted row back and returns it; a changed
+  fingerprint updates that row in place, keeps the id stable and emits
+  `catalog.source.refingerprinted`. Present in 0.1.0 and 0.2.0.
+- **The Graph Explorer's relation review workflow now works through the BFF.**
+  Two independent defects made it unusable. The mutation allowlist matched the
+  prefix `/api/v1/skill-relation-proposals/`, which refused manual proposal
+  creation and both explicit-candidate actions while admitting an operator
+  route the UI never calls. And the BFF dropped `If-Match`, so the mutations
+  that did get through were rejected upstream with `428
+  PRECONDITION_REQUIRED` — approve, reject and apply all failed this way. The
+  allowlist is now anchored per path and `If-Match` is forwarded. Present in
+  0.2.0.
+- **The MCP stdio smoke tests no longer race.** Each installed a workspace
+  symlink into the shared `dist/` tree in its own `beforeAll`, which left the
+  DB-only end-to-end test depending on whichever ran first. The package build
+  now mirrors those links via `scripts/sync-workspace-deps.mjs`.
+
+### Added
+
+- **Opt-in OpenTelemetry telemetry** (`@portable-agent-asset-hub/telemetry`),
+  wired into the REST request path and the MCP transport. Off by default and
+  fail-open: with no configuration the launcher builds a noop handle, and a
+  missing endpoint, an unavailable Node subpath or an invalid level degrade to
+  that same noop rather than failing the boot. Privacy and cardinality are
+  contracts — attributes are scrubbed, labels come from closed sets, and the
+  route label is the OpenAPI template rather than the concrete path. No body,
+  prompt, query text or bearer reaches a span or a metric. Shutdown order is
+  server, then store, then telemetry. ADR 0004 records the decision.
+- **A portable Docker stack** under `observability/`: pinned non-root REST and
+  MCP images plus a Compose stack running an OpenTelemetry Collector,
+  Prometheus, Tempo and Grafana with provisioned datasources and four
+  dashboards. `pnpm docker:contract` reads the configuration statically and
+  needs no daemon; `pnpm docker:smoke` drives the live stack through seventeen
+  checks including SQLite persistence across restarts, two sequential MCP
+  sessions, and fail-open plus recovery with the Collector down.
+- **Migration 0020**: `approval_mode` (`human`|`auto`, defaulting to `human`)
+  and `auto_approve_rule` on `skill_relation_proposals`, with an index for
+  partitioning the queue by provenance. Approval provenance is orthogonal to
+  workflow status; an approved proposal stays approved across the upgrade.
+- **Two closed-by-default auto-approval eligibility gates**,
+  `autoApprovableExplicitCandidates` and `isAutoApproveUnlocked`. Foundations
+  only: there is no persisted opt-in, no versioned policy, no attributable
+  runtime decision and no API wiring, and a test asserts each symbol has
+  exactly one reference in the source tree so it cannot quietly acquire a
+  production caller. **Auto-approval is not part of this release.**
+- **Opt-in private-LAN serving for the Graph Explorer**, behind both
+  `GRAPH_UI_ALLOW_LAN=1` and a `GRAPH_UI_HOST` that parses as a canonical
+  private IPv4 literal. Strictly read-only: LAN mode refuses the entire
+  mutation allowlist. Still a private-network affordance, not a deployment
+  story — no TLS, no per-viewer identity.
+- **A documentation contract gate**, `pnpm docs:check`, plus `docs/README.md`
+  as the index it reads. CI now runs it, `observability:lint` and
+  `docker:contract`.
+
+### Changed
+
+- **The Graph Explorer is split into a composition root and focused
+  components.** State moves to `state/useExplorerState.ts` and
+  `state/useFilters.ts`; presentation splits into `Toolbar`, `FilterPanel`,
+  `GraphCanvas`, `Inspector`, `SkillReader` and `StatusBar`. One behavioral
+  change comes with it: the FTS semantic neighborhood is now an explicit graph
+  layer and is filtered out of the relation proposal queue, so a semantic
+  neighbor cannot drift into the governed review flow just by being rendered.
+  The workspace also keeps all five tracks usable below 1100px.
+- **The MCP transport refuses model-supplied header overrides** for
+  authorization, request correlation, identity and W3C trace context. A
+  `RestTransport` can no longer be used to bypass the identity filter or forge
+  a parent trace.
+- REST advertises `schemaVersion: 20` through `getStatus` and
+  `getCapabilities`.
+
+### Not included
+
+Loki and any persistent log store; auto-approval as a runtime capability;
+published container images. Each is deliberate, and the reasons are in
+`README.md` and `docs/observability.md`.
+
 ## 0.2.0 — 2026-08-27
 
 Second public release. It lifts the consolidated skills, skill-graph and

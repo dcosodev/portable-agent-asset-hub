@@ -376,10 +376,12 @@ personal skills, profiles, credentials, sessions, and runtime state.
 ### Not implemented (in this public export)
 
 - A hosted service, a managed runtime, or any kind of SLA.
-- OpenTelemetry / Grafana observability and the Docker stack. That work
-  exists but is not yet consolidated, so it is deliberately out of 0.2.0.
-- Automatic canonicalization of relation candidates. Every edge in
-  `skill_relations` is the result of an explicit human review.
+- A persistent log store. The observability stack ships Collector,
+  Prometheus, Tempo and Grafana; log retention needs a privacy review and a
+  retention policy this stack does not yet have.
+- Automatic approval of relation candidates. Migration 0020 records approval
+  provenance and two closed-by-default eligibility gates exist, but nothing
+  wires them: human review remains the only path to a canonical relation.
 - CI coverage of the staged gates: the GitHub Actions workflow runs the
   fast checks and the demo only; gates `s0`–`s10` are local scripts.
 - Personal skills, profiles, cookies, tokens, sessions, `state.db`, or

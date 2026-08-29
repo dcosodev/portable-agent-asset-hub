@@ -130,6 +130,47 @@ and that behavior itself is under test
 (`tests/s6-generate-sdks.test.ts`). Drift between the contract and the
 generated trees is detected by `pnpm s6:drift`.
 
+## 0.3.0 — telemetry, the observability stack and two real bugs
+
+0.3.0 lifted the work that 0.2.0 had explicitly deferred as unconsolidated:
+the OpenTelemetry kernel, the Docker observability stack, the graph-ui
+component refactor and the relation auto-approval foundations. The port ran as
+nine separate blocks, each gated and pushed on its own, rather than as one cut.
+
+**The private repository was not simply ahead.** Its working tree failed
+`pnpm build` from a clean checkout with `TS2307`, and it recorded that failure
+as an open P0 blocker. The cause was already fixed here: the public repository
+had added the project references the private tsconfigs lacked
+(`storage-sqlite → storage-files`, `rest → storage-files + storage-sqlite`) and
+moved `packages/rest` off the shared `dist/` tree. So the fix travelled from
+public to private, not the other way, and each block was verified against a
+detached worktree with `pnpm install --frozen-lockfile && pnpm build` before
+being pushed.
+
+The same asymmetry shaped `packages/rest/src/app.ts` again. The private
+`createApp` had lost the 405 + `Allow` route matching, the explicit
+`createdOperations` set and the `SCHEMA_VERSION` constant. Wrapping the public
+handler in the telemetry span by hand — rather than taking the private file —
+kept all three.
+
+**Two bugs surfaced that neither repository had caught.** The catalog
+`addSource` identity defect was byte-identical in both and had shipped in
+0.1.0 and 0.2.0; a repeated apply under a different root id failed with a
+`404`. And the Graph Explorer's entire relation review flow was broken through
+the BFF: a prefix-matched allowlist refused three of the seven governed paths
+the UI calls, and a dropped `If-Match` header meant the four that did get
+through were answered `428` by REST. No test covered the BFF's mutation path,
+so a stub-upstream test that echoes method, path, `If-Match` and body was
+written before the fix.
+
+**Deliberately left behind.** Loki and persistent log collection, the private
+repository's newest work, contradicted its own scope document, which listed log
+retention as out of scope pending a privacy and retention review. Internal
+audit reports, calibration runs, batch records and the implementation backlog
+stayed private: they are run evidence with local paths, not contracts. Relation
+auto-approval shipped as eligibility gates and a provenance schema only, with a
+test asserting neither gate has a production caller.
+
 ## 0.2.0 — skills, skill graph and governed relations
 
 The 0.2.0 surface was developed in a private repository and lifted here as a
