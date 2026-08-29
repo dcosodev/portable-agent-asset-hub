@@ -117,11 +117,23 @@ flowchart LR
     STORE_S["@portable-agent-asset-hub/storage-sqlite<br/>(single owner)"]
     MAT["@portable-agent-asset-hub/materializers"]
     MIG["@portable-agent-asset-hub/migration"]
+    RA["@portable-agent-asset-hub/runtime-adapters"]
   end
 
-  subgraph Runtimes
-    HER[Hermes adapter]
-    OCL[OpenClaw adapter]
+  subgraph Runtimes["Runtimes (preview → digest → apply → rollback)"]
+    CDX[Codex]
+    CC[Claude Code]
+    OC[OpenCode]
+    HER[Hermes]
+    OCL[OpenClaw]
+  end
+
+  subgraph Observability["Observability (opt-in, off by default)"]
+    TEL["@portable-agent-asset-hub/telemetry"]
+    COL[OTel Collector]
+    PROM[Prometheus]
+    TEMPO[Tempo]
+    GRAF[Grafana]
   end
 
   RESTMAP --> REST
@@ -139,8 +151,23 @@ flowchart LR
   CORE --> MAT
   CORE --> MIG
 
+  CORE --> RA
+
+  RA --> CDX
+  RA --> CC
+  RA --> OC
+  RA --> HER
+  RA --> OCL
   MAT --> HER
   MAT --> OCL
+
+  REST -.-> TEL
+  MCP -.-> TEL
+  TEL -.->|OTLP| COL
+  COL -.-> PROM
+  COL -.-> TEMPO
+  PROM -.-> GRAF
+  TEMPO -.-> GRAF
 
   subgraph Gates
     S0[scripts/s0-*.mjs]
@@ -157,8 +184,18 @@ flowchart LR
 
 The hub is read through three client channels — REST, MCP stdio, and the
 generated SDKs — but writes always pass through the same core dispatcher, the
-same storage adapters, and the same materializer contracts. Telemetry runs
-beside all of them as a side channel and changes none of it.
+same storage adapters, and the same materializer contracts.
+
+Five runtimes hang off one adapter package rather than five integrations. Each
+is a renderer over the same plan: `computePreview` produces a digest, `applyPlan`
+refuses to act on a stale one, and `rollbackPlan` undoes exactly what was
+applied. A runtime never reaches SQLite, and adding one adds a renderer, not a
+source of truth.
+
+The dotted edges are the telemetry side channel. It is drawn separately because
+it is separate: off unless an operator opts in, a noop when unreachable, and
+never a substitute for the durable audit trail. Nothing on the solid path
+changes behavior based on whether it is running.
 
 ## Package responsibilities
 
