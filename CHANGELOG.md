@@ -102,9 +102,14 @@ The database schema moves from 19 to 20. Existing databases upgrade in place.
 - `CONTRIBUTING.md` lists the gates a change actually has to pass, which
   surface needs which, and the external tool each one requires.
 - `pnpm docs:check` derives the schema version from the migration filenames
-  instead of hardcoding it. The first version of the gate missed the very
-  drift it was written for; the corrected gate then found a second stale
-  claim in `docs/skill-graph-retrieval.md`.
+  instead of hardcoding it, and the corrected gate found a stale claim in
+  `docs/skill-graph-retrieval.md`.
+- The README no longer describes the hub as driving materializers for "Hermes
+  and OpenClaw". Five runtimes — Codex, Claude Code, OpenCode, Hermes and
+  OpenClaw — share one `preview → digest → apply → rollback` lifecycle through
+  `runtime-adapters`, and the architecture diagram now shows all of them plus
+  the telemetry side channel. The badge note lists what CI actually runs and
+  what stays local, with the reason for each.
 
 ### Internal
 
