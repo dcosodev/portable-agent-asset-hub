@@ -27,11 +27,13 @@ fail-closed, and explicitly not a hosted service.
 | TypeScript | `^5.8.2` (devDependency) |
 | Project status | Portfolio / research, not a hosted service |
 
-> CI runs the fast checks only (`lint`, `typecheck`, `test`, and the
-> end-to-end demo). The staged gates (`s0`–`s10`) remain local, fail-closed
-> scripts. The S6 SDK-generation gate additionally requires Java 17 and
-> OpenAPI Generator `7.10.0`; missing external tools are reported as
-> blockers, not silently downgraded.
+> CI runs the documentation contract, `lint` (root and `graph-ui`),
+> `typecheck`, `test`, the OpenAPI drift gate, the static observability and
+> Docker-stack contracts, MCP metadata reproducibility, and the end-to-end
+> demo. What stays local is what needs something CI does not have: the
+> staged gates (`s0`–`s10`), `pnpm docker:smoke` (a running Docker daemon),
+> and the S6 SDK generation (Java 17 and OpenAPI Generator `7.10.0`).
+> Missing external tools are reported as blockers, never silently downgraded.
 
 ## At a glance
 
@@ -263,6 +265,7 @@ pnpm install
 pnpm build
 
 # 3. Run the local fast-checks (see "Validation" below).
+pnpm docs:check
 pnpm lint
 pnpm typecheck
 pnpm test
@@ -271,9 +274,13 @@ pnpm test
 #    drift 412 -> rollback), fully local. See docs/demo.md.
 node examples/demo/demo.mjs
 
-# 5. Optional: browse the canonical skill graph read-only.
+# 5. Optional: browse the canonical skill graph.
 #    Needs a running REST hub; see docs/web-graph-explorer.md.
 pnpm graph-ui
+
+# 6. Optional: bring up the local observability stack (Collector,
+#    Prometheus, Tempo, Grafana). Needs Docker; see observability/README.md.
+docker compose -f observability/compose.yaml up -d
 ```
 
 > `pnpm test` is preceded by `pnpm build` (`pretest` hook). It runs
@@ -297,6 +304,7 @@ The repository ships two classes of validation:
 
 | Command | Purpose |
 | --- | --- |
+| `pnpm docs:check` | Documentation contract: promised documents exist, relative links resolve, no stale schema or contract claims. |
 | `pnpm lint` | ESLint over the workspace (`--max-warnings 0`). |
 | `pnpm typecheck` | `tsc -b` across the project references, then `graph-ui`. |
 | `pnpm test` | Builds first (`pretest`), then runs the vitest suite and the `graph-ui` suite. |
@@ -304,6 +312,10 @@ The repository ships two classes of validation:
 | `pnpm audit` | `pnpm audit --prod` over the production dependency set. |
 | `pnpm baseline:audit` | `node scripts/s0-audit.mjs` over the public fixture. |
 | `pnpm pack` | `node scripts/s0-pack.mjs` (publishable tarball). |
+| `pnpm observability:lint` | Static contract over the telemetry kernel: bounded attributes, no unredacted values. |
+| `pnpm observability:contract` | Privacy, cardinality, fail-open, config and noop behavior of the telemetry kernel. |
+| `pnpm docker:contract` | Static read of the Compose and Collector configuration. No daemon required. |
+| `pnpm docker:smoke` | Builds both images and drives the live stack end to end. **Requires Docker.** |
 
 ### Staged gates (S0–S10)
 
@@ -418,7 +430,7 @@ absolute paths in issues or pull requests. See
 
 ## Development workflow
 
-1. Run the local fast checks: `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+1. Run the local fast checks: `pnpm docs:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
 2. Touching a contract? Regenerate SDKs with `pnpm s6:generate` (requires
    Java 17 and OpenAPI Generator 7.10.0) and confirm `pnpm s6:drift` is
    clean. Do not edit the generated SDKs manually.
