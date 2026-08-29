@@ -38,7 +38,7 @@ describe('S2 migrations, doctor, backup, schemas and owner boundary', () => {
       expect(driftDb.doctor().ok).toBe(false);
       expect(() => driftDb.withConnection((connection) => migrate(connection, join(process.cwd(), 'packages/storage-sqlite/src/migrations')))).toThrow();
       driftDb.close();
-      expect(loadMigrations(join(process.cwd(), 'packages/storage-sqlite/src/migrations'))).toHaveLength(19);
+      expect(loadMigrations(join(process.cwd(), 'packages/storage-sqlite/src/migrations'))).toHaveLength(20);
     } finally { await rm(dir, { recursive: true, force: true }); }
   });
 

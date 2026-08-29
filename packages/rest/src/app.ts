@@ -57,7 +57,7 @@ export type OperationId = DeclaredRoute['operationId'] | ExplicitOperationId;
  * It is a single named constant here so that bumping the schema is one
  * edit in this package rather than two inline literals.
  */
-export const SCHEMA_VERSION = 19;
+export const SCHEMA_VERSION = 20;
 
 export type AuthVerifier = (token: string, requestId?: string) => ActorContext | null;
 export type RestHub = {

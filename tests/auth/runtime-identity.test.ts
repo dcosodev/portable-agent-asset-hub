@@ -46,9 +46,9 @@ describe('runtime credential identity', () => {
       void app(req, res);
     });
     expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body)).toMatchObject({ schemaVersion: 19, auth: { mode: 'local-dev' }, actor: { agentId: 'agt_opencode' } });
-    const server = buildMcpServer({ restBaseUrl: 'http://hub.test', actor, transport: async (request: unknown) => { void request; return { status: 200, headers: {}, body: { schemaVersion: 19, features: { skillGraph: true } } }; } });
+    expect(JSON.parse(response.body)).toMatchObject({ schemaVersion: 20, auth: { mode: 'local-dev' }, actor: { agentId: 'agt_opencode' } });
+    const server = buildMcpServer({ restBaseUrl: 'http://hub.test', actor, transport: async (request: unknown) => { void request; return { status: 200, headers: {}, body: { schemaVersion: 20, features: { skillGraph: true } } }; } });
     const result = await server.handle('tools/call', { name: 'get_hub_capabilities', arguments: {} }) as { content: Array<{ text: string }> };
-    expect(JSON.parse(result.content[0]!.text)).toMatchObject({ schemaVersion: 19 });
+    expect(JSON.parse(result.content[0]!.text)).toMatchObject({ schemaVersion: 20 });
   });
 });

@@ -15,7 +15,7 @@ export function loadMigrations(dir: string): Migration[] {
 }
 export function migrate(db: DatabaseSync, dir: string): void {
   const migrations = loadMigrations(dir);
-  if (migrations.length !== 19 || migrations.some((migration, index) => migration.version !== index + 1)) throw new HubError('MIGRATION_GAP', 'migration sequence must be continuous 0001-0019', 500);
+  if (migrations.length !== 20 || migrations.some((migration, index) => migration.version !== index + 1)) throw new HubError('MIGRATION_GAP', 'migration sequence must be continuous 0001-0020', 500);
   db.exec('CREATE TABLE IF NOT EXISTS schema_meta (version INTEGER PRIMARY KEY, name TEXT NOT NULL, checksum TEXT NOT NULL, applied_at TEXT NOT NULL)');
   for (const migration of migrations) {
     const old = db.prepare('SELECT checksum,name FROM schema_meta WHERE version=?').get(migration.version) as { checksum: string; name: string } | undefined;

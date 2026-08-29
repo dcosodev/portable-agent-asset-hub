@@ -636,7 +636,7 @@ describe('FASE 5 — skill export focal', () => {
     expect(existsSync(join(targetDir, 'skills'))).toBe(false);
   });
 
-  it('the DB is checked for integrity (PRAGMA integrity_check OK) and the migration set is contiguous up to 0016', async () => {
+  it('the DB is checked for integrity and the migration set is current and contiguous', async () => {
     const dbPath = makeDb();
     const a = actorLocal();
     const store = new SqliteStore(dbPath);
@@ -653,8 +653,8 @@ describe('FASE 5 — skill export focal', () => {
       const rows = probe
         .prepare("SELECT version, name FROM schema_meta ORDER BY version")
         .all() as Array<{ version: number; name: string }>;
-      expect(rows.map((row) => row.version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
-      expect(rows[rows.length - 1]?.name).toBe('relation_proposal_review');
+      expect(rows.map((row) => row.version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+      expect(rows[rows.length - 1]?.name).toBe('relation_proposal_auto_approval');
     } finally {
       probe.close();
     }

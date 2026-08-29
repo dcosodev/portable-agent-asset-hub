@@ -114,6 +114,7 @@ describe('durable REST launcher', () => {
 
     const status = await fetch(`${ready.url}/api/v1/status`);
     expect(status.status).toBe(200);
+    expect(await status.json()).toMatchObject({ schemaVersion: 20 });
 
     const doctor = await fetch(`${ready.url}/api/v1/admin/doctor`);
     expect(doctor.status).toBe(200);

@@ -545,10 +545,10 @@ describe('Fase 3 DB-only skills e2e', () => {
     try {
       const integrity = (reopened.prepare('PRAGMA integrity_check').get() as { integrity_check: string }).integrity_check;
       expect(integrity).toBe('ok');
-      // The hub tracks schema state in `schema_meta` (the runner writes
-      // one row per migration). 16 migrations are shipped in this build.
+      // The hub tracks schema state in `schema_meta`; the runner writes one
+      // row per migration in the current contiguous chain.
       const schemaVersion = (reopened.prepare('SELECT MAX(version) AS v FROM schema_meta').get() as { v: number | null }).v;
-      expect(schemaVersion).toBe(19);
+      expect(schemaVersion).toBe(20);
       const rowCount = (reopened.prepare('SELECT COUNT(*) AS c FROM skill_entries').get() as { c: number }).c;
       expect(rowCount).toBeGreaterThan(0);
     } finally {

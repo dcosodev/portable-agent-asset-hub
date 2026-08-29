@@ -101,11 +101,11 @@ function utf8Bytes(text: string): Buffer {
 }
 
 describe('Phase 1 skill versioned storage', () => {
-  it('migrates contiguously to 0015 and creates the canonical tables', async () => {
+  it('migrates contiguously through the current schema and creates the canonical tables', async () => {
     const dbPath = freshDb();
     const store = new SqliteStore(dbPath);
     try {
-      // Sanity: doctor should still report green after migration 0015.
+      // Sanity: doctor should report green after the complete migration chain.
       const tables = store.doctor();
       expect(tables).toBeDefined();
       // Open the same file with a fresh handle to inspect schema_meta + table names.
@@ -115,8 +115,8 @@ describe('Phase 1 skill versioned storage', () => {
         const rows = probe
           .prepare("SELECT version, name FROM schema_meta ORDER BY version")
           .all() as Array<{ version: number; name: string }>;
-        expect(rows.map((row) => row.version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
-        expect(rows[rows.length - 1]?.name).toBe('relation_proposal_review');
+        expect(rows.map((row) => row.version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+        expect(rows[rows.length - 1]?.name).toBe('relation_proposal_auto_approval');
         const tableNames = probe
           .prepare("SELECT name FROM sqlite_master WHERE type IN ('table') AND name LIKE 'skill_%' ORDER BY name")
           .all() as Array<{ name: string }>;

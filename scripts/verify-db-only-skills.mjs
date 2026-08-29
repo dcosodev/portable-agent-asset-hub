@@ -60,7 +60,7 @@ function main() {
     const integrity = db.prepare('PRAGMA integrity_check').get();
     const integrityOk = integrity && integrity.integrity_check === 'ok';
     const schemaVersion = db.prepare('SELECT MAX(version) AS v FROM schema_meta').get();
-    const schemaOk = schemaVersion && Number(schemaVersion.v) === 19;
+    const schemaOk = schemaVersion && Number(schemaVersion.v) === 20;
     const headRow = db.prepare(
       "SELECT sv.version, se.lifecycle, sv.body, sv.body_sha256, sv.total_size FROM skill_versions sv JOIN skill_entries se ON se.id = sv.id AND se.owner_user_id = sv.owner_user_id AND se.scope_agent_id = sv.scope_agent_id WHERE sv.id = ? AND se.current_version = sv.version ORDER BY sv.version DESC LIMIT 1",
     ).get(args.skillId);
