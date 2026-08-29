@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { spawn, type ChildProcess } from 'node:child_process';
-import { createServer } from 'node:net';
+import type { ChildProcess } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { once } from 'node:events';
 import { SqliteStore } from '@portable-agent-asset-hub/storage-sqlite';
 import { createActorContext } from '@portable-agent-asset-hub/core';
+import { spawnRestLauncher } from '../fixtures/rest-launcher';
 
 const repoRoot = resolve(import.meta.dirname, '../..');
 const bin = join(repoRoot, 'packages/rest/bin/agent-memory-rest.mjs');
@@ -25,37 +25,7 @@ afterEach(() => {
  * launcher refuses port 0 in its own env-var validation, so the test
  * must hand it a real, free port.
  */
-async function allocateFreePort(): Promise<number> {
-  return new Promise((resolvePort, reject) => {
-    const probe = createServer();
-    probe.once('error', reject);
-    probe.listen(0, '127.0.0.1', () => {
-      const address = probe.address();
-      if (!address || typeof address === 'string') {
-        probe.close(() => reject(new Error('probe did not return numeric address')));
-        return;
-      }
-      const port = address.port;
-      probe.close(() => resolvePort(port));
-    });
-  });
-}
 
-async function waitReady(child: ChildProcess): Promise<{ url: string; dbPath: string; stderr: string }> {
-  let stderr = '';
-  return new Promise((resolveReady, reject) => {
-    const timer = setTimeout(() => reject(new Error(`launcher readiness timeout: ${stderr}`)), 10_000);
-    if (!child.stderr) throw new Error('launcher stderr pipe missing');
-    child.stderr.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString('utf8');
-      const line = stderr.split('\n').find((entry) => entry.startsWith('AGENT_MEMORY_READY '));
-      if (!line) return;
-      clearTimeout(timer);
-      resolveReady({ ...JSON.parse(line.slice('AGENT_MEMORY_READY '.length)) as { url: string; dbPath: string }, stderr });
-    });
-    child.once('error', reject);
-  });
-}
 
 describe('durable REST launcher', () => {
   it('serves graph relations/dependents and mandatory retrieval through the real REST process', async () => {
@@ -68,9 +38,8 @@ describe('durable REST launcher', () => {
       seed.transaction(actor, (tx) => tx.skills.writeSkill({ id: 'skl_docker', scope: actor.scope, logicalKey: 'skill:docker', kind: 'skill', name: 'docker-build', summary: 'docker build container', lifecycle: 'active', body: Buffer.from('# docker'), metadata: {}, resources: [] }, { reason: 'seed', requestId: 'req_docker' }));
       seed.transaction(actor, (tx) => tx.skills.writeSkill({ id: 'skl_k8s', scope: actor.scope, logicalKey: 'skill:k8s', kind: 'skill', name: 'kubernetes-deployment', summary: 'deploy api kubernetes helm', lifecycle: 'active', body: Buffer.from('# k8s'), metadata: {}, resources: [], relations: [{ type: 'requires', targetSkillId: 'skl_docker', targetVersion: 1 }] }, { reason: 'seed', requestId: 'req_k8s' }));
     } finally { seed.close(); }
-    const child = spawn(process.execPath, [bin], { cwd: repoRoot, env: { ...process.env, AGENT_MEMORY_DB_PATH: dbPath, PORT: String(await allocateFreePort()), HOST: '127.0.0.1' }, stdio: ['ignore', 'pipe', 'pipe'] });
-    children.push(child);
-    const ready = await waitReady(child);
+    const ready = await spawnRestLauncher({ bin, repoRoot, dbPath, children });
+    const { child } = ready;
     const relations = await fetch(`${ready.url}/api/v1/skills/skl_k8s/relations?version=1`);
     expect(relations.status).toBe(200);
     expect((await relations.json() as { items: Array<{ targetSkillId: string }> }).items[0]?.targetSkillId).toBe('skl_docker');
@@ -97,14 +66,8 @@ describe('durable REST launcher', () => {
     const root = mkdtempSync(join(repoRoot, '.tmp-rest-launcher-'));
     tempRoots.push(root);
     const dbPath = join(root, 'agent-memory.sqlite');
-    const port = await allocateFreePort();
-    const child = spawn(process.execPath, [bin], {
-      cwd: repoRoot,
-      env: { ...process.env, AGENT_MEMORY_DB_PATH: dbPath, PORT: String(port), HOST: '127.0.0.1' },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    children.push(child);
-    const ready = await waitReady(child);
+    const ready = await spawnRestLauncher({ bin, repoRoot, dbPath, children });
+    const { child } = ready;
     expect(ready.dbPath).toBe(dbPath);
     expect(ready.stderr).not.toContain('AGENT_MEMORY_BEARER_TOKEN');
 
