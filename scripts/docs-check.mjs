@@ -11,11 +11,23 @@
 // concepts a reader must find, and the absence of claims we know went
 // stale, rather than trying to validate prose.
 
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import process from 'node:process';
 
 const root = process.cwd();
+
+/**
+ * The current schema version, derived from the migrations on disk rather
+ * than hardcoded — the whole point is that the documents track the code,
+ * so the number this gate compares against has to come from the code.
+ */
+const schemaVersion = Math.max(
+  ...readdirSync(resolve(root, 'packages/storage-sqlite/src/migrations'))
+    .map((name) => /^(\d{4})_/u.exec(name)?.[1])
+    .filter((version) => version !== undefined)
+    .map(Number),
+);
 
 /** Documents that describe how the shipped system behaves today. */
 const currentDocs = [
@@ -78,18 +90,34 @@ for (const relative of currentDocs) {
 }
 
 const readme = readFileSync(resolve(root, 'README.md'), 'utf8');
-const architecture = readFileSync(resolve(root, 'docs/architecture.md'), 'utf8');
-const explorer = readFileSync(resolve(root, 'docs/web-graph-explorer.md'), 'utf8');
 
 // Claims that were true of an earlier slice and would mislead now.
 const staleClaims = [
-  [/schema (?:1[0-9]|[1-9])\b(?! or)/i, 'an outdated schema version'],
   [/\b23 operations\b/i, 'the pre-0.2.0 operation count'],
   [/strictly read-only projection/i, 'the pre-0.3.0 read-only BFF claim'],
 ];
-for (const [label, text] of [['README.md', readme], ['docs/architecture.md', architecture], ['docs/web-graph-explorer.md', explorer]]) {
+
+// A document that names a schema version or a migration chain must name the
+// current one. `CHANGELOG.md` and the engineering log record history on
+// purpose and are exempt; every other current document is not.
+const historical = new Set(['CHANGELOG.md', 'docs/engineering-log.md']);
+const current = String(schemaVersion).padStart(2, '0');
+const schemaClaims = [
+  [new RegExp(`\\bschema (?!${schemaVersion}\\b)\\d+`, 'iu'), 'a schema version that is not the current one'],
+  [new RegExp(`\\b0001\\.\\.(?!00${current}\\b)\\d{4}\\b`, 'u'), 'a migration chain that does not end at the current migration'],
+];
+
+for (const relative of currentDocs) {
+  const absolute = resolve(root, relative);
+  if (!existsSync(absolute)) continue;
+  const text = readFileSync(absolute, 'utf8');
   for (const [pattern, why] of staleClaims) {
-    if (pattern.test(text)) fail(`${label}: stale claim (${why}) matches ${pattern}`);
+    if (pattern.test(text)) fail(`${relative}: stale claim (${why}) matches ${pattern}`);
+  }
+  if (historical.has(relative)) continue;
+  for (const [pattern, why] of schemaClaims) {
+    const match = pattern.exec(text);
+    if (match) fail(`${relative}: stale claim (${why}): ${JSON.stringify(match[0])}`);
   }
 }
 
@@ -106,4 +134,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-process.stdout.write(`Documentation contract PASS: ${currentDocs.length} current docs, ${linksChecked} relative links, ${mermaidBlocks} Mermaid block(s).\n`);
+process.stdout.write(`Documentation contract PASS: ${currentDocs.length} current docs, ${linksChecked} relative links, ${mermaidBlocks} Mermaid block(s), schema ${schemaVersion}.\n`);

@@ -58,7 +58,11 @@ structural retrieval and deterministic lookup. A future semantic backend or
 reranker can propose candidates without changing identities, versions or the
 REST contracts.
 
-## Storage — schema 16
+## Storage
+
+The tables this contract reads and writes, introduced by migration `0016`.
+This is not the full schema: later migrations add tables and columns that
+retrieval does not touch.
 
 ```text
 SQLite canonical
