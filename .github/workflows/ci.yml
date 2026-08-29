@@ -18,6 +18,10 @@ jobs:
           node-version: 22.16.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Documentation contract
+        # Cheap and independent of the build, so it runs first: a broken
+        # link should not wait behind a full typecheck.
+        run: pnpm docs:check
       - run: pnpm lint
       - name: Lint graph-ui
         # graph-ui lints JSX under its own config and is not covered by the
@@ -27,6 +31,13 @@ jobs:
       - run: pnpm test
       - name: OpenAPI drift gate
         run: pnpm s6:drift
+      - name: Observability source contract
+        # Static checks over the telemetry kernel and the Docker stack
+        # configuration. Neither needs a running Docker daemon; the live
+        # `pnpm docker:smoke` is a local gate and is deliberately not run here.
+        run: |
+          pnpm observability:lint
+          pnpm docker:contract
       - name: MCP tool metadata is reproducible
         # generate-mcp-tools honors SOURCE_DATE_EPOCH, so regenerating must be
         # a no-op against the committed metadata.

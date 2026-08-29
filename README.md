@@ -66,10 +66,17 @@ explicitly not a hosted service.
 - **Skill export** (`@portable-agent-asset-hub/skill-export`) producing
   deterministic focal and full exports with canonical relation manifests.
 - **Web Graph Explorer** (`@portable-agent-asset-hub/graph-ui`,
-  `docs/web-graph-explorer.md`): a read-only React/Cytoscape projection served
-  by a loopback BFF. It never opens SQLite and never writes.
+  `docs/web-graph-explorer.md`): a read-mostly React/Cytoscape projection
+  served by a BFF. It never opens SQLite; the only writes it forwards are an
+  anchored allowlist of governed relation proposal actions on loopback.
+  Serving to a private LAN is opt-in and refuses every mutation.
 - **Migration surface** (`@portable-agent-asset-hub/migration`) with
   classifier, redactor, cutover, replay, retirement, and shadow flows.
+- **Operational telemetry** (`@portable-agent-asset-hub/telemetry`,
+  `docs/observability.md`): an opt-in OpenTelemetry side channel, off by
+  default and fail-open, with a portable Docker stack (Collector, Prometheus,
+  Tempo, Grafana) under [`observability/`](observability/). It never replaces
+  the durable audit trail.
 - **Storage adapters** under `@portable-agent-asset-hub/storage-files` and
   `@portable-agent-asset-hub/storage-sqlite` (single SQLite owner per
   `docs/adr/0001-single-sqlite-owner.md`).
@@ -138,9 +145,10 @@ flowchart LR
   S10 --> MAT
 ```
 
-The hub is read through three client channels — REST, MCP, and the generated
-SDKs — but writes always pass through the same core dispatcher, the same
-storage adapters, and the same materializer contracts.
+The hub is read through three client channels — REST, MCP stdio, and the
+generated SDKs — but writes always pass through the same core dispatcher, the
+same storage adapters, and the same materializer contracts. Telemetry runs
+beside all of them as a side channel and changes none of it.
 
 ## Package responsibilities
 
@@ -155,7 +163,8 @@ storage adapters, and the same materializer contracts.
 | `@portable-agent-asset-hub/storage-sqlite` | SQLite-backed storage adapter (the single owner). | See `docs/adr/0001-single-sqlite-owner.md`. |
 | `@portable-agent-asset-hub/runtime-adapters` | Attaches a hub to Codex, Claude Code, OpenCode, Hermes and OpenClaw. | `computePreview` / `applyPlan` / `rollbackPlan`; path containment, safe file modes, no secrets in descriptors. See `docs/runtime-adapters.md`. |
 | `@portable-agent-asset-hub/skill-export` | Deterministic focal and full skill export with canonical relation manifests. | Proposals are staging data and are never exported as canonical graph data. |
-| `@portable-agent-asset-hub/graph-ui` | Read-only Web Graph Explorer (React, Vite, Cytoscape.js) plus its loopback BFF. | Strictly a REST client; never opens SQLite. See `docs/web-graph-explorer.md`. |
+| `@portable-agent-asset-hub/graph-ui` | Read-mostly Web Graph Explorer (React, Vite, Cytoscape.js) plus its BFF. | Strictly a REST client; never opens SQLite. Forwards only allowlisted governed relation actions, and none in LAN mode. See `docs/web-graph-explorer.md`. |
+| `@portable-agent-asset-hub/telemetry` | Opt-in OpenTelemetry kernel: config parsing, bounded attributes, redaction, noop fallback. | Off by default and fail-open; never a substitute for audit. See `docs/observability.md`. |
 | `@portable-agent-asset-hub/sdk-ts` | Generated TypeScript SDK (`typescript-fetch`). | Source of truth is `openapi/openapi.yaml`; `generated/PROVENANCE.json` records the pinned tool. |
 | `@portable-agent-asset-hub/sdk-python` | Generated Python SDK (`python`). | Same generator, same pinned version, same contract fixtures. |
 

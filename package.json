@@ -64,7 +64,8 @@
     "observability:gate": "node scripts/observability-gate.mjs",
     "docker:contract": "node scripts/docker-stack-contract.mjs",
     "docker:smoke": "node scripts/docker-stack-smoke.mjs",
-    "docker:gate": "pnpm docker:contract && pnpm docker:smoke"
+    "docker:gate": "pnpm docker:contract && pnpm docker:smoke",
+    "docs:check": "node scripts/docs-check.mjs"
   },
   "dependencies": {
     "@portable-agent-asset-hub/core": "workspace:*",
