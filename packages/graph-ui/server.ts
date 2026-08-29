@@ -12,6 +12,25 @@ export function isLanHost(host: string): boolean {
   if ([first, second, third, fourth].some((octet) => octet < 0 || octet > 255)) return false;
   return first === 10 || (first === 192 && second === 168) || (first === 172 && second >= 16 && second <= 31);
 }
+/**
+ * The exact set of governed relation mutations the BFF will forward.
+ *
+ * A prefix match is not good enough here: it let `POST
+ * /api/v1/skill-relation-proposals/reconcile-canonical-duplicates` through
+ * while refusing `POST /api/v1/skill-relation-proposals`, which the UI does
+ * call. Each entry below is anchored, and every mutation still has to clear
+ * capability, CAS and review on the REST side — this list only decides what
+ * the browser is allowed to reach at all.
+ */
+const GOVERNED_MUTATIONS: readonly RegExp[] = [
+  /^\/api\/v1\/skill-relation-proposals$/u,
+  /^\/api\/v1\/skill-relation-proposals\/(?:apply|apply-preview|discover)$/u,
+  /^\/api\/v1\/skill-relation-proposals\/[^/]+\/(?:approve|reject)$/u,
+  /^\/api\/v1\/skill-relation-candidates\/explicit\/(?:impact|stage)$/u,
+];
+export function isGovernedMutation(pathname: string, method: string | undefined): boolean {
+  return method === 'POST' && GOVERNED_MUTATIONS.some((pattern) => pattern.test(pathname));
+}
 const MIME: Record<string,string> = { '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.json':'application/json; charset=utf-8','.map':'application/json; charset=utf-8' };
 export async function loadBearer(path: string | undefined): Promise<string | undefined> {
   if (!path) return undefined;
@@ -53,7 +72,7 @@ export async function startGraphUi(env: NodeJS.ProcessEnv = process.env) {
     res.setHeader('content-security-policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
     try {
       const url = new URL(req.url ?? '/', 'http://localhost');
-      const proposalMutation = !lanMode && url.pathname.startsWith('/api/v1/skill-relation-proposals/') && req.method === 'POST';
+      const proposalMutation = !lanMode && isGovernedMutation(url.pathname, req.method);
       if (req.method !== 'GET' && req.method !== 'HEAD' && !proposalMutation) {
         res.writeHead(405, {'content-type':'application/json','allow':'GET, HEAD'});
         res.end(JSON.stringify({error:{code:'READ_ONLY',message:'Graph UI is read-only'}}));
@@ -65,7 +84,8 @@ export async function startGraphUi(env: NodeJS.ProcessEnv = process.env) {
         const headers: Record<string,string> = { accept: 'application/json' };
         if (bearer) headers.authorization = `Bearer ${bearer}`;
         let body: string | undefined;
-        if (proposalMutation) { const chunks: Buffer[] = []; for await (const chunk of req) chunks.push(Buffer.from(chunk)); body = Buffer.concat(chunks).toString('utf8'); headers['content-type'] = req.headers['content-type'] ?? 'application/json'; }
+        if (proposalMutation) { const chunks: Buffer[] = []; for await (const chunk of req) chunks.push(Buffer.from(chunk)); body = Buffer.concat(chunks).toString('utf8'); headers['content-type'] = req.headers['content-type'] ?? 'application/json'; // REST answers 428 without it, so a dropped If-Match silently breaks every governed mutation.
+          const ifMatch = req.headers['if-match']; headers['if-match'] = typeof ifMatch === 'string' ? ifMatch : '*'; }
         const response = await fetch(target, { method: req.method, headers, body, signal: AbortSignal.timeout(15_000) });
         res.writeHead(response.status, {'content-type':response.headers.get('content-type') ?? 'application/json','cache-control':'no-store'});
         res.end(Buffer.from(await response.arrayBuffer())); return;

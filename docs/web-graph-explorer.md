@@ -5,9 +5,12 @@
 The Web Graph Explorer is a human-facing, local, read-mostly projection of the
 canonical skill domain. SQLite remains the single source of truth; REST enforces
 `ActorContext`, scope and capabilities; the browser never opens SQLite and never
-receives the bearer. The only mutations the BFF permits are the governed
-relation proposal POSTs under `/api/v1/skill-relation-proposals/*`, and only
-while listening on loopback.
+receives the bearer. The only mutations the BFF permits are an anchored
+allowlist of governed relation actions, and only while listening on loopback.
+Passing that allowlist buys a request nothing beyond reachability: REST still
+enforces capability, CAS and the `preview -> planDigest -> reviewedDigest ->
+apply` review flow, and staging a candidate produces a reviewable proposal, never
+a canonical relation.
 
 The implementation covers:
 
@@ -49,7 +52,13 @@ The BFF:
   never a hostname that merely looks like one, and never a public address;
 - refuses every mutation in LAN mode, including the proposal POSTs it
   allows on loopback, so a LAN listener is strictly read-only;
-- accepts only `GET` and `HEAD`;
+- accepts `GET` and `HEAD` everywhere, plus an anchored allowlist of governed
+  relation mutations on loopback: `POST` to `/skill-relation-proposals`,
+  `/skill-relation-proposals/{apply,apply-preview,discover}`,
+  `/skill-relation-proposals/{id}/{approve,reject}` and
+  `/skill-relation-candidates/explicit/{impact,stage}`;
+- forwards `If-Match` on those mutations, which REST requires (`428`
+  otherwise), and forwards nothing else from the request headers;
 - validates that the upstream REST URL is `http://127.0.0.1` or
   `http://localhost`;
 - opens the bearer file with `O_NOFOLLOW`, rejects symlinks, and requires

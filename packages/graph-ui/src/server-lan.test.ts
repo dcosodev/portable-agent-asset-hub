@@ -29,7 +29,7 @@ describe('Graph UI LAN boundary', () => {
     await expect(startGraphUi({ GRAPH_UI_HOST: '8.8.8.8', GRAPH_UI_ALLOW_LAN: '1' })).rejects.toThrow('private IPv4');
   });
 
-  it.skipIf(privateInterface === undefined)('disables governed proposal POSTs on an opted-in private LAN binding', async () => {
+  it.skipIf(privateInterface === undefined)('refuses a mutation on a private LAN binding that loopback would forward', async () => {
     const host = privateInterface;
     if (!host) throw new Error('private interface required by test');
     const port = 42000 + Math.floor(Math.random() * 1000);
@@ -40,7 +40,7 @@ describe('Graph UI LAN boundary', () => {
       GRAPH_UI_REST_URL: 'http://127.0.0.1:39421',
     });
     try {
-      const response = await fetch(`http://${host}:${port}/api/v1/skill-relation-proposals/proposal-1/review`, {
+      const response = await fetch(`http://${host}:${port}/api/v1/skill-relation-proposals/proposal-1/approve`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: '{}',
