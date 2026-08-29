@@ -91,6 +91,30 @@ The database schema moves from 19 to 20. Existing databases upgrade in place.
 - REST advertises `schemaVersion: 20` through `getStatus` and
   `getCapabilities`.
 
+### Documentation
+
+- `docs/architecture.md` gains the telemetry side channel, the Graph Explorer
+  BFF, the telemetry kernel and the observability stack, and now names the
+  current migration chain rather than `0001..0019`.
+- `docs/relation-proposal-workflow.md` and `docs/skill-relations.md` state
+  plainly that auto-approval exists only as foundations and that nothing
+  writes `approval_mode = 'auto'`.
+- `CONTRIBUTING.md` lists the gates a change actually has to pass, which
+  surface needs which, and the external tool each one requires.
+- `pnpm docs:check` derives the schema version from the migration filenames
+  instead of hardcoding it. The first version of the gate missed the very
+  drift it was written for; the corrected gate then found a second stale
+  claim in `docs/skill-graph-retrieval.md`.
+
+### Internal
+
+- The REST tests that spawn a real launcher shared five byte-identical copies
+  of a racy port helper: it bound port 0, read the number back and closed the
+  probe, so a parallel worker could take the port before the child did. CI hit
+  it as `EADDRINUSE`. They now share one harness that detects the collision
+  immediately and retries on a fresh port, and that retries a race rather than
+  a bug — any other failure still propagates on the first attempt.
+
 ### Not included
 
 Loki and any persistent log store; auto-approval as a runtime capability;
