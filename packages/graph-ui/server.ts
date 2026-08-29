@@ -5,6 +5,13 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const LOOPBACK = new Set(['127.0.0.1', '::1', 'localhost']);
+export function isLanHost(host: string): boolean {
+  const parts = host.split('.');
+  if (parts.length !== 4 || parts.some((part) => !/^(0|[1-9]\d{0,2})$/u.test(part))) return false;
+  const [first, second, third, fourth] = parts.map(Number);
+  if ([first, second, third, fourth].some((octet) => octet < 0 || octet > 255)) return false;
+  return first === 10 || (first === 192 && second === 168) || (first === 172 && second >= 16 && second <= 31);
+}
 const MIME: Record<string,string> = { '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.json':'application/json; charset=utf-8','.map':'application/json; charset=utf-8' };
 export async function loadBearer(path: string | undefined): Promise<string | undefined> {
   if (!path) return undefined;
@@ -30,7 +37,11 @@ export async function loadBearer(path: string | undefined): Promise<string | und
 }
 export async function startGraphUi(env: NodeJS.ProcessEnv = process.env) {
   const host = env.GRAPH_UI_HOST ?? '127.0.0.1';
-  if (!LOOPBACK.has(host)) throw new Error('Graph UI binds to loopback only');
+  const allowLan = env.GRAPH_UI_ALLOW_LAN === '1';
+  if (!LOOPBACK.has(host) && !(allowLan && isLanHost(host))) {
+    throw new Error('Graph UI binds to loopback only unless GRAPH_UI_ALLOW_LAN=1 and GRAPH_UI_HOST is a private IPv4 address');
+  }
+  const lanMode = !LOOPBACK.has(host);
   const port = Number(env.GRAPH_UI_PORT ?? '39422');
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('GRAPH_UI_PORT must be 1..65535');
   const upstream = new URL(env.GRAPH_UI_REST_URL ?? 'http://127.0.0.1:39421');
@@ -42,7 +53,7 @@ export async function startGraphUi(env: NodeJS.ProcessEnv = process.env) {
     res.setHeader('content-security-policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
     try {
       const url = new URL(req.url ?? '/', 'http://localhost');
-      const proposalMutation = url.pathname.startsWith('/api/v1/skill-relation-proposals/') && req.method === 'POST';
+      const proposalMutation = !lanMode && url.pathname.startsWith('/api/v1/skill-relation-proposals/') && req.method === 'POST';
       if (req.method !== 'GET' && req.method !== 'HEAD' && !proposalMutation) {
         res.writeHead(405, {'content-type':'application/json','allow':'GET, HEAD'});
         res.end(JSON.stringify({error:{code:'READ_ONLY',message:'Graph UI is read-only'}}));

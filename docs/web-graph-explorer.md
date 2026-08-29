@@ -2,10 +2,12 @@
 
 ## Purpose and limits
 
-The Web Graph Explorer is a human-facing, local, strictly read-only projection
-of the canonical skill domain. SQLite remains the single source of truth; REST
-enforces `ActorContext`, scope and capabilities; the UI writes no relations,
-versions, resources or events.
+The Web Graph Explorer is a human-facing, local, read-mostly projection of the
+canonical skill domain. SQLite remains the single source of truth; REST enforces
+`ActorContext`, scope and capabilities; the browser never opens SQLite and never
+receives the bearer. The only mutations the BFF permits are the governed
+relation proposal POSTs under `/api/v1/skill-relation-proposals/*`, and only
+while listening on loopback.
 
 The implementation covers:
 
@@ -41,7 +43,12 @@ Canonical SQLite
 
 The BFF:
 
-- binds on loopback only;
+- binds on loopback by default; serving on a LAN address requires both
+  `GRAPH_UI_ALLOW_LAN=1` and a `GRAPH_UI_HOST` that parses as a canonical
+  private IPv4 literal (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) —
+  never a hostname that merely looks like one, and never a public address;
+- refuses every mutation in LAN mode, including the proposal POSTs it
+  allows on loopback, so a LAN listener is strictly read-only;
 - accepts only `GET` and `HEAD`;
 - validates that the upstream REST URL is `http://127.0.0.1` or
   `http://localhost`;
@@ -54,6 +61,24 @@ The BFF:
 
 Under `AUTH_MODE=local-dev` the secret file may be omitted. In bearer mode it is
 mandatory.
+
+### Serving on a private LAN
+
+LAN mode exists so a second device on the same private network can *read* the
+graph — a tablet beside the keyboard, a second workstation. It is off unless
+asked for twice, by `GRAPH_UI_ALLOW_LAN=1` and by an explicit private IPv4
+`GRAPH_UI_HOST`; either one alone still binds to loopback or refuses to start.
+
+Host validation parses the four octets rather than matching a prefix, so
+`10.0.0.5` is accepted while `10.evil.example` and `192.168.1.1.attacker.test`
+are not. Every POST is rejected in LAN mode regardless of the allowlist, the
+bearer stays server-side as on loopback, and no new surface is exposed: the LAN
+listener serves exactly the read paths loopback serves.
+
+This is still a private-network affordance, not a deployment story. There is no
+TLS, no per-viewer identity and no multi-tenancy; anyone who can reach the port
+can read the whole graph in the operator's scope. Public exposure remains out of
+scope and would need a reverse proxy, TLS and a threat model.
 
 ## Shell composition
 
