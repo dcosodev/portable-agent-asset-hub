@@ -59,10 +59,12 @@ export function proposalDomain(relation: RelationType): 'operational' | 'semanti
   return relation === 'related_to' ? 'semantic' : 'operational';
 }
 
+export const FTS_SEMANTIC_PROPOSAL_DETECTOR = 'fts-candidate-v1';
+
 export function filterProposals(proposals: RelationProposal[], filters: Filters): RelationProposal[] {
   const statuses = filters.proposalStatuses ?? new Set(['proposed'] as const);
   const minConfidence = filters.proposalMinConfidence ?? 0;
-  return proposals.filter((proposal) => statuses.has(proposal.status) && proposal.confidence >= minConfidence &&
+  return proposals.filter((proposal) => proposal.detector !== FTS_SEMANTIC_PROPOSAL_DETECTOR && statuses.has(proposal.status) && proposal.confidence >= minConfidence &&
     (!filters.proposalDetectors || filters.proposalDetectors.size === 0 || filters.proposalDetectors.has(proposal.detector)) &&
     (filters.proposalDomain === undefined || filters.proposalDomain === 'both' || proposalDomain(proposal.relationType) === filters.proposalDomain) &&
     filters.relations.has(proposal.relationType));

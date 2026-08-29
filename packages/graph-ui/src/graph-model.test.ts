@@ -42,6 +42,11 @@ describe('graph DTO/model', () => {
     expect(graphElements(graph).filter((element) => element.data?.proposed === 'yes')).toHaveLength(0);
   });
 
+  it('retira las semánticas FTS de la cola de revisión', () => {
+    const semantic = { id: 'semantic-1', sourceSkillId: 'a', sourceVersion: 2, targetSkillId: 'b', targetVersionSnapshot: 1, relationType: 'related_to' as const, targetVersionConstraint: null, confidence: 0.84, detector: 'fts-candidate-v1', reason: 'similarity', status: 'proposed' as const, evidence: [{ kind: 'fts_similarity' }], createdAt: 'now' };
+    expect(filterProposals([semantic], { relations: new Set(RELATIONS), lifecycle: 'all', query: '', proposalStatuses: new Set(['proposed']) })).toEqual([]);
+  });
+
   it('encodes relation semantics and zoom-aware labels in Cytoscape styles', () => {
     const style = (selector: string) => {
       const rule = graphStyles.find((candidate) => 'selector' in candidate && String(candidate.selector).split(',').map((part) => part.trim()).includes(selector)) as { style?: Record<string, unknown> } | undefined;

@@ -14,6 +14,8 @@ The implementation covers:
 - transitive dependent impact;
 - eight canonical relation types;
 - REST search and visual filters;
+- a modular shell: toolbar, view controls and an explicit layer selector;
+- an opt-in FTS semantic neighborhood layer, kept out of the review queue;
 - a node and edge inspector;
 - safe rendering of `SKILL.md` and bounded textual resources;
 - a Retrieval Explorer built exclusively on persisted `retrieval_events`;
@@ -52,6 +54,26 @@ The BFF:
 
 Under `AUTH_MODE=local-dev` the secret file may be omitted. In bearer mode it is
 mandatory.
+
+## Shell composition
+
+`App.tsx` is a composition root, not a container. All explorer state — graph
+loads, selection, filters, proposal queues, deep links — lives in
+`state/useExplorerState.ts`, with the filter reducer split out into
+`state/useFilters.ts`. Presentation is divided into `Toolbar`, `FilterPanel`,
+`GraphCanvas`, `Inspector`, `SkillReader` and `StatusBar`, each of which takes
+plain props and owns no fetching.
+
+The split matters for one behavioral reason beyond tidiness: the FTS semantic
+neighborhood is a *suggestion* surface, not a review surface. It is rendered as
+an explicit graph layer that the operator turns on from the toolbar, and
+`FTS_SEMANTIC_PROPOSAL_DETECTOR` keeps those suggestions out of the relation
+proposal queue. A semantic neighbor never reaches the governed review flow by
+being merely visible.
+
+The workspace keeps all five tracks — toolbar, filters, canvas, inspector and
+queues — usable below 1100px rather than dropping any of them, and
+`ResponsiveLayout.test.ts` pins that.
 
 ## Why Cytoscape.js
 
