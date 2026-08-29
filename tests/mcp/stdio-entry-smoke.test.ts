@@ -24,17 +24,15 @@
 // the happy-path case is a distinctive, opaque sentinel string the
 // test asserts does *not* leak into stderr.
 //
-// The temp artefacts (the `.tmp-s7-mcp-entry-*` directory and the
-// per-run `node_modules/@portable-agent-asset-hub/core` symlink that
-// lets the compiled server resolve its bare workspace specifier) are
-// created in `beforeAll` and torn down in `afterAll` with `rmSync`
-// inside `finally`-style guards. They live next to the existing
+// The temp artefact (the `.tmp-s7-mcp-entry-*` directory) is created in
+// `beforeAll` and torn down in `afterAll` with `rmSync` inside
+// `finally`-style guards. It lives next to the existing
 // `.tmp-s7-mcp-*` fixtures from `stdio-smoke.test.ts` so the lint
 // ignore pattern `.tmp-*/` covers them too.
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
@@ -54,21 +52,13 @@ const entryDist = join(repoRoot, 'dist/packages/mcp/stdio-entry.js');
 // the bin field in `package.json` and the env-var reader in
 // `stdio-entry.ts`.
 const binShim = join(repoRoot, 'packages/mcp/bin/agent-memory-mcp.mjs');
-// The compiled MCP server imports `@portable-agent-asset-hub/core`
-// via a bare specifier. As explained in `tests/mcp/stdio-smoke.test.ts`,
-// Node's ESM resolver only walks up ancestor `node_modules`
-// directories of the importing file, so the symlink has to live at
-// `dist/packages/mcp/node_modules/@portable-agent-asset-hub/core` —
-// that is the only place ESM bare-specifier resolution will find it
-// when called from `dist/packages/mcp/server.js`. The existing
-// `stdio-smoke.test.ts` creates the same symlink in its own
-// `beforeAll`; when vitest runs the two files in parallel we use a
-// race-tolerant creation (ignore `EEXIST`) and a reference-counted
-// `afterAll` so neither test removes the symlink the other still
-// needs.
-const fixtureRoot = join(repoRoot, 'dist/packages/mcp/node_modules');
-const fixtureLink = join(fixtureRoot, '@portable-agent-asset-hub/core');
-const corePackageDir = join(repoRoot, 'packages/core');
+// The compiled MCP server imports its workspace dependencies by bare
+// specifier, and Node's ESM resolver only walks up ancestor
+// `node_modules` directories of the importing file. The package's build
+// step therefore runs `scripts/sync-workspace-deps.mjs mcp`, which links
+// them under `dist/packages/mcp/node_modules/@portable-agent-asset-hub/`.
+// This test relies on `pnpm build` having run; it no longer installs its
+// own fixture links, which used to race with `stdio-smoke.test.ts`.
 
 const fixtures = {
   health: { ok: true },
@@ -127,29 +117,11 @@ beforeAll(async () => {
   // also the per-run scratch space for the bin shim's child process
   // (the `.tmp-*/` ignore pattern keeps `pnpm lint` happy).
   mcpEntryDir = mkdtempSync(join(repoRoot, '.tmp-s7-mcp-entry-'));
-
-  // Race-tolerant symlink creation: `stdio-smoke.test.ts` creates the
-  // same symlink in its own `beforeAll`, so when vitest runs the two
-  // files in parallel we may see `EEXIST`. The link points at the
-  // same target either way, so we only need to create it once.
-  mkdirSync(resolve(fixtureLink, '..'), { recursive: true });
-  try {
-    symlinkSync(corePackageDir, fixtureLink, 'dir');
-  } catch (error) {
-    if (!(error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'EEXIST')) {
-      throw error;
-    }
-  }
 });
 
 afterAll(async () => {
   if (server) await new Promise<void>((res) => server.close(() => res()));
-  // Leave the workspace symlink in place if the other test file
-  // (`stdio-smoke.test.ts`) is running in parallel and might still
-  // need it. The shared link is owned by the test process group, not
-  // by any one file's lifecycle — when both tests finish, the next
-  // `pnpm build` clean step wipes the dist tree and the symlink with
-  // it. We do, however, always wipe our per-run scratch directory.
+  // Always wipe our per-run scratch directory.
   if (mcpEntryDir) rmSync(mcpEntryDir, { force: true, recursive: true });
 });
 

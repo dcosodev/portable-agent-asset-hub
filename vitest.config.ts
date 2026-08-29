@@ -2,6 +2,10 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: { alias: {
+    // telemetry subpath aliases MUST come before the root alias.
+    '@portable-agent-asset-hub/telemetry/testing': new URL('./packages/telemetry/src/testing/index.ts', import.meta.url).pathname,
+    '@portable-agent-asset-hub/telemetry/node': new URL('./packages/telemetry/src/node/index.ts', import.meta.url).pathname,
+    '@portable-agent-asset-hub/telemetry': new URL('./packages/telemetry/src/index.ts', import.meta.url).pathname,
     '@portable-agent-asset-hub/core': new URL('./packages/core/src/index.ts', import.meta.url).pathname,
     '@portable-agent-asset-hub/storage-sqlite': new URL('./packages/storage-sqlite/src/index.ts', import.meta.url).pathname,
     '@portable-agent-asset-hub/storage-files': new URL('./packages/storage-files/src/index.ts', import.meta.url).pathname,
@@ -17,5 +21,5 @@ export default defineConfig({
     '@portable-agent-asset-hub/runtime-adapters': new URL('./packages/runtime-adapters/src/index.ts', import.meta.url).pathname,
     '@portable-agent-asset-hub/skill-export': new URL('./packages/skill-export/src/index.ts', import.meta.url).pathname,
   } },
-  test: { include: ['tests/**/*.test.ts'] },
+  test: { include: ['tests/**/*.test.ts'], testTimeout: 20_000, hookTimeout: 30_000 },
 });

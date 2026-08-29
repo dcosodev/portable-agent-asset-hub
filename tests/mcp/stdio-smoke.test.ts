@@ -19,7 +19,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
@@ -33,20 +33,15 @@ const repoRoot = resolve(here, '../..');
 // runtime behaviour. Falling back to the TypeScript source would let a
 // `tsx`-style shortcut mask build/dependency regressions.
 const serverEntry = join(repoRoot, 'dist/packages/mcp/server.js');
-// The compiled server imports `@portable-agent-asset-hub/core` via a
-// bare specifier. Node's ESM resolver walks up from the *importing*
-// file (i.e. `dist/packages/mcp/server.js`), only checking `node_modules`
-// directories at each ancestor — not arbitrary subdirectories. The
-// pnpm symlink lives at `packages/mcp/node_modules/@portable-agent-asset-hub/core`,
-// which is outside the dist tree, so we install a sibling symlink at
-// `dist/packages/mcp/node_modules/@portable-agent-asset-hub/core`
-// pointing at the workspace `packages/core` package. The symlink lives
-// only while the test runs (created in `beforeAll`, removed in
-// `afterAll`), so `pnpm build`'s existing dist clean step can wipe it
-// without ceremony and no production source is touched.
-const fixtureRoot = join(repoRoot, 'dist/packages/mcp/node_modules');
-const fixtureLink = join(fixtureRoot, '@portable-agent-asset-hub/core');
-const corePackageDir = join(repoRoot, 'packages/core');
+// The compiled server imports its workspace dependencies by bare
+// specifier. Node's ESM resolver walks up from the *importing* file
+// (i.e. `dist/packages/mcp/server.js`), only checking `node_modules`
+// directories at each ancestor — not arbitrary subdirectories — and the
+// pnpm links live at `packages/mcp/node_modules/`, outside the dist tree.
+// The package's build step therefore runs
+// `scripts/sync-workspace-deps.mjs mcp`, which mirrors them into
+// `dist/packages/mcp/node_modules/@portable-agent-asset-hub/`. This test
+// relies on `pnpm build` having run rather than installing its own links.
 
 const fixtures = {
   health: { ok: true },
@@ -93,29 +88,6 @@ beforeAll(async () => {
   if (!address || typeof address === 'string') throw new Error('no address');
   base = `http://127.0.0.1:${address.port}`;
 
-  // Install a fixture-only workspace symlink so the bare
-  // `@portable-agent-asset-hub/core` import inside the compiled MCP
-  // server resolves. See the comments above `fixtureRoot` for the
-  // resolution rationale.
-  //
-  // Race-tolerant creation: `tests/mcp/stdio-entry-smoke.test.ts`
-  // creates the same symlink in its own `beforeAll`. When vitest runs
-  // the two files in parallel we may race the symlink creation; both
-  // tests point the link at the same target, so it is safe to ignore
-  // `EEXIST` and let whichever side lost the race proceed without the
-  // symlink existing at that exact instant. We deliberately do NOT
-  // `rmSync` the link first — that would clobber the other file's
-  // link and reintroduce the flake `afterAll`-side of which test
-  // finishes first would then delete the symlink the other still
-  // needs to spawn its child.
-  mkdirSync(resolve(fixtureLink, '..'), { recursive: true });
-  try {
-    symlinkSync(corePackageDir, fixtureLink, 'dir');
-  } catch (error) {
-    if (!(error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'EEXIST')) {
-      throw error;
-    }
-  }
 
   // Materialise a tiny ESM entry that re-exports the compiled server.
   // The shim exists so the child can be configured per-test (base URL,
@@ -123,7 +95,7 @@ beforeAll(async () => {
   // shim itself uses an absolute specifier to import the compiled
   // server, so its location does not affect bare-specifier resolution —
   // the bare import happens inside `dist/packages/mcp/server.js` and
-  // resolves via the fixture symlink installed above. The temp
+  // resolves via the links the build mirrored into the dist tree. The temp
   // directory is tracked so `afterAll` can wipe both the entry file and
   // the directory it lives in — leaving the parent `.tmp-s7-mcp-*`
   // directory behind would litter the repo root and trip `pnpm lint`.
@@ -139,13 +111,6 @@ beforeAll(async () => {
 afterAll(async () => {
   if (child && !child.killed) child.kill('SIGKILL');
   if (server) await new Promise<void>((res) => server.close(() => res()));
-  // Leave the workspace symlink in place: when vitest runs this file
-  // in parallel with `tests/mcp/stdio-entry-smoke.test.ts`, the other
-  // file's child may still need it. The shared link is owned by the
-  // test process group, not by any one file's lifecycle — when both
-  // tests finish, the next `pnpm build` clean step wipes the dist
-  // tree and the symlink with it. We do, however, always wipe our
-  // per-run shim directory.
   // Wipe the per-run shim directory created by `mkdtempSync` (which
   // would otherwise linger in the repo root as `.tmp-s7-mcp-*`).
   if (mcpEntryDir) rmSync(mcpEntryDir, { force: true, recursive: true });

@@ -22,11 +22,12 @@
     "agent-memory-mcp": "./bin/agent-memory-mcp.mjs"
   },
   "scripts": {
-    "build": "tsc -b --force",
+    "build": "tsc -b --force && node ../../scripts/sync-workspace-deps.mjs mcp",
     "stdio-entry": "node ./bin/agent-memory-mcp.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
     "@portable-agent-asset-hub/core": "workspace:*",
-    "@modelcontextprotocol/sdk": "1.30.0"
+    "@portable-agent-asset-hub/telemetry": "workspace:*"
   }
 }

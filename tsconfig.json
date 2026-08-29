@@ -1,16 +1,41 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/baseline/tsconfig.json" },
-    { "path": "packages/core/tsconfig.json" },
-    { "path": "packages/storage-sqlite/tsconfig.json" },
-    { "path": "packages/storage-files/tsconfig.json" },
-    { "path": "packages/materializers/tsconfig.json" },
-    { "path": "packages/rest/tsconfig.json" },
-    { "path": "packages/sdk-ts/tsconfig.json" },
-    { "path": "packages/mcp/tsconfig.json" },
-    { "path": "packages/migration/tsconfig.json" },
-    { "path": "packages/runtime-adapters/tsconfig.json" },
-    { "path": "packages/skill-export/tsconfig.json" }
+    {
+      "path": "packages/telemetry/tsconfig.json"
+    },
+    {
+      "path": "packages/baseline/tsconfig.json"
+    },
+    {
+      "path": "packages/core/tsconfig.json"
+    },
+    {
+      "path": "packages/storage-sqlite/tsconfig.json"
+    },
+    {
+      "path": "packages/storage-files/tsconfig.json"
+    },
+    {
+      "path": "packages/materializers/tsconfig.json"
+    },
+    {
+      "path": "packages/rest/tsconfig.json"
+    },
+    {
+      "path": "packages/sdk-ts/tsconfig.json"
+    },
+    {
+      "path": "packages/mcp/tsconfig.json"
+    },
+    {
+      "path": "packages/migration/tsconfig.json"
+    },
+    {
+      "path": "packages/runtime-adapters/tsconfig.json"
+    },
+    {
+      "path": "packages/skill-export/tsconfig.json"
+    }
   ]
 }

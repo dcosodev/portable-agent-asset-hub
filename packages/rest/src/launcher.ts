@@ -116,6 +116,12 @@ import { HubError, SyncService, normalizeGraphMode, normalizeGraphVersionMode, v
 import { RootScanner } from '@portable-agent-asset-hub/storage-files';
 import { SqliteStore } from '@portable-agent-asset-hub/storage-sqlite';
 import { listen, type AuthVerifier, type RestHub } from './app.js';
+import type { TelemetryDiagnostic } from '@portable-agent-asset-hub/telemetry';
+import {
+  parseTelemetryConfig,
+  startTelemetry,
+  type HubTelemetryHandle,
+} from '@portable-agent-asset-hub/telemetry';
 
 /** Name of the env var carrying the SQLite database path (required). */
 export const DB_PATH_ENV = 'AGENT_MEMORY_DB_PATH';
@@ -128,6 +134,41 @@ export const BEARER_TOKEN_ENV = 'AGENT_MEMORY_BEARER_TOKEN';
 export const AUTH_MODE_ENV = 'AGENT_MEMORY_AUTH_MODE';
 /** Default port used when `PORT` is unset. */
 export const DEFAULT_PORT = 39421;
+/** Optional telemetry level env (off|basic|standard|debug). Defaults to `off`. */
+export const TELEMETRY_LEVEL_ENV = 'AGENT_MEMORY_TELEMETRY_LEVEL';
+/** Direct alias of `TELEMETRY_LEVEL_ENV` used by the OpenTelemetry SDK. */
+const TELEMETRY_OTEL_LEVEL_ENV = 'TELEMETRY_LEVEL';
+const TELEMETRY_OTEL_ENDPOINT_ENV = 'OTEL_EXPORTER_OTLP_ENDPOINT';
+const TELEMETRY_OTEL_ENABLED_ENV = 'TELEMETRY_ENABLED';
+const TELEMETRY_OTEL_SERVICE_ENV = 'OTEL_SERVICE_NAME';
+const TELEMETRY_OTEL_SAMPLE_ENV = 'TELEMETRY_SAMPLE_RATIO';
+const TELEMETRY_OTEL_INTERVAL_ENV = 'TELEMETRY_EXPORT_INTERVAL_MS';
+
+function telemetryEnv(env: Readonly<Record<string, string | undefined>>): {
+  TELEMETRY_ENABLED?: string;
+  TELEMETRY_LEVEL?: string;
+  OTEL_EXPORTER_OTLP_ENDPOINT?: string;
+  OTEL_SERVICE_NAME?: string;
+  TELEMETRY_SAMPLE_RATIO?: string;
+  TELEMETRY_EXPORT_INTERVAL_MS?: string;
+} {
+  // Prefer the canonical OpenTelemetry env names; fall back to the
+  // Hub-specific alias so both surfaces work without surprising the
+  // operator. The Hub alias takes precedence when both are set because
+  // operators will reach for the Hub-named variable first.
+  return {
+    TELEMETRY_ENABLED: (env[TELEMETRY_LEVEL_ENV] && env[TELEMETRY_LEVEL_ENV] !== 'off')
+      || env[TELEMETRY_OTEL_LEVEL_ENV]
+      || env[TELEMETRY_OTEL_ENABLED_ENV]
+      ? '1'
+      : undefined,
+    TELEMETRY_LEVEL: env[TELEMETRY_LEVEL_ENV] ?? env[TELEMETRY_OTEL_LEVEL_ENV],
+    OTEL_EXPORTER_OTLP_ENDPOINT: env[TELEMETRY_OTEL_ENDPOINT_ENV],
+    OTEL_SERVICE_NAME: env[TELEMETRY_OTEL_SERVICE_ENV],
+    TELEMETRY_SAMPLE_RATIO: env[TELEMETRY_OTEL_SAMPLE_ENV],
+    TELEMETRY_EXPORT_INTERVAL_MS: env[TELEMETRY_OTEL_INTERVAL_ENV],
+  };
+}
 /** Default bind host used when `HOST` is unset. */
 export const DEFAULT_HOST = '127.0.0.1';
 
@@ -181,6 +222,14 @@ export type LauncherOptions = {
   stderr?: NodeJS.WritableStream;
   /** Exit hook used in tests instead of `process.exit`. */
   exit?: (code: number) => void;
+  /**
+   * Optional telemetry handle. When omitted, the launcher builds a handle
+   * from the `AGENT_MEMORY_TELEMETRY_*` / `OTEL_*` env vars, which is a
+   * noop `off` handle unless telemetry is explicitly enabled. Its
+   * `shutdown()` runs AFTER the store closes — server, then store, then
+   * telemetry.
+   */
+  telemetry?: HubTelemetryHandle;
   /** Signal hooks used in tests instead of `process.on`. */
   signals?: {
     onSigterm?: (handler: () => void) => void;
@@ -224,6 +273,21 @@ export async function runLauncher(options: LauncherOptions = {}): Promise<number
     writeDiagnostic(stderr, 'error', `${AUTH_MODE_ENV} must be local-dev or bearer.`);
     return 2;
   }
+
+  const telemetryConfig = parseTelemetryConfig(telemetryEnv(env));
+  const diagnosticsCollector: TelemetryDiagnostic[] = [];
+  // Wire the real Node SDK when the parser says enabled. `startTelemetry`
+  // is bound-checked: an unavailable Node subpath, a missing endpoint or an
+  // invalid level all degrade to a noop handle rather than failing the boot.
+  const telemetry: HubTelemetryHandle = options.telemetry
+    ?? await startTelemetry(telemetryEnv(env), diagnosticsCollector);
+  // Diagnostics from the parser and the Node SDK go to stderr so operators
+  // can inspect them without parsing stdout.
+  for (const diagnostic of diagnosticsCollector) {
+    writeDiagnostic(stderr, 'error', `telemetry: ${diagnostic.category}: ${diagnostic.message}`);
+  }
+  writeDiagnostic(stderr, 'start', `telemetry level=${telemetry.level}`);
+  void telemetryConfig; // retained for diagnostic exposure; the live handle is `telemetry`.
 
   const store = new SqliteStore(dbPath);
   const scope: Scope = { ownerUserId: LOCAL_USER_ID, agentId: LOCAL_AGENT_ID };
@@ -563,6 +627,7 @@ export async function runLauncher(options: LauncherOptions = {}): Promise<number
       host,
       port,
       storage,
+      telemetry,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown error';
@@ -581,7 +646,7 @@ export async function runLauncher(options: LauncherOptions = {}): Promise<number
   const shutdown = (signal: NodeJS.Signals | 'manual'): void => {
     if (shuttingDown) return;
     shuttingDown = true;
-    writeDiagnostic(stderr, 'shutdown', `received ${signal}; closing server then store`);
+    writeDiagnostic(stderr, 'shutdown', `received ${signal}; closing server then store then telemetry`);
     server.close((serverError) => {
       if (serverError) writeDiagnostic(stderr, 'error', `server close failed: ${serverError.message}`);
       try {
@@ -589,10 +654,21 @@ export async function runLauncher(options: LauncherOptions = {}): Promise<number
       } catch (storeError) {
         const message = storeError instanceof Error ? storeError.message : 'unknown error';
         writeDiagnostic(stderr, 'error', `store close failed: ${message}`);
+        // Telemetry shutdown still runs even if the store fails to close,
+        // otherwise the process can linger with exporters pending.
+        telemetry.shutdown().catch(() => undefined);
         exit(1);
         return;
       }
-      exit(0);
+      // Telemetry is the last subsystem to shut down so spans and metrics can
+      // flush BEFORE the process exits. The handle is bounded; the shutdown
+      // promise resolves within the configured deadline.
+      telemetry.shutdown()
+        .catch((telemetryError: unknown) => {
+          const message = telemetryError instanceof Error ? telemetryError.message : 'unknown error';
+          writeDiagnostic(stderr, 'error', `telemetry shutdown failed: ${message}`);
+        })
+        .finally(() => exit(0));
     });
   };
 

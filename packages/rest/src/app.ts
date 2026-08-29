@@ -2,6 +2,16 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { randomUUID } from 'node:crypto';
 import type { ActorContext } from '@portable-agent-asset-hub/core';
 import { HubError } from '@portable-agent-asset-hub/core';
+import {
+  extractTraceparentContext,
+  createNoopTelemetryHandle,
+  histogramMetric,
+  recordMetric,
+  scrubAttributes,
+  withSpanInContext,
+  type HubTelemetryHandle,
+  type Span,
+} from '@portable-agent-asset-hub/telemetry';
 import { healthRoutes } from './routes/health.js';
 import { adminRoutes } from './routes/admin.js';
 import { identityRoutes } from './routes/identities.js';
@@ -66,6 +76,12 @@ export type RestHub = {
   dispatch?: (operationId: OperationId, input: { body: unknown; params: Record<string,string>; query: Record<string,string>; actor: ActorContext; requestId: string; operationMode?: string; storage?: unknown }) => unknown | Promise<unknown>;
 };
 export type RestOptions = {
+  /**
+   * Optional telemetry handle. Omitted means a noop `off` handle: the
+   * request path still calls into it, and every call is a no-op. Nothing
+   * in this module ever fails because telemetry is unavailable.
+   */
+  telemetry?: HubTelemetryHandle;
   hub: RestHub;
   verifier?: AuthVerifier;
   localMode?: boolean;
@@ -142,10 +158,49 @@ function send(res: ServerResponse, status: number, body: unknown, id: string): v
   const payload = JSON.stringify(status >= 400 ? { ...(body as Record<string, unknown>), request_id: id } : body);
   res.statusCode = status; res.setHeader('content-type', 'application/json'); res.setHeader('x-request-id', id); res.end(payload);
 }
-function fail(res: ServerResponse, error: unknown, id: string): void {
-  if (error instanceof HubError) return send(res, error.status, { error: { code: error.code, message: error.message, status: error.status } }, id);
-  send(res, 500, { error: { code: 'INTERNAL', message: 'internal error', status: 500 } }, id);
+/**
+ * Render a route's regex back into an OpenAPI-shaped template
+ * (`/api/v1/skills/{id}/graph`). Metric and span labels must be bounded:
+ * the concrete path is unbounded cardinality, the template is not.
+ */
+function routeTemplate(route: RestRoute | undefined): string {
+  if (!route) return '__no_route__';
+  let capture = 0;
+  const names = route.paramNames ?? [];
+  return route.pattern.source
+    .replace(/^\^/u, '')
+    .replace(/\$$/u, '')
+    .replace(/\\\//gu, '/')
+    .replace(/\(\[\^\/\]\+\)|\(\.\+\)/gu, () => {
+      const name = names[capture] ?? (capture === 0 ? 'id' : `param${capture + 1}`);
+      capture += 1;
+      return `{${name}}`;
+    });
 }
+
+/** Storage mode as a closed label set, so an unexpected value cannot leak. */
+function boundedStorageMode(options: RestOptions): string {
+  const mode = options.storage?.mode ?? options.hub.storage?.mode;
+  return mode === 'canonical' || mode === 'temporary' || mode === 'test' ? mode : 'unknown';
+}
+
+function statusClass(status: number): string {
+  if (status >= 100 && status < 600) return `${Math.floor(status / 100)}xx`;
+  return 'unknown';
+}
+
+/**
+ * Extract a W3C trace context from the inbound request headers. Only the
+ * canonical `traceparent` and `tracestate` carriers are inspected — no
+ * other header is trusted — and an absent or malformed pair falls back to
+ * a fresh root context.
+ */
+function extractInboundContext(req: IncomingMessage): ReturnType<typeof extractTraceparentContext> {
+  const headers: Record<string, string | string[] | undefined> = {};
+  for (const key of ['traceparent', 'tracestate']) headers[key] = req.headers[key];
+  return extractTraceparentContext(headers);
+}
+
 async function readBody(req: IncomingMessage, max: number): Promise<unknown> {
   const chunks: Buffer[] = []; let bytes = 0;
   for await (const chunk of req) { const part = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk); bytes += part.length; if (bytes > max) throw new HubError('VALIDATION', 'request body too large', 413); chunks.push(part); }
@@ -154,62 +209,131 @@ async function readBody(req: IncomingMessage, max: number): Promise<unknown> {
 }
 export function createApp(options: RestOptions) {
   const max = options.maxBodyBytes ?? 1024 * 1024;
+  const telemetry = options.telemetry ?? createNoopTelemetryHandle('off');
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+    const startedAt = performance.now();
     const id = requestId(req); const url = new URL(req.url ?? '/', 'http://localhost');
     // Match on path first, then on method, so a known path reached with
     // the wrong method answers 405 + Allow instead of a misleading 404.
     const pathMatches = routes.filter((candidate) => candidate.pattern.test(url.pathname));
-    if (pathMatches.length === 0) return send(res, 404, { error: { code: 'NOT_FOUND', message: 'route not found', status: 404 } }, id);
     const route = pathMatches.find((candidate) => candidate.method === req.method);
-    if (!route) {
-      res.setHeader('allow', [...new Set(pathMatches.map((candidate) => candidate.method))].join(', '));
-      return send(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'method not allowed', status: 405 } }, id);
-    }
     const peer = req.socket.remoteAddress ?? '';
-    const bearer = req.headers.authorization;
-    let actor: ActorContext | undefined;
-    if (options.localMode && loopback(peer)) actor = options.localActor;
-    else {
-      if (!bearer?.startsWith('Bearer ') || !options.verifier) return send(res, 401, { error: { code: 'UNAUTHENTICATED', message: 'bearer required', status: 401 } }, id);
-      actor = options.verifier(bearer.slice(7), id) ?? undefined;
-      if (!actor) return send(res, 401, { error: { code: 'UNAUTHENTICATED', message: 'invalid bearer', status: 401 } }, id);
-    }
-    if (route.cas && !req.headers['if-match'] && req.method !== 'GET') return send(res, 428, { error: { code: 'PRECONDITION_REQUIRED', message: 'If-Match required', status: 428 } }, id);
-    try {
-      if (route.capability && !actor?.capabilities.includes(route.capability) && !actor?.capabilities.includes('admin')) {
-        throw new HubError('FORBIDDEN', `${route.capability} capability required`, 403);
-      }
-      const body = req.method === 'GET' ? undefined : await readBody(req, max);
-      if (route.operationId === 'getHealth') return send(res, 200, { ok: true }, id);
-      if (route.operationId === 'getStatus') return send(res, 200, { ok: true, service: 'portable-agent-asset-hub', ...(options.storage ? { schemaVersion: SCHEMA_VERSION, storage: storagePayload(options.storage, options.localMode === true) } : {}) }, id);
-      if (route.operationId === 'getCapabilities') return send(res, 200, {
-        schemaVersion: SCHEMA_VERSION,
-        apiVersion: 'v1',
-        features: { skills: true, memories: true, skillGraph: true, relationProposals: true, mandatoryRetrieval: true, retrievalAudit: true },
-        auth: { mode: options.localMode ? 'local-dev' : 'bearer' },
-        actor: { userId: actor!.userId, agentId: actor!.agentId, capabilities: actor!.capabilities },
-        storage: storagePayload(options.storage, options.localMode === true),
-        limits: { maxGraphDepth: 8, maxResolvedSkills: 32 },
-      }, id);
-      if (route.operationId === 'getDoctor') return send(res, 200, options.hub.doctor?.() ?? { ok: true }, id);
-      if (!options.hub.dispatch || !actor) throw new HubError('INTERNAL', 'operation unavailable', 501);
-      const matches = route.pattern.exec(url.pathname) ?? [];
-      const params: Record<string, string> = {};
-      const names = route.paramNames ?? (matches[1] ? ['id'] : []);
-      for (let index = 0; index < names.length; index += 1) {
-        const raw = matches[index + 1];
-        if (typeof raw === 'string' && raw.length > 0) {
-          try {
-            params[names[index]!] = decodeURIComponent(raw);
-          } catch {
-            throw new HubError('VALIDATION', 'malformed percent-encoding in path parameter', 400);
+    const authMode = options.localMode && loopback(peer) ? 'local-dev' : 'bearer';
+    const operationId = route?.operationId ?? '__no_route__';
+    const template = routeTemplate(route ?? pathMatches[0]);
+    const storageMode = boundedStorageMode(options);
+    let status = 500;
+    let errorCode: string | undefined;
+
+    // Every exit from the handler goes through `respond` so the finally
+    // block below sees the status that was actually sent.
+    const respond = (nextStatus: number, body: unknown): void => {
+      status = nextStatus;
+      send(res, nextStatus, body, id);
+    };
+
+    let span: Span | undefined;
+    await withSpanInContext(telemetry, 'hub.request', {
+      'hub.operation_id': operationId,
+      'hub.auth_mode': authMode,
+      'hub.runtime': 'node',
+      'hub.storage_mode': storageMode,
+      'http.request.method': req.method ?? 'UNKNOWN',
+      'http.route': template,
+    }, extractInboundContext(req), async (activeSpan: Span | undefined) => {
+      span = activeSpan;
+      try {
+        if (pathMatches.length === 0) {
+          errorCode = 'NOT_FOUND';
+          return respond(404, { error: { code: 'NOT_FOUND', message: 'route not found', status: 404 } });
+        }
+        if (!route) {
+          res.setHeader('allow', [...new Set(pathMatches.map((candidate) => candidate.method))].join(', '));
+          errorCode = 'METHOD_NOT_ALLOWED';
+          return respond(405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'method not allowed', status: 405 } });
+        }
+        const bearer = req.headers.authorization;
+        let actor: ActorContext | undefined;
+        if (options.localMode && loopback(peer)) actor = options.localActor;
+        else {
+          if (!bearer?.startsWith('Bearer ') || !options.verifier) {
+            errorCode = 'UNAUTHENTICATED';
+            return respond(401, { error: { code: 'UNAUTHENTICATED', message: 'bearer required', status: 401 } });
+          }
+          actor = options.verifier(bearer.slice(7), id) ?? undefined;
+          if (!actor) {
+            errorCode = 'UNAUTHENTICATED';
+            return respond(401, { error: { code: 'UNAUTHENTICATED', message: 'invalid bearer', status: 401 } });
           }
         }
+        if (route.cas && !req.headers['if-match'] && req.method !== 'GET') {
+          errorCode = 'PRECONDITION_REQUIRED';
+          return respond(428, { error: { code: 'PRECONDITION_REQUIRED', message: 'If-Match required', status: 428 } });
+        }
+        if (route.capability && !actor?.capabilities.includes(route.capability) && !actor?.capabilities.includes('admin')) {
+          throw new HubError('FORBIDDEN', `${route.capability} capability required`, 403);
+        }
+        const body = req.method === 'GET' ? undefined : await readBody(req, max);
+        if (route.operationId === 'getHealth') return respond(200, { ok: true });
+        if (route.operationId === 'getStatus') return respond(200, { ok: true, service: 'portable-agent-asset-hub', ...(options.storage ? { schemaVersion: SCHEMA_VERSION, storage: storagePayload(options.storage, options.localMode === true) } : {}) });
+        if (route.operationId === 'getCapabilities') return respond(200, {
+          schemaVersion: SCHEMA_VERSION,
+          apiVersion: 'v1',
+          features: { skills: true, memories: true, skillGraph: true, relationProposals: true, mandatoryRetrieval: true, retrievalAudit: true },
+          auth: { mode: options.localMode ? 'local-dev' : 'bearer' },
+          actor: { userId: actor!.userId, agentId: actor!.agentId, capabilities: actor!.capabilities },
+          storage: storagePayload(options.storage, options.localMode === true),
+          limits: { maxGraphDepth: 8, maxResolvedSkills: 32 },
+        });
+        if (route.operationId === 'getDoctor') return respond(200, options.hub.doctor?.() ?? { ok: true });
+        if (!options.hub.dispatch || !actor) throw new HubError('INTERNAL', 'operation unavailable', 501);
+        const matches = route.pattern.exec(url.pathname) ?? [];
+        const params: Record<string, string> = {};
+        const names = route.paramNames ?? (matches[1] ? ['id'] : []);
+        for (let index = 0; index < names.length; index += 1) {
+          const raw = matches[index + 1];
+          if (typeof raw === 'string' && raw.length > 0) {
+            try {
+              params[names[index]!] = decodeURIComponent(raw);
+            } catch {
+              throw new HubError('VALIDATION', 'malformed percent-encoding in path parameter', 400);
+            }
+          }
+        }
+        const result = await options.hub.dispatch(route.operationId, { body, params, query: Object.fromEntries(url.searchParams), actor, requestId: id, operationMode: typeof req.headers['x-agent-operation-mode'] === 'string' ? req.headers['x-agent-operation-mode'] : undefined, storage: options.hub.storage });
+        if (result === undefined) throw new HubError('INTERNAL', 'operation returned no response', 500);
+        return respond(createdOperations.has(route.operationId) ? 201 : 200, result);
+      } catch (error) {
+        if (error instanceof HubError) {
+          errorCode = error.code;
+          return respond(error.status, { error: { code: error.code, message: error.message, status: error.status } });
+        }
+        errorCode = 'INTERNAL';
+        return respond(500, { error: { code: 'INTERNAL', message: 'internal error', status: 500 } });
+      } finally {
+        const resultClass = status < 400 ? 'success' : 'error';
+        if (span) {
+          span.setAttributes(scrubAttributes({
+            'http.response.status_code': status,
+            'hub.result_class': resultClass,
+            ...(errorCode ? { 'hub.error_code_bounded': errorCode } : {}),
+          }));
+          span.setStatus({ code: status < 400 ? 1 : 2 });
+        }
+        const labels = {
+          operation_id: operationId,
+          runtime: 'node',
+          status_class: statusClass(status),
+          auth_mode: authMode,
+          storage_mode: storageMode,
+          result_class: resultClass,
+          ...(errorCode ? { error_code_bounded: errorCode } : {}),
+        };
+        recordMetric(telemetry, 'hub.requests', 1, labels);
+        histogramMetric(telemetry, 'hub.request.duration', performance.now() - startedAt, 'ms', labels);
+        if (status >= 400) recordMetric(telemetry, 'hub.request.errors', 1, labels);
       }
-      const result = await options.hub.dispatch(route.operationId, { body, params, query: Object.fromEntries(url.searchParams), actor, requestId: id, operationMode: typeof req.headers['x-agent-operation-mode'] === 'string' ? req.headers['x-agent-operation-mode'] : undefined, storage: options.hub.storage });
-      if (result === undefined) throw new HubError('INTERNAL', 'operation returned no response', 500);
-      return send(res, createdOperations.has(route.operationId) ? 201 : 200, result, id);
-    } catch (error) { return fail(res, error, id); }
+    });
   };
 }
 export function createRestServer(options: RestOptions): Server { return createServer(createApp(options)); }

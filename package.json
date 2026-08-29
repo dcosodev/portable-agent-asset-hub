@@ -22,7 +22,7 @@
     "typecheck": "tsc -b && pnpm --filter @portable-agent-asset-hub/graph-ui typecheck",
     "pretest": "pnpm build",
     "test": "vitest run && pnpm --filter @portable-agent-asset-hub/graph-ui test",
-    "build": "node scripts/clean.mjs dist && tsc -b --force && node scripts/copy-s2-migrations.mjs && pnpm --filter @portable-agent-asset-hub/graph-ui build",
+    "build": "node scripts/clean.mjs dist && tsc -b --force && node scripts/copy-s2-migrations.mjs && pnpm --filter @portable-agent-asset-hub/mcp build && pnpm --filter @portable-agent-asset-hub/graph-ui build",
     "graph-ui": "pnpm --filter @portable-agent-asset-hub/graph-ui build && pnpm --filter @portable-agent-asset-hub/graph-ui start",
     "graph-ui:test": "pnpm --filter @portable-agent-asset-hub/graph-ui test",
     "pack": "node scripts/s0-pack.mjs",
@@ -56,7 +56,11 @@
     "hub:start:temp": "node scripts/start-hub.mjs temporary",
     "hub:backup": "node scripts/hub-backup.mjs",
     "relations:discover": "node scripts/relations.mjs discover",
-    "relations:proposals": "node scripts/relations.mjs proposals"
+    "relations:proposals": "node scripts/relations.mjs proposals",
+    "observability:lint": "node scripts/observability-lint.mjs",
+    "observability:contract": "pnpm vitest run tests/telemetry/privacy-contract.test.ts tests/telemetry/cardinality-contract.test.ts tests/telemetry/fail-open.test.ts tests/telemetry/config.test.ts tests/telemetry/noop.test.ts",
+    "observability:cardinality": "pnpm vitest run tests/telemetry/cardinality-contract.test.ts",
+    "observability:e2e": "pnpm vitest run tests/telemetry/otlp-process-smoke.test.ts"
   },
   "dependencies": {
     "@portable-agent-asset-hub/core": "workspace:*",
@@ -69,6 +73,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@opentelemetry/api": "1.9.1",
     "@types/node": "^22.15.0",
     "@typescript-eslint/eslint-plugin": "^8.27.0",
     "@typescript-eslint/parser": "^8.27.0",

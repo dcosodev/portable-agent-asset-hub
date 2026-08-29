@@ -7,6 +7,7 @@
 
 import type { McpError, RestErrorBody, Transport, TransportRequest, TransportResponse } from './types.js';
 import { mapRestErrorToMcp } from './error-mapper.js';
+import { injectTraceparentIntoHeaders } from '@portable-agent-asset-hub/telemetry';
 
 const FORBIDDEN_PATH_CHARS = /\s/;
 
@@ -73,7 +74,20 @@ export class RestTransport {
     const headers: Record<string, string> = { accept: 'application/json' };
     if (request.bearer ?? this.#bearer) headers.authorization = `Bearer ${request.bearer ?? this.#bearer}`;
     if (request.body !== undefined) headers['content-type'] = 'application/json';
-    for (const [k, v] of Object.entries(request.headers ?? {})) headers[k.toLowerCase()] = v;
+    // Caller-supplied headers may override routing metadata, but NEVER
+    // the authorization header, the request correlation headers that
+    // REST emits itself, or any W3C trace context carrier. The model can
+    // forward CAS / idempotency / agent-operation-mode, but it cannot
+    // spoof identity, request id, or the traceparent.
+    for (const [k, v] of Object.entries(request.headers ?? {})) {
+      if (isModelReservedHeader(k)) continue;
+      headers[k.toLowerCase()] = v;
+    }
+    // Forward the active W3C trace context as a transport carrier. The
+    // REST kernel's `extractTraceparentContext` is only consulted for the
+    // canonical `traceparent`/`tracestate` keys, so any other model
+    // injection of fake parent traces is ignored.
+    injectTraceparentIntoHeaders(headers);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.#timeoutMs);
     let response: Response;
@@ -97,6 +111,35 @@ export class RestTransport {
     // MCP layer never invents or overwrites it.
     return { status: response.status, headers: respHeaders, body };
   }
+}
+
+/**
+ * Headers that the model MUST NOT override, even via `args.headers`.
+ * Includes reserved REST metadata, identity headers, and the canonical
+ * W3C trace context carriers. The MCP identity module already filters
+ * `x-mcp-*` headers from model-supplied inputs (see
+ * `stripModelIdentityHeaders`); we keep this list here so the
+ * `RestTransport` cannot be used to bypass that filter.
+ */
+const MODEL_RESERVED_HEADERS = new Set([
+  'authorization',
+  'x-request-id',
+  'x-mcp-reason',
+  'x-mcp-actor',
+  'x-mcp-user-id',
+  'x-mcp-agent-id',
+  'x-mcp-role',
+  'x-mcp-capability',
+  'x-mcp-identity',
+  'traceparent',
+  'tracestate',
+  'tracestate-header',
+  'host',
+  'content-length',
+]);
+
+function isModelReservedHeader(key: string): boolean {
+  return MODEL_RESERVED_HEADERS.has(key.toLowerCase());
 }
 
 function safeJsonParse(text: string): unknown {
