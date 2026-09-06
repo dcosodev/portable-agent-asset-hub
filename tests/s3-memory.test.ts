@@ -188,6 +188,38 @@ describe('S3 memory nominal vertical slices', () => {
     }
   });
 
+  it('malformed_fts_query_syntax_raises_a_clean_validation_error', () => {
+    // Memory search intentionally passes the raw query straight
+    // through as an FTS5 MATCH expression (the OR test above relies
+    // on this), rather than quoting it into a literal search the way
+    // skill/catalog search do. That means genuinely malformed syntax
+    // — an unbalanced quote here — must still fail predictably as a
+    // caller-fixable 400, not a 500.
+    //
+    // `store.transaction()` wraps ANY non-HubError exception in a
+    // generic HubError('INTERNAL', ..., 500) (see transaction.ts), so
+    // asserting only `toThrowError(HubError)` would pass even before
+    // the fix — every uncaught error becomes *some* HubError at that
+    // layer. Asserting `code`/`status` is what actually distinguishes
+    // "clean VALIDATION/400" from "the raw node:sqlite
+    // ERR_SQLITE_ERROR papered over as INTERNAL/500".
+    const store = new SqliteStore(':memory:');
+    try {
+      createBase(store);
+      let caught: unknown;
+      try {
+        store.transaction(actor, (tx) => tx.memories.search(actor.scope, 'unbalanced "quote'));
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(HubError);
+      expect((caught as HubError).code).toBe('VALIDATION');
+      expect((caught as HubError).status).toBe(400);
+    } finally {
+      store.close();
+    }
+  });
+
   it('fts_contains_only_current_active_or_candidate_heads', () => {
     const store = new SqliteStore(':memory:');
     try {
