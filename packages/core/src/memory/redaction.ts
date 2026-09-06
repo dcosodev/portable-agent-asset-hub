@@ -1,3 +1,8 @@
+// Compared against a NORMALIZED field key (lowercased, `_`/`-`
+// stripped — see `normalizeKey`) rather than the raw key, so
+// 'access_token', 'accessToken' and 'access-token' all match the same
+// 'accesstoken' entry below instead of requiring every real-world
+// spelling to be listed separately.
 const sensitiveKeys = new Set([
   'password',
   'passwd',
@@ -5,11 +10,15 @@ const sensitiveKeys = new Set([
   'accesstoken',
   'refreshtoken',
   'secret',
+  'clientsecret',
   'apikey',
-  'api_key',
   'authorization',
   'privatekey',
 ]);
+
+function normalizeKey(key: string): string {
+  return key.toLowerCase().replace(/[_-]/gu, '');
+}
 
 const patterns: Array<[string, RegExp]> = [
   ['bearer', /\bBearer\s+[A-Za-z0-9._~+/=-]+/gi],
@@ -26,8 +35,8 @@ export function redact(value: unknown): { value: unknown; summary: string[] } {
 
   const walk = (current: unknown, key?: string): unknown => {
     if (typeof current === 'string') {
-      if (key && sensitiveKeys.has(key.toLowerCase())) {
-        summary.add(key.toLowerCase().replaceAll('_', ''));
+      if (key && sensitiveKeys.has(normalizeKey(key))) {
+        summary.add(normalizeKey(key));
         return '[REDACTED:secret]';
       }
       let cleaned = current;
