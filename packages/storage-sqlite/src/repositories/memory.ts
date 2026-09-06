@@ -200,7 +200,7 @@ export class MemoryRepository {
     const now = new Date().toISOString();
     this.db
       .prepare(
-        'UPDATE memories SET lifecycle = ?, confidence = ?, importance = ?, current_version = ?, updated_at = ? WHERE id = ? AND current_version = ?',
+        'UPDATE memories SET lifecycle = ?, confidence = ?, importance = ?, current_version = ?, updated_at = ? WHERE id = ? AND current_version = ? AND owner_user_id = ? AND scope_agent_id = ?',
       )
       .run(
         lifecycle,
@@ -210,6 +210,8 @@ export class MemoryRepository {
         now,
         id,
         oldVersion,
+        scope.ownerUserId,
+        scope.agentId,
       );
     this.db
       .prepare('UPDATE memory_versions SET lifecycle = ? WHERE memory_id = ? AND version = ?')
@@ -243,8 +245,8 @@ export class MemoryRepository {
     const replacementId = `mem_${randomUUID()}`;
     const lifecycle = input.lifecycle ?? 'candidate';
     this.db
-      .prepare('UPDATE memories SET lifecycle = ?, updated_at = ? WHERE id = ? AND current_version = ?')
-      .run('superseded', now, id, oldVersion);
+      .prepare('UPDATE memories SET lifecycle = ?, updated_at = ? WHERE id = ? AND current_version = ? AND owner_user_id = ? AND scope_agent_id = ?')
+      .run('superseded', now, id, oldVersion, scope.ownerUserId, scope.agentId);
     this.db
       .prepare('UPDATE memory_versions SET lifecycle = ? WHERE memory_id = ? AND version = ?')
       .run('superseded', id, oldVersion);
@@ -287,7 +289,23 @@ export class MemoryRepository {
 
   public forget(id: string, expectedVersion: number, scope: Scope, reason = 'forget', requestId = ''): Memory {
     const row = this.row(id, scope);
-    if (row.lifecycle === 'forgotten') return this.materialize(row, scope);
+    if (row.lifecycle === 'forgotten') {
+      // Idempotent replay: the version the memory was AT right before
+      // this forget (current_version - 1) is what a client that
+      // issued this exact forget would have observed and re-sent —
+      // e.g. a retried request after a dropped response. Accept only
+      // that value silently. Anything else is a caller acting on a
+      // genuinely stale view (unrelated to this forget, or from
+      // further in the past) and must fail CAS like update()/
+      // supersede() do, rather than silently succeeding as if nothing
+      // was wrong with the caller's assumption about current state.
+      const versionBeforeThisForget = Number(row.current_version) - 1;
+      if (expectedVersion === versionBeforeThisForget) return this.materialize(row, scope);
+      throw new HubError('CONFLICT', 'version conflict', 409, {
+        expectedVersion,
+        actualVersion: Number(row.current_version),
+      });
+    }
     const oldVersion = Number(row.current_version);
     if (oldVersion !== expectedVersion) throw new HubError('CONFLICT', 'version conflict', 409);
     const nextVersion = oldVersion + 1;
@@ -296,8 +314,8 @@ export class MemoryRepository {
       .prepare('SELECT content_json, redaction_summary_json FROM memory_versions WHERE memory_id = ? AND version = ?')
       .get(id, oldVersion) as Row;
     this.db
-      .prepare('UPDATE memories SET lifecycle = ?, current_version = ?, updated_at = ? WHERE id = ? AND current_version = ?')
-      .run('forgotten', nextVersion, now, id, oldVersion);
+      .prepare('UPDATE memories SET lifecycle = ?, current_version = ?, updated_at = ? WHERE id = ? AND current_version = ? AND owner_user_id = ? AND scope_agent_id = ?')
+      .run('forgotten', nextVersion, now, id, oldVersion, scope.ownerUserId, scope.agentId);
     this.db
       .prepare('UPDATE memory_versions SET lifecycle = ? WHERE memory_id = ? AND version = ?')
       .run('superseded', id, oldVersion);
