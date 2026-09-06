@@ -207,6 +207,20 @@ function revalidatePlan(input: ApplyInput): { target: string; plan: readonly Pla
     if (!/^[0-9a-f]{64}$/u.test(file.sha256)) {
       throw new Error(`preview file sha256 invalid: ${file.relativePath}`);
     }
+    // `stageFiles` re-verifies bytes against `file.sha256` too, but
+    // only after a lock and a full backup have already been created
+    // (see `applyPlan` below). Checking it here as well means a
+    // tampered `preview.files[i].bytes` — a mismatch between the
+    // bytes an attacker (or a corrupted preview.json) swapped in and
+    // the sha256 that same entry declares — is rejected fail-fast,
+    // before any of that side-effecting setup happens, for every
+    // file (not only USER.md/SOUL.md, which additionally get an
+    // independent re-derivation from the canonical source files in
+    // `rescanInputs`).
+    const declaredSha256 = sha256(new Uint8Array(file.bytes));
+    if (declaredSha256 !== file.sha256) {
+      throw new Error(`preview file bytes/sha256 mismatch: ${file.relativePath} (${declaredSha256} vs ${file.sha256})`);
+    }
     assertSafeMode(file.mode);
   }
   return { target: target.absolute, plan: preview.files, digest: preview.planDigest };

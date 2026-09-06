@@ -347,6 +347,38 @@ describe('runtime-adapters/apply-rollback', () => {
     expect(onDiskSoul.equals(readFileSync(SOUL_FIXTURE))).toBe(true);
   });
 
+  it('rejects tampered wrapper/descriptor bytes fail-fast, before any lock or backup is created', () => {
+    // Regression test: `revalidatePlan` used to only check that
+    // `planDigest.digest` matched `reviewedDigest` plus that each
+    // file's `sha256` field was hex-shaped — it never recomputed
+    // sha256(bytes) and compared it to the declared `sha256`. That
+    // self-consistency check DID already exist, but only later, in
+    // `stageFiles`, after a lock and a full backup had already been
+    // created. This confirms the check now runs fail-fast in
+    // `revalidatePlan`, before any of that side-effecting setup.
+    const target = freshTarget('rt-tamper-wrapper-');
+    const preview = computePreview(fixtureInput('codex', target));
+    const tampered: Preview = {
+      ...preview,
+      files: preview.files.map((file) =>
+        file.relativePath === relativePathOf('codex').wrapper
+          ? { ...file, bytes: new TextEncoder().encode('malicious wrapper content') }
+          : file,
+      ),
+    };
+    expect(() =>
+      applyPlan({
+        preview: tampered,
+        targetDir: target,
+        reviewedDigest: tampered.planDigest.digest,
+        reason: 'tamper-regression',
+      }),
+    ).toThrow(/bytes\/sha256 mismatch/i);
+    // No lock file should exist — the rejection happened before
+    // applyPlan ever acquired one.
+    expect(existsSync(join(target, '.pah', 'apply.lock'))).toBe(false);
+  });
+
   it.each(HARNESSES)('rollback_harness_%s_restores_originals_and_removes_new', (harness) => {
     const target = freshTarget(`rt-rb-${harness}-`);
     writeFileSync(join(target, 'USER.md'), 'PRIOR_USER_BODY');
