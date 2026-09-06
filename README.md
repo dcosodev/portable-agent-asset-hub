@@ -103,8 +103,9 @@ fail-closed, and explicitly not a hosted service.
 - **Skill export** (`@portable-agent-asset-hub/skill-export`) producing
   deterministic focal and full exports with canonical relation manifests.
 - **Web Graph Explorer** (`@portable-agent-asset-hub/graph-ui`,
-  `docs/web-graph-explorer.md`): a read-mostly React/Cytoscape projection
-  served by a BFF. It never opens SQLite; the only writes it forwards are an
+  [`docs/web-graph-explorer.md`](docs/web-graph-explorer.md)): a read-mostly
+  React/Cytoscape projection served by a BFF ([screenshot](docs/web-graph-explorer.md)).
+  It never opens SQLite; the only writes it forwards are an
   anchored allowlist of governed relation proposal actions on loopback.
   Serving to a private LAN is opt-in and refuses every mutation.
 - **Migration surface** (`@portable-agent-asset-hub/migration`) with
