@@ -16,6 +16,22 @@ Adding a sixth runtime means writing a renderer, not another source of truth.
 It is published as a portfolio and research artifact: reproducible,
 fail-closed, and explicitly not a hosted service.
 
+## Contents
+
+- [Badges](#badges)
+- [At a glance](#at-a-glance)
+- [Architecture and data flow](#architecture-and-data-flow)
+- [Package responsibilities](#package-responsibilities)
+- [API surface at a glance](#api-surface-at-a-glance)
+- [Quickstart](#quickstart)
+- [Validation](#validation)
+- [Project status](#project-status)
+- [Security and privacy boundary](#security-and-privacy-boundary)
+- [Development workflow](#development-workflow)
+- [Project layout](#project-layout)
+- [Related documentation](#related-documentation)
+- [Community and license](#community-and-license)
+
 ## Badges
 
 | Badge | Source |
