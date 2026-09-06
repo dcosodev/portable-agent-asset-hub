@@ -292,11 +292,10 @@ describe('S8 preview: deterministic, traversal-rejecting', () => {
       expect(() => assertSafeRelativePath('a//b')).toThrow();
       expect(() => assertSafeRelativePath('/a/b')).toThrow();
       expect(() => assertSafeRelativePath('a/b/')).not.toThrow();
-      // Backslash is the path separator on Windows, so a relative
-      // path containing one must be rejected rather than folded into
-      // an opaque segment (this module only splits on '/').
-      expect(() => assertSafeRelativePath('a\\..\\b')).toThrow();
-      expect(() => assertSafeRelativePath('a\\b')).toThrow();
+      // Backslash is the Windows separator: 'a\..\b' would traverse
+      // there, and this module only splits on '/'. Reject it outright.
+      expect(() => assertSafeRelativePath('a\\..\\b')).toThrow(/backslash/i);
+      expect(() => assertSafeRelativePath('a\\b')).toThrow(/backslash/i);
     } finally {
       store.close();
     }
