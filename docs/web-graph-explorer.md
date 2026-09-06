@@ -1,5 +1,13 @@
 # Web Graph Explorer
 
+![Global Graph view of the Web Graph Explorer, showing five skills connected by canonical relations, with the Relation Proposals and Explicit Relations panels open and the status bar reporting a live local REST connection.](assets/graph-explorer.png)
+
+The Global Graph view against a small local hub: five skills, four canonical
+`requires`/`related_to` edges, `Relation Proposals` and `Explicit Relations`
+panels on the left, and the status bar confirming a live REST connection
+(`schema 20`, `auth local-dev`). Captured from a real, running instance —
+not a mockup.
+
 ## Purpose and limits
 
 The Web Graph Explorer is a human-facing, local, read-mostly projection of the

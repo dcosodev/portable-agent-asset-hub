@@ -46,6 +46,7 @@ const currentDocs = [
   'docs/runtime-adapters.md',
   'docs/observability.md',
   'docs/demo.md',
+  'docs/faq.md',
   'docs/engineering-log.md',
   'observability/README.md',
   'slices/README.md',

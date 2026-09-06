@@ -1,5 +1,12 @@
 # Portable Agent Asset Hub
 
+**The problem in one sentence:** every AI coding agent (Claude Code, Codex,
+Cursor-likes, custom bots) wants your reusable knowledge — skills,
+instructions, memories — in its own file format, in its own directory, so
+the same knowledge ends up copy-pasted and drifting across five tools with
+no single place that says which copy is right. This project keeps one
+versioned, audited copy and generates each tool's format from it on demand.
+
 Portable, auditable hub for versioned agent assets and runtime materialization.
 
 One canonical OpenAPI contract drives every surface: a REST API, an MCP stdio
@@ -15,6 +22,23 @@ Adding a sixth runtime means writing a renderer, not another source of truth.
 
 It is published as a portfolio and research artifact: reproducible,
 fail-closed, and explicitly not a hosted service.
+
+## Contents
+
+- [Badges](#badges)
+- [At a glance](#at-a-glance)
+- [Architecture and data flow](#architecture-and-data-flow)
+- [Package responsibilities](#package-responsibilities)
+- [API surface at a glance](#api-surface-at-a-glance)
+- [Quickstart](#quickstart)
+  - [Try it: a raw request and the same call through the SDK](#try-it-a-raw-request-and-the-same-call-through-the-sdk)
+- [Validation](#validation)
+- [Project status](#project-status)
+- [Security and privacy boundary](#security-and-privacy-boundary)
+- [Development workflow](#development-workflow)
+- [Project layout](#project-layout)
+- [Related documentation](#related-documentation)
+- [Community and license](#community-and-license)
 
 ## Badges
 
@@ -79,8 +103,9 @@ fail-closed, and explicitly not a hosted service.
 - **Skill export** (`@portable-agent-asset-hub/skill-export`) producing
   deterministic focal and full exports with canonical relation manifests.
 - **Web Graph Explorer** (`@portable-agent-asset-hub/graph-ui`,
-  `docs/web-graph-explorer.md`): a read-mostly React/Cytoscape projection
-  served by a BFF. It never opens SQLite; the only writes it forwards are an
+  [`docs/web-graph-explorer.md`](docs/web-graph-explorer.md)): a read-mostly
+  React/Cytoscape projection served by a BFF ([screenshot](docs/web-graph-explorer.md)).
+  It never opens SQLite; the only writes it forwards are an
   anchored allowlist of governed relation proposal actions on loopback.
   Serving to a private LAN is opt-in and refuses every mutation.
 - **Migration surface** (`@portable-agent-asset-hub/migration`) with
@@ -339,6 +364,32 @@ docker compose -f observability/compose.yaml up -d
 > expected and harmless; the limitation is recorded explicitly in the gate
 > evidence rather than suppressed.
 
+### Try it: a raw request and the same call through the SDK
+
+With the demo's REST server running in loopback `localMode` on `:8787`
+(see `examples/demo/demo.mjs` or `packages/rest/README.md`), no bearer
+token is required:
+
+```sh
+curl -s http://127.0.0.1:8787/api/v1/health
+# {"status":"ok"}
+
+curl -s http://127.0.0.1:8787/api/v1/skills/search?q=deploy
+```
+
+The generated TypeScript SDK wraps the same contract:
+
+```ts
+import { Configuration, DefaultApi } from '@portable-agent-asset-hub/sdk-ts/generated';
+
+const api = new DefaultApi(new Configuration({ basePath: 'http://127.0.0.1:8787' }));
+await api.getHealth();
+```
+
+See [`docs/demo.md`](docs/demo.md#using-the-generated-sdks-instead) for the
+Python equivalent and for a full walkthrough that also exercises `If-Match`
+CAS, drift detection, and rollback — not just a read.
+
 ## Validation
 
 The repository ships two classes of validation:
@@ -546,6 +597,8 @@ checklist.
   resolution, canonical vs temporary, backup and doctor.
 - [`docs/demo.md`](docs/demo.md) — the end-to-end walkthrough
   (`examples/demo/demo.mjs`) and SDK usage snippets.
+- [`docs/faq.md`](docs/faq.md) — troubleshooting for the errors and warnings
+  the repository's own tooling actually produces.
 - [`docs/engineering-log.md`](docs/engineering-log.md) — staged-gate
   methodology, glossary, and the consolidated RED/GREEN log per stage.
 - [`docs/s2-contract.md`](docs/s2-contract.md) — S2 contract notes.

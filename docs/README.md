@@ -19,6 +19,7 @@ contracts** exists and that its relative links resolve.
 | [`observability.md`](observability.md) | telemetry configuration, privacy and failure model |
 | [`../observability/README.md`](../observability/README.md) | Docker Compose operations and the smoke gate |
 | [`demo.md`](demo.md) | the end-to-end demo the CI runs on every change |
+| [`faq.md`](faq.md) | answers to the questions the repository's own validation output raises most often |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | development and verification workflow |
 | [`../SECURITY.md`](../SECURITY.md) | reporting a vulnerability |
 
