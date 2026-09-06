@@ -619,13 +619,26 @@ export function rollbackPlan(input: { targetDir: string; runId: string; reason?:
 }
 
 function walkBackup(root: string): string[] {
+  // No manifest or other bookkeeping file is ever written directly
+  // under `backupDir` — every write goes through
+  // join(backupDir, file.relativePath) for one of the four applied
+  // plan files (backupFiles() in this same module). Several of those
+  // relative paths are themselves dot-prefixed by design
+  // ('.mcp.json' for claude-code, '.codex/config.toml' for codex, and
+  // the equivalent under '.hermes/'/'.openclaw/' for those harnesses
+  // — see claude-code/implementation.ts, codex/implementation.ts).
+  // A blanket "skip dot-prefixed entries" filter here (previously
+  // present, commented "skip manifest") silently dropped every one of
+  // those files from this defence-in-depth fallback walk, so
+  // rollbackPlan could never restore them if the registry's own file
+  // list ever fell out of sync — exactly the case this fallback
+  // exists to cover.
   const out: string[] = [];
   const stack = [root];
   while (stack.length > 0) {
     const current = stack.pop() as string;
     const entries = readdirSync(current, { withFileTypes: true });
     for (const entry of entries) {
-      if (entry.name.startsWith('.')) continue; // skip manifest
       const absolute = join(current, entry.name);
       if (lstatSync(absolute).isDirectory()) {
         stack.push(absolute);

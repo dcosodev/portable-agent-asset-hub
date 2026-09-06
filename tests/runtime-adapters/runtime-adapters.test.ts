@@ -40,7 +40,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ChildProcess, spawn } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync, existsSync, lstatSync, chmodSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import {
   applyPlan,
@@ -410,6 +410,52 @@ describe('runtime-adapters/apply-rollback', () => {
     expect(userRecord).toBeDefined();
     expect(userRecord!.existed).toBe(true);
     expect(userRecord!.mode).toBe(0o600);
+  });
+
+  it('rollback restores a dot-prefixed descriptor (.codex/config.toml) via the walkBackup fallback even when the registry entry is missing it', () => {
+    // Regression test: walkBackup() used to skip every dot-prefixed
+    // entry while re-scanning the backup directory tree (a leftover
+    // "skip manifest" filter for a manifest file that is never
+    // actually written there), so the defence-in-depth fallback could
+    // never restore descriptors like '.mcp.json' (claude-code) or
+    // '.codex/config.toml' (codex) — exactly the files this fallback
+    // exists to cover when the registry's own file list falls out of
+    // sync. Simulate that by deleting the codex descriptor's entry
+    // from the on-disk registry after a real apply, then confirm
+    // rollback still restores its original bytes from backupDir.
+    const harness = 'codex' as const;
+    const target = freshTarget('rt-rb-registry-drift-');
+    const descriptorRel = relativePathOf(harness).descriptor;
+    mkdirSync(join(target, dirname(descriptorRel)), { recursive: true });
+    writeFileSync(join(target, descriptorRel), 'PRIOR_DESCRIPTOR_BODY');
+    chmodSync(join(target, descriptorRel), 0o600);
+
+    const preview = computePreview(fixtureInput(harness, target));
+    const result = applyPlan({
+      preview,
+      targetDir: target,
+      reviewedDigest: preview.planDigest.digest,
+      reason: 'test:registry-drift',
+    });
+    expect(readFileSync(join(target, descriptorRel), 'utf8')).not.toBe('PRIOR_DESCRIPTOR_BODY');
+
+    // Simulate registry drift: drop the descriptor's backup record
+    // from the run entry, as if it had never been tracked.
+    const registryPath = join(target, '.pah', 'runtime-adapters-runs.json');
+    const registry = JSON.parse(readFileSync(registryPath, 'utf8')) as {
+      runs: Array<{ runId?: string; backup?: { files?: Array<{ relativePath: string }> } }>;
+    };
+    const run = registry.runs.find((entry) => entry.runId === result.runId);
+    expect(run?.backup?.files).toBeDefined();
+    run!.backup!.files = run!.backup!.files!.filter((file) => file.relativePath !== descriptorRel);
+    writeFileSync(registryPath, JSON.stringify(registry));
+
+    const rb: RollbackResult = rollbackPlan({ targetDir: target, runId: result.runId });
+    // Not reported via the registry-driven `restoredFiles` accounting
+    // for its *record*, but walkBackup's fallback still restores the
+    // bytes and lists it.
+    expect(rb.restoredFiles).toContain(descriptorRel);
+    expect(readFileSync(join(target, descriptorRel), 'utf8')).toBe('PRIOR_DESCRIPTOR_BODY');
   });
 
   it('apply_refuses_symlink_target_root', () => {
