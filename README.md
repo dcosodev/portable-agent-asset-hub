@@ -1,5 +1,12 @@
 # Portable Agent Asset Hub
 
+**The problem in one sentence:** every AI coding agent (Claude Code, Codex,
+Cursor-likes, custom bots) wants your reusable knowledge — skills,
+instructions, memories — in its own file format, in its own directory, so
+the same knowledge ends up copy-pasted and drifting across five tools with
+no single place that says which copy is right. This project keeps one
+versioned, audited copy and generates each tool's format from it on demand.
+
 Portable, auditable hub for versioned agent assets and runtime materialization.
 
 One canonical OpenAPI contract drives every surface: a REST API, an MCP stdio
