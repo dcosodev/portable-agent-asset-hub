@@ -458,6 +458,28 @@ describe('runtime-adapters/apply-rollback', () => {
     expect(readFileSync(join(target, descriptorRel), 'utf8')).toBe('PRIOR_DESCRIPTOR_BODY');
   });
 
+  it('apply_rejects_tampered_plan_bytes_before_any_lock_or_backup', () => {
+    const target = freshTarget('rt-tamper-');
+    const preview = computePreview(fixtureInput('codex', target));
+    const wrapperRel = relativePathOf('codex').wrapper;
+    // Swap the wrapper's bytes but leave its declared sha256 (and the
+    // plan digest) untouched — the exact shape of a corrupted or
+    // maliciously edited preview.json.
+    const tamperedFiles = preview.files.map((file) =>
+      file.relativePath === wrapperRel
+        ? { ...file, bytes: new TextEncoder().encode('TAMPERED WRAPPER BYTES') }
+        : file,
+    );
+    const tampered = { ...preview, files: tamperedFiles } as typeof preview;
+    expect(() =>
+      applyPlan({ preview: tampered, targetDir: target, reviewedDigest: preview.planDigest.digest, reason: 'tamper' }),
+    ).toThrow(/bytes\/sha256 mismatch/);
+    // Rejection happened in revalidatePlan, before acquireLock() /
+    // backupFiles() — no lock file, no backup tree.
+    expect(existsSync(join(target, '.pah/apply.lock'))).toBe(false);
+    expect(existsSync(join(target, '.pah/runtime-adapters-backups'))).toBe(false);
+  });
+
   it('apply_refuses_symlink_target_root', () => {
     const real = makeTargetDir('rt-symlink-real-');
     const symlinkParent = makeTargetDir('rt-symlink-parent-');
