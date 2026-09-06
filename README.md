@@ -596,6 +596,8 @@ checklist.
   resolution, canonical vs temporary, backup and doctor.
 - [`docs/demo.md`](docs/demo.md) — the end-to-end walkthrough
   (`examples/demo/demo.mjs`) and SDK usage snippets.
+- [`docs/faq.md`](docs/faq.md) — troubleshooting for the errors and warnings
+  the repository's own tooling actually produces.
 - [`docs/engineering-log.md`](docs/engineering-log.md) — staged-gate
   methodology, glossary, and the consolidated RED/GREEN log per stage.
 - [`docs/s2-contract.md`](docs/s2-contract.md) — S2 contract notes.
