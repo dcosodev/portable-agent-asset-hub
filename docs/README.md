@@ -22,6 +22,14 @@ contracts** exists and that its relative links resolve.
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | development and verification workflow |
 | [`../SECURITY.md`](../SECURITY.md) | reporting a vulnerability |
 
+## Package READMEs
+
+Each workspace package under `packages/` has its own README with a
+file-by-file breakdown of what it contains and how it fits with the rest
+of the system. They are linked from the root
+[`README.md`](../README.md#package-responsibilities) "Package
+responsibilities" table rather than duplicated here.
+
 ## Architecture decisions
 
 - [`adr/0001-single-sqlite-owner.md`](adr/0001-single-sqlite-owner.md)

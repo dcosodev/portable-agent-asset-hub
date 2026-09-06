@@ -202,21 +202,24 @@ changes behavior based on whether it is running.
 
 ## Package responsibilities
 
+Each package also has its own README with a file-by-file breakdown; the
+table below links to them.
+
 | Package | Role | Notes |
 | --- | --- | --- |
-| `@portable-agent-asset-hub/core` | Domain types, `HubError`, `ActorContext`, policy, event emission, core dispatch. | The only package allowed to own SQLite (see ADR 0001). |
-| `@portable-agent-asset-hub/rest` | `node:http` server exposing `/api/v1/...` from the OpenAPI route table. | `createApp`, `createRestServer`, `listen`; bearer auth, loopback `localMode`, `If-Match` CAS, `x-request-id` propagation. |
-| `@portable-agent-asset-hub/mcp` | MCP server facade. Never opens a database; talks to REST through `rest-transport.ts`. | Tool registry derived from `x-mcp.exposed`, `x-mcp.capability`, `x-mcp.safety`. |
-| `@portable-agent-asset-hub/materializers` | Hermes (`./hermes`) and OpenClaw (`./openclaw`) materializers with `preview`, `apply`, `rollback`. | Manifest v1 schema under `src/manifest.v1.json`; CAS-based lock per run. |
-| `@portable-agent-asset-hub/migration` | Migration / cutover surface: classifier, redactor, shadow, replay, retirement. | Operates on the same core and storage adapters. |
-| `@portable-agent-asset-hub/storage-files` | Filesystem-backed storage adapter. | Used for portable fixtures. |
-| `@portable-agent-asset-hub/storage-sqlite` | SQLite-backed storage adapter (the single owner). | See `docs/adr/0001-single-sqlite-owner.md`. |
-| `@portable-agent-asset-hub/runtime-adapters` | Attaches a hub to Codex, Claude Code, OpenCode, Hermes and OpenClaw. | `computePreview` / `applyPlan` / `rollbackPlan`; path containment, safe file modes, no secrets in descriptors. See `docs/runtime-adapters.md`. |
-| `@portable-agent-asset-hub/skill-export` | Deterministic focal and full skill export with canonical relation manifests. | Proposals are staging data and are never exported as canonical graph data. |
-| `@portable-agent-asset-hub/graph-ui` | Read-mostly Web Graph Explorer (React, Vite, Cytoscape.js) plus its BFF. | Strictly a REST client; never opens SQLite. Forwards only allowlisted governed relation actions, and none in LAN mode. See `docs/web-graph-explorer.md`. |
-| `@portable-agent-asset-hub/telemetry` | Opt-in OpenTelemetry kernel: config parsing, bounded attributes, redaction, noop fallback. | Off by default and fail-open; never a substitute for audit. See `docs/observability.md`. |
-| `@portable-agent-asset-hub/sdk-ts` | Generated TypeScript SDK (`typescript-fetch`). | Source of truth is `openapi/openapi.yaml`; `generated/PROVENANCE.json` records the pinned tool. |
-| `@portable-agent-asset-hub/sdk-python` | Generated Python SDK (`python`). | Same generator, same pinned version, same contract fixtures. |
+| [`@portable-agent-asset-hub/core`](packages/core/README.md) | Domain types, `HubError`, `ActorContext`, policy, event emission, core dispatch. | The only package allowed to own SQLite (see ADR 0001). |
+| [`@portable-agent-asset-hub/rest`](packages/rest/README.md) | `node:http` server exposing `/api/v1/...` from the OpenAPI route table. | `createApp`, `createRestServer`, `listen`; bearer auth, loopback `localMode`, `If-Match` CAS, `x-request-id` propagation. |
+| [`@portable-agent-asset-hub/mcp`](packages/mcp/README.md) | MCP server facade. Never opens a database; talks to REST through `rest-transport.ts`. | Tool registry derived from `x-mcp.exposed`, `x-mcp.capability`, `x-mcp.safety`. |
+| [`@portable-agent-asset-hub/materializers`](packages/materializers/README.md) | Hermes (`./hermes`) and OpenClaw (`./openclaw`) materializers with `preview`, `apply`, `rollback`. | Manifest v1 schema under `src/manifest.v1.json`; CAS-based lock per run. |
+| [`@portable-agent-asset-hub/migration`](packages/migration/README.md) | Migration / cutover surface: classifier, redactor, shadow, replay, retirement. | Operates on the same core and storage adapters. |
+| [`@portable-agent-asset-hub/storage-files`](packages/storage-files/README.md) | Filesystem-backed storage adapter. | Used for portable fixtures. |
+| [`@portable-agent-asset-hub/storage-sqlite`](packages/storage-sqlite/README.md) | SQLite-backed storage adapter (the single owner). | See `docs/adr/0001-single-sqlite-owner.md`. |
+| [`@portable-agent-asset-hub/runtime-adapters`](packages/runtime-adapters/README.md) | Attaches a hub to Codex, Claude Code, OpenCode, Hermes and OpenClaw. | `computePreview` / `applyPlan` / `rollbackPlan`; path containment, safe file modes, no secrets in descriptors. See `docs/runtime-adapters.md`. |
+| [`@portable-agent-asset-hub/skill-export`](packages/skill-export/README.md) | Deterministic focal and full skill export with canonical relation manifests. | Proposals are staging data and are never exported as canonical graph data. |
+| [`@portable-agent-asset-hub/graph-ui`](packages/graph-ui/README.md) | Read-mostly Web Graph Explorer (React, Vite, Cytoscape.js) plus its BFF. | Strictly a REST client; never opens SQLite. Forwards only allowlisted governed relation actions, and none in LAN mode. See `docs/web-graph-explorer.md`. |
+| [`@portable-agent-asset-hub/telemetry`](packages/telemetry/README.md) | Opt-in OpenTelemetry kernel: config parsing, bounded attributes, redaction, noop fallback. | Off by default and fail-open; never a substitute for audit. See `docs/observability.md`. |
+| [`@portable-agent-asset-hub/sdk-ts`](packages/sdk-ts/README.md) | Generated TypeScript SDK (`typescript-fetch`). | Source of truth is `openapi/openapi.yaml`; `generated/PROVENANCE.json` records the pinned tool. |
+| [`@portable-agent-asset-hub/sdk-python`](packages/sdk-python/README.md) | Generated Python SDK (`python`). | Same generator, same pinned version, same contract fixtures. |
 
 ## API surface at a glance
 
