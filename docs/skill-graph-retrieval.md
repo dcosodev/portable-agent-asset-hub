@@ -196,6 +196,85 @@ same bilingual list backs `retrievalKeywords`' stopword filter. Adding
 coverage for another language means extending the `TERMS` (and stopword) table
 in that module — there is no pluggable classifier interface yet.
 
+### Example: `POST /api/v1/retrieval/resolve`
+
+Request:
+
+```json
+{
+  "query": "how do I deploy the hub with the observability stack enabled",
+  "profile": "default"
+}
+```
+
+Response (`200`, shape `RetrievalResolution` in
+[`../openapi/components/schemas.yaml`](../openapi/components/schemas.yaml)):
+
+```json
+{
+  "requestId": "req_9f2c1a",
+  "classification": {
+    "primary": "deployment",
+    "labels": ["deployment", "operational"],
+    "personalContextRequired": false
+  },
+  "policy": {
+    "skillRetrievalRequired": true,
+    "memoryRetrievalRequired": false,
+    "ruleVersion": "retrieval-policy-v1"
+  },
+  "query": {
+    "digest": "5e2f...c9a1",
+    "terms": ["deploy", "hub", "observability", "stack", "enabled"]
+  },
+  "candidatesConsidered": 6,
+  "memoryCandidatesConsidered": 0,
+  "noMatch": false,
+  "skills": [
+    {
+      "skillId": "docker-compose-deploy",
+      "version": 3,
+      "score": 0.82,
+      "tier": "canonical",
+      "reason": "direct_match",
+      "depth": 0
+    },
+    {
+      "skillId": "otel-collector-config",
+      "version": 1,
+      "score": 0.61,
+      "tier": "dependency",
+      "reason": "dependency",
+      "parent": "docker-compose-deploy",
+      "relation": "requires",
+      "depth": 1
+    }
+  ],
+  "memories": [],
+  "limits": {
+    "maxCandidates": 20,
+    "maxGraphDepth": 8,
+    "maxResolvedSkills": 64,
+    "maxBodyBytes": 2097152,
+    "canonicalThreshold": 0.7,
+    "supportingThreshold": 0.35
+  },
+  "materialization": {
+    "selectedBytes": 4310,
+    "maxBodyBytes": 2097152
+  }
+}
+```
+
+`query` never carries the raw text back — only its SHA-256 `digest` and the
+extracted `terms`. `skills[].reason: "dependency"` is how a skill the caller
+never searched for shows up anyway, pulled in through `requires`/`extends`
+graph expansion from a directly matched skill (see "Relation model and
+semantics" above). Field values here are illustrative, not a live fixture; the shape is
+enforced by the OpenAPI schema and exercised by
+`tests/storage-sqlite/skill-graph-retrieval.test.ts` and the REST route
+tests in `tests/rest/`.
+
 ## Audit and privacy
 
 Every resolution creates:
