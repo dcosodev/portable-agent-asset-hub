@@ -24,6 +24,7 @@ fail-closed, and explicitly not a hosted service.
 - [Package responsibilities](#package-responsibilities)
 - [API surface at a glance](#api-surface-at-a-glance)
 - [Quickstart](#quickstart)
+  - [Try it: a raw request and the same call through the SDK](#try-it-a-raw-request-and-the-same-call-through-the-sdk)
 - [Validation](#validation)
 - [Project status](#project-status)
 - [Security and privacy boundary](#security-and-privacy-boundary)
@@ -354,6 +355,32 @@ docker compose -f observability/compose.yaml up -d
 > which is experimental on the supported Node >= 22.16 line. The warning is
 > expected and harmless; the limitation is recorded explicitly in the gate
 > evidence rather than suppressed.
+
+### Try it: a raw request and the same call through the SDK
+
+With the demo's REST server running in loopback `localMode` on `:8787`
+(see `examples/demo/demo.mjs` or `packages/rest/README.md`), no bearer
+token is required:
+
+```sh
+curl -s http://127.0.0.1:8787/api/v1/health
+# {"status":"ok"}
+
+curl -s http://127.0.0.1:8787/api/v1/skills/search?q=deploy
+```
+
+The generated TypeScript SDK wraps the same contract:
+
+```ts
+import { Configuration, DefaultApi } from '@portable-agent-asset-hub/sdk-ts/generated';
+
+const api = new DefaultApi(new Configuration({ basePath: 'http://127.0.0.1:8787' }));
+await api.getHealth();
+```
+
+See [`docs/demo.md`](docs/demo.md#using-the-generated-sdks-instead) for the
+Python equivalent and for a full walkthrough that also exercises `If-Match`
+CAS, drift detection, and rollback — not just a read.
 
 ## Validation
 
