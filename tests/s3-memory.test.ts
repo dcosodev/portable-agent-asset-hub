@@ -188,6 +188,69 @@ describe('S3 memory nominal vertical slices', () => {
     }
   });
 
+  it('forget_rejects_a_stale_expectedVersion_from_before_the_forget_it_replays', () => {
+    // forget() has a special idempotent-replay path when the memory
+    // is already forgotten (see forget_first_call_is_cas_and_second_
+    // call_is_idempotent above): the version the memory was AT right
+    // before ITS forget is accepted silently, because that is exactly
+    // what a client retrying the same forget request would resend.
+    // A caller whose expectedVersion is from further in the past —
+    // stale for a reason unrelated to that specific retry — must
+    // still get a CONFLICT, not a silent success that hides how far
+    // out of date their view actually is.
+    const store = new SqliteStore(':memory:');
+    try {
+      const { memory } = createBase(store);
+      // v1 -> v2 (an ordinary update, unrelated to forgetting).
+      store.transaction(actor, (tx) => tx.memories.update(memory.id, { expectedVersion: 1, reason: 'bump' }, actor.scope));
+      // v2 -> v3 (forgotten). The version right before this forget is 2.
+      const forgotten = store.transaction(actor, (tx) => tx.memories.forget(memory.id, 2, actor.scope));
+      expect(forgotten.version).toBe(3);
+      // A caller that still thinks the memory is at v1 (stale from
+      // before the v1->v2 update, not from this forget) must be
+      // rejected, not silently handed the forgotten memory.
+      expect(() => store.transaction(actor, (tx) => tx.memories.forget(memory.id, 1, actor.scope))).toThrowError(HubError);
+      // The true idempotent replay (expectedVersion = 2, the version
+      // right before THIS forget) still succeeds.
+      const replay = store.transaction(actor, (tx) => tx.memories.forget(memory.id, 2, actor.scope));
+      expect(replay.version).toBe(3);
+    } finally {
+      store.close();
+    }
+  });
+
+  it('malformed_fts_query_syntax_raises_a_clean_validation_error', () => {
+    // Memory search intentionally passes the raw query straight
+    // through as an FTS5 MATCH expression (the OR test above relies
+    // on this), rather than quoting it into a literal search the way
+    // skill/catalog search do. That means genuinely malformed syntax
+    // — an unbalanced quote here — must still fail predictably as a
+    // caller-fixable 400, not a 500.
+    //
+    // `store.transaction()` wraps ANY non-HubError exception in a
+    // generic HubError('INTERNAL', ..., 500) (see transaction.ts), so
+    // asserting only `toThrowError(HubError)` would pass even before
+    // the fix — every uncaught error becomes *some* HubError at that
+    // layer. Asserting `code`/`status` is what actually distinguishes
+    // "clean VALIDATION/400" from "the raw node:sqlite
+    // ERR_SQLITE_ERROR papered over as INTERNAL/500".
+    const store = new SqliteStore(':memory:');
+    try {
+      createBase(store);
+      let caught: unknown;
+      try {
+        store.transaction(actor, (tx) => tx.memories.search(actor.scope, 'unbalanced "quote'));
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(HubError);
+      expect((caught as HubError).code).toBe('VALIDATION');
+      expect((caught as HubError).status).toBe(400);
+    } finally {
+      store.close();
+    }
+  });
+
   it('fts_contains_only_current_active_or_candidate_heads', () => {
     const store = new SqliteStore(':memory:');
     try {

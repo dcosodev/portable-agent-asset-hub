@@ -40,9 +40,9 @@ export const skillRoutes = [
   { method: 'POST', pattern: /^\/api\/v1\/skills\/resolve$/, operationId: 'resolveSkillGraph', cas: false },
   // 1. Literal-first: search MUST appear before /skills/{id}.
   { method: 'GET', pattern: /^\/api\/v1\/skills\/search$/, operationId: 'searchSkills', cas: false },
-  { method: 'GET', pattern: /^\/api\/v1\/skills\/([^/]+)\/relations$/, operationId: 'getSkillRelations', cas: false, paramNames: ['id'] },
-  { method: 'PUT', pattern: /^\/api\/v1\/skills\/([^/]+)\/relations$/, operationId: 'replaceSkillRelations', cas: true, paramNames: ['id'] },
-  { method: 'GET', pattern: /^\/api\/v1\/skills\/([^/]+)\/dependents$/, operationId: 'getSkillDependents', cas: false, paramNames: ['id'] },
+  { method: 'GET', pattern: /^\/api\/v1\/skills\/([^/]+)\/relations$/, operationId: 'getSkillRelations', cas: false, capability: 'skill.read', paramNames: ['id'] },
+  { method: 'PUT', pattern: /^\/api\/v1\/skills\/([^/]+)\/relations$/, operationId: 'replaceSkillRelations', cas: true, capability: 'write.skill', paramNames: ['id'] },
+  { method: 'GET', pattern: /^\/api\/v1\/skills\/([^/]+)\/dependents$/, operationId: 'getSkillDependents', cas: false, capability: 'skill.read', paramNames: ['id'] },
   { method: 'GET', pattern: /^\/api\/v1\/skills\/([^/]+)\/graph$/, operationId: 'getSkillGraph', cas: false, capability: 'skill.read', paramNames: ['id'] },
   { method: 'GET', pattern: /^\/api\/v1\/skills\/([^/]+)\/impact$/, operationId: 'getSkillImpact', cas: false, capability: 'skill.read', paramNames: ['id'] },
   // 2. Path-parameter get of a single skill by id. The router will only
