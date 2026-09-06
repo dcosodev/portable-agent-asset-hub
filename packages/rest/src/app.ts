@@ -115,6 +115,26 @@ export type RestRoute = {
   paramNames?: readonly string[];
 };
 
+/**
+ * REST-only, loopback/local-dev trust bypass: an actor carrying this
+ * capability satisfies every `route.capability` check regardless of
+ * which capability the route actually declares. It exists because REST
+ * is meant to run as a trusted single-operator backend process (see
+ * `LOCAL_CAPABILITIES` in `launcher.ts`, which grants it to the
+ * loopback `local-dev` actor), not as the client-facing delegation
+ * surface — that role belongs to MCP.
+ *
+ * Deliberately NOT part of `@portable-agent-asset-hub/core`'s
+ * `CAPABILITIES` table: `packages/mcp/src/capabilities.ts` filters any
+ * capability an MCP client requests (via `AGENT_MEMORY_CAPABILITIES`)
+ * against that same table, so keeping `admin` out of it means an MCP
+ * client can never be granted this blanket bypass — MCP callers stay on
+ * the fine-grained `admin.<namespace>` capabilities instead. Do not add
+ * `'admin'` to core's `CAPABILITIES` array; doing so would silently
+ * reopen this bypass for MCP as well.
+ */
+const REST_ADMIN_BYPASS_CAPABILITY = 'admin';
+
 function adaptExplicitRoute(r: { method: string; pattern: RegExp; operationId: string; capability?: string; readOnly: boolean }): RestRoute {
   return { method: r.method, pattern: r.pattern, operationId: r.operationId as OperationId, cas: !r.readOnly, capability: r.capability };
 }
@@ -270,7 +290,7 @@ export function createApp(options: RestOptions) {
           errorCode = 'PRECONDITION_REQUIRED';
           return respond(428, { error: { code: 'PRECONDITION_REQUIRED', message: 'If-Match required', status: 428 } });
         }
-        if (route.capability && !actor?.capabilities.includes(route.capability) && !actor?.capabilities.includes('admin')) {
+        if (route.capability && !actor?.capabilities.includes(route.capability) && !actor?.capabilities.includes(REST_ADMIN_BYPASS_CAPABILITY)) {
           throw new HubError('FORBIDDEN', `${route.capability} capability required`, 403);
         }
         const body = req.method === 'GET' ? undefined : await readBody(req, max);
