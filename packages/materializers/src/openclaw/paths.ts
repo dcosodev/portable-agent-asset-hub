@@ -78,10 +78,17 @@ function assertSafeStateDir(stateDir: string): string {
   if (!stateDir || typeof stateDir !== 'string') {
     throw new HubError('VALIDATION', 'stateDir required', 400);
   }
-  const absolute = resolve(stateDir);
-  if (!isAbsolute(absolute)) {
+  // Check `isAbsolute` on the RAW input, before `resolve()`.
+  // `resolve()` always returns an absolute path (it normalizes a
+  // relative input against `process.cwd()`), so checking `isAbsolute`
+  // on its result can never reject anything — a relative or
+  // traversal-laden stateDir like '../../../tmp/attacker' would
+  // silently resolve against cwd instead of being refused, exactly
+  // the outcome this check exists to prevent.
+  if (!isAbsolute(stateDir)) {
     throw new HubError('VALIDATION', 'stateDir must be absolute', 400);
   }
+  const absolute = resolve(stateDir);
   if (existsSync(absolute) && lstatSync(absolute).isSymbolicLink()) {
     throw new HubError('VALIDATION', 'symlink stateDir rejected', 400);
   }

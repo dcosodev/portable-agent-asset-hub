@@ -171,6 +171,16 @@ describe('S9 resolveStateDir: precedence chain, no ~/.openclaw assumption', () =
     symlinkSync(real, link);
     expect(() => resolveStateDir({ stateDir: link })).toThrow(/symlink/i);
   });
+
+  it('rejects a relative stateDir instead of silently resolving it against cwd', async () => {
+    const { resolveStateDir } = await import('@portable-agent-asset-hub/materializers/openclaw');
+    // `resolve()` normalizes ANY input to an absolute path, so the
+    // safety check must reject non-absolute input before resolving —
+    // otherwise traversal like '../../../tmp/attacker' would silently
+    // become a valid, unintended target instead of being refused.
+    expect(() => resolveStateDir({ stateDir: '../../../tmp/attacker' })).toThrow(/absolute/i);
+    expect(() => resolveStateDir({ stateDir: 'relative/state' })).toThrow(/absolute/i);
+  });
 });
 
 describe('S9 paths: frozen openclaw layout', () => {
