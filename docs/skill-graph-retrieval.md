@@ -185,6 +185,17 @@ removes every term, bounded raw tokens are used so that a mandatory policy never
 skips discovery. Selected dependencies are included with a `dependency` reason,
 plus parent, relation, depth, constraint and resolved version.
 
+### Language support
+
+`classifyRetrievalRequest` (`packages/core/src/skills/retrieval.ts`) matches
+each category against a fixed table of Spanish and English keyword patterns.
+This is a deliberate, bounded choice, not general-purpose i18n: a query
+written in any other language will not match any category and falls back to
+`general_knowledge`, which does not trigger mandatory skill retrieval. The
+same bilingual list backs `retrievalKeywords`' stopword filter. Adding
+coverage for another language means extending the `TERMS` (and stopword) table
+in that module — there is no pluggable classifier interface yet.
+
 ## Audit and privacy
 
 Every resolution creates:

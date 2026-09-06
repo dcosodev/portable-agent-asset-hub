@@ -60,7 +60,10 @@ fail-closed, and explicitly not a hosted service.
 - **Versioned skill graph and mandatory retrieval**
   (`docs/skill-graph-retrieval.md`): eight canonical relation types, bounded
   structural expansion, immutable version resolution, and an append-only
-  `retrieval_events` audit with a redacted query.
+  `retrieval_events` audit with a redacted query. The initial query
+  classifier is a deterministic **Spanish/English** lexical matcher; queries
+  in other languages fall back to `general_knowledge` (see the "Language
+  support" note in that doc).
 - **Governed relation proposals** (`docs/skill-relations.md`,
   `docs/relation-proposal-workflow.md`): discovery and explicit
   `related_skills` metadata produce *candidates*, never canonical edges. Review
