@@ -1,5 +1,13 @@
 # Engineering log
 
+> **Historical record, not a current contract.** This document is not
+> covered by `pnpm docs:check` and is not updated on every change the way
+> the documents under [`docs/README.md`](README.md#current-contracts) are.
+> Counts, paths, and stage outcomes here reflect the state at the time each
+> stage closed. For current behavior, read the contract documents linked
+> from [`docs/README.md`](README.md); read this log for *why* the system
+> ended up shaped the way it did.
+
 This document records how the hub was built and validated, stage by stage.
 It consolidates the working TDD logs kept during development into one
 narrative, with the project's vocabulary defined up front.
