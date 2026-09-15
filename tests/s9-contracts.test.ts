@@ -161,6 +161,14 @@ describe('S9 resolveStateDir: precedence chain, no ~/.openclaw assumption', () =
     expect(() => resolveStateDir({})).toThrow(/stateDir/i);
   });
 
+  it('rejects a non-absolute stateDir instead of resolving it against cwd', async () => {
+    const { resolveStateDir } = await import('@portable-agent-asset-hub/materializers/openclaw');
+    // `resolve()` would turn either of these into an absolute path under
+    // process.cwd(); the guard must refuse the raw input first.
+    expect(() => resolveStateDir({ stateDir: 'relative/state/dir' })).toThrow(/stateDir must be absolute/i);
+    expect(() => resolveStateDir({ stateDir: '../../../tmp/attacker' })).toThrow(/stateDir must be absolute/i);
+  });
+
   it('rejects a symlinked state dir (defence in depth, matches S8)', async () => {
     const { resolveStateDir } = await import('@portable-agent-asset-hub/materializers/openclaw');
     const outer = tempRoot('sym-outer');

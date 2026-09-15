@@ -213,10 +213,10 @@ export function assertSafeRelativePath(relativePath: string): void {
     throw new HubError('VALIDATION', 'absolute path rejected', 400);
   }
   // Reject backslashes outright, matching baseline/src/index.ts's
-  // equivalent validator. This module splits only on '/', so a
-  // backslash is otherwise folded into an opaque segment instead of
-  // being rejected — harmless on a POSIX path.join, but backslash IS
-  // the separator on Windows, so 'foo\\..\\bar' would traverse there.
+  // validator and runtime-adapters' safe-paths. This module splits only
+  // on '/', so a backslash is otherwise folded into an opaque segment
+  // instead of being rejected — harmless under a POSIX path.join, but
+  // backslash IS the separator on Windows, where 'foo\..\bar' traverses.
   if (relativePath.includes('\\')) {
     throw new HubError('VALIDATION', `backslash path is ambiguous: ${relativePath}`, 400);
   }
