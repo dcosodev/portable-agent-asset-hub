@@ -30,9 +30,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
+	"hub/internal/compose"
 	"hub/internal/config"
 	"hub/internal/doctor"
 	"hub/internal/output"
@@ -158,6 +158,8 @@ func run(argv []string, stdout, stderr io.Writer) (int, error) {
 	case "config":
 		printConfig(sink, cfg, rest, jsonFlag)
 		return exitOK, nil
+	case "runtime":
+		return runRuntime(sink, stdout, stderr, cfg, rest, jsonFlag)
 	default:
 		emitError(sink, "hub: unknown command %q (try `hub --help`)", command)
 		return exitContractViolation, nil
@@ -430,12 +432,72 @@ func displayOrUnset(v string) string {
 	return v
 }
 
-// emitError emits a single diagnostic on stderr. The function is
-// centralised so all stderr output goes through one choke-point —
-// and so tests can assert "no stderr on success" by checking the
-// empty case.
-func emitError(sink *output.Sink, format string, a ...any) {
-	// Sort a (no-op for now; reserved for future structured keys).
-	_ = sort.Strings
-	_ = sink.Errorf(format, a...)
+// runRuntime is the dispatch shim from `hub runtime …` to the
+// runtime handler in cmd_runtime.go. It owns three responsibilities
+// the handler itself must not:
+//
+//  1. Resolve the Compose runtime via compose.Detect. Detect is
+//     read-only (no subprocess beyond exec.LookPath) and isolated
+//     by default (HUB_RUNTIME or hub-<pid>-<epoch>), so wiring it
+//     here keeps the handler hermetic.
+//  2. Build a *compose.Service with NewService(rt, nil). nil
+//     selects the production Runner (OSExec); tests can swap in a
+//     scripted Runner by passing one to NewService — the handler
+//     itself never instantiates the runner.
+//  3. Translate argv → RuntimeFlags via ParseRuntimeFlags so the
+//     handler sees a typed tuple. Parser failures are surfaced as
+//     exit 2 (contract violation).
+//
+// Detect / Service construction failures are operator errors (exit 1)
+// because they typically mean "docker is not on PATH" or the
+// resolved compose file is missing — env drift, not shell contract
+// drift.
+func runRuntime(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, rest []string, jsonFlag bool) (int, error) {
+	// T2 polish: cfg.Runtime IS HUB_RUNTIME. The architecture
+	// documents HUB_RUNTIME as "the Compose project root" — but
+	// operators / hermetic tests commonly point it at an absolute
+	// compose-file path (the .yaml the binary should drive). Detect
+	// owns the polymorphism: when opts.ComposeFile is empty, it
+	// inspects HUB_RUNTIME itself and treats it as a compose-file
+	// override precisely when the path points at an existing
+	// .yaml/.yml file. We deliberately do NOT re-bundle cfg.Runtime
+	// into opts.ComposeFile here — doing so would (a) force the
+	// Detect codepath to treat HUB_RUNTIME as a project-root marker
+	// even when it is unambiguously a file path, and (b) couple
+	// the CLI to config-time value resolution that future slices
+	// may want to alter.
+	rt, err := compose.Detect(compose.DetectOptions{RepoRoot: repoRoot})
+	if err != nil {
+		emitError(sink, "hub runtime: detect: %v", err)
+		return exitOperatorError, nil
+	}
+	svc := compose.NewService(rt, nil)
+	rcfg := RuntimeConfig{
+		RepoRoot:    repoRoot,
+		ComposeFile: rt.ComposeFile,
+		ProjectName: rt.ProjectName,
+		WorkingDir:  rt.WorkingDir,
+	}
+	flags, perr := ParseRuntimeFlags(rest)
+	if perr != nil {
+		emitError(sink, "%v", perr)
+		return exitContractViolation, nil
+	}
+	// Honour a top-level --json so `hub runtime ps --json` works
+	// without forcing the operator to repeat --json after every
+	// subcommand. ParseRuntimeFlags already accepts --json inline;
+	// this OR is just a convenience shortcut.
+	if jsonFlag {
+		flags.JSON = true
+	}
+	return RunRuntime(stdout, stderr, rcfg, flags, svc)
 }
+
+// emitError was previously declared here; the function now lives in
+// cmd_helpers.go so cmd_runtime.go can share the implementation
+// without importing main.go (cyclic import — main is the entry
+// point). The behaviour is identical: a single stderr line via
+// sink.Errorf, fail-closed, never echoing bearer-shaped content.
+// `*output.Sink` satisfies the interface declared in
+// cmd_helpers.go so every existing call site in main.go keeps
+// compiling unchanged.
