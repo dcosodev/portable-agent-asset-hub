@@ -160,6 +160,20 @@ func run(argv []string, stdout, stderr io.Writer) (int, error) {
 		return exitOK, nil
 	case "runtime":
 		return runRuntime(sink, stdout, stderr, cfg, rest, jsonFlag)
+	case "init":
+		// First-run init. The handler is idempotent (an existing
+		// tokens/hub.token is preserved byte-for-byte). All
+		// failure modes surface as exit 2 (contract violation).
+		// The handler owns its own --json OR'ing: a top-level
+		// `hub --json init` and an inline `hub init --json` are
+		// equivalent.
+		return runInit(sink, cfg, jsonFlag)
+	case "token":
+		// Subcommand dispatch is handled inside runToken: show
+		// (redacted) or rotate (regenerate). Any unknown verb
+		// or forbidden flag (--full / --reveal / --print)
+		// surfaces as exit 2.
+		return runToken(sink, cfg, rest, jsonFlag)
 	default:
 		emitError(sink, "hub: unknown command %q (try `hub --help`)", command)
 		return exitContractViolation, nil
@@ -237,6 +251,10 @@ func printHelp(sink *output.Sink) {
 		"  hub path <KEY>         print a resolved path (home, runtime, openapi, log, token)",
 		"  hub config <KEY>       print a config value (env-aware)",
 		"  hub config --json      print the full config as JSON",
+		"  hub init               create $HUB_HOME layout + bearer token (idempotent)",
+		"  hub init --json        structured payload, bearer-free",
+		"  hub token show         print a redacted token preview",
+		"  hub token rotate       generate a fresh bearer (mode 0600)",
 		"  hub doctor             read-only health + contract + policy check",
 		"  hub doctor --json      the same report as a structured payload",
 		"",
