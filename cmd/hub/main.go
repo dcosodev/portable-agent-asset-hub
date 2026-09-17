@@ -174,6 +174,25 @@ func run(argv []string, stdout, stderr io.Writer) (int, error) {
 		// or forbidden flag (--full / --reveal / --print)
 		// surfaces as exit 2.
 		return runToken(sink, cfg, rest, jsonFlag)
+	case "open":
+		// `hub open` — serve the embedded Graph Explorer bundle on
+		// 127.0.0.1 (loopback only). The parser is strict: unknown
+		// flags, missing values, and any non-loopback bind literal
+		// produce exit 2 (contract violation). The dispatcher does
+		// NOT re-implement the loopback check; RunOpen owns it.
+		flags, perr := ParseOpenFlags(rest)
+		if perr != nil {
+			emitError(sink, "%v", perr)
+			return exitContractViolation, nil
+		}
+		// Honour a top-level --json so `hub --json open` works
+		// without forcing the operator to repeat --json after
+		// the subcommand. ParseOpenFlags already accepts --json
+		// inline; this OR is just a convenience shortcut.
+		if jsonFlag {
+			flags.JSON = true
+		}
+		return RunOpen(stdout, stderr, flags)
 	default:
 		emitError(sink, "hub: unknown command %q (try `hub --help`)", command)
 		return exitContractViolation, nil
@@ -255,6 +274,8 @@ func printHelp(sink *output.Sink) {
 		"  hub init --json        structured payload, bearer-free",
 		"  hub token show         print a redacted token preview",
 		"  hub token rotate       generate a fresh bearer (mode 0600)",
+		"  hub open               serve the embedded Graph Explorer bundle (loopback only)",
+		"  hub open --help        loopback bind, port, json, env-knob docs",
 		"  hub doctor             read-only health + contract + policy check",
 		"  hub doctor --json      the same report as a structured payload",
 		"",
