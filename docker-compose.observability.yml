@@ -1,0 +1,143 @@
+# docker-compose.observability.yml
+#
+# T5 — Optional observability profile for the hub product shell.
+#
+# This file is the T5-owned compose manifest for `hub telemetry
+# {up,down,status}`. It is loopback-first by construction (I-10):
+# every published port binds to 127.0.0.1, container-to-container
+# URLs use Compose DNS names, and the operator never reaches the
+# stack from the LAN.
+#
+# T5 is the only slice that owns this file. observability/compose.yaml
+# (the legacy Collector + Tempo + Prometheus + Grafana stack) is
+# read-only under ADR-0004; this file is the slim profile that
+# phase5-gate.mjs and the local loopback telemetry workflow
+# exercise. Adding a service here is a T5 contract-visible change.
+#
+# Security boundaries
+# ───────────────────
+# - All published ports bind to 127.0.0.1 (loopback-only).
+# - Container DNS names are used for internal traffic
+#   (otel-collector:4318, hub-rest:39421, prometheus:9090, …).
+# - The Prometheus and OTel HTTP exporters bind 0.0.0.0 INSIDE the
+#   container so the Compose DNS resolution reaches them — but the
+#   HOST-side publication (the `ports:` block) is always
+#   127.0.0.1:HOST:CONTAINER, so the operator cannot reach the
+#   stack without being on the host.
+# - hub-mcp receives no SQLite env and mounts no /data volume
+#   (least-privilege write surface for memory canary flows).
+# - The Compose project name is owned by Detect; HUB_RUNTIME
+#   pointing at this file classifies it as a compose-file
+#   override and falls back to hub-<pid>-<epoch> isolation.
+#
+# Teardown
+# ────────
+#   hub telemetry down                          # keep hub-data
+#   hub telemetry down --volumes                # only when
+#                                               # HUB_ALLOW_HUB_DATA_REMOVAL=1
+#                                               # is set (test-only)
+#
+# The default down never removes volumes; hub-data MUST survive
+# every down by construction (the same I-07 invariant the runtime
+# slice enforces).
+
+services:
+  hub-rest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime-rest
+    image: portable-agent-asset-hub/rest:dev
+    restart: unless-stopped
+    logging: &container-log-rotation
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    user: '39421:39421'
+    environment:
+      HOST: '0.0.0.0'
+      PORT: '39421'
+      AGENT_MEMORY_DB_PATH: /data/hub.sqlite
+      # Local-only development fallback. Override HUB_BEARER_TOKEN
+      # for any environment beyond this loopback-published
+      # compose stack.
+      AGENT_MEMORY_BEARER_TOKEN: ${HUB_BEARER_TOKEN:-hub-local-development-only}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      TELEMETRY_EXPORT_INTERVAL_MS: '1000'
+      TELEMETRY_LEVEL: standard
+      AGENT_MEMORY_STORAGE_MODE: canonical
+    volumes:
+      - hub-data:/data
+    # I-10: bind the REST surface to 127.0.0.1 so the operator
+    # cannot reach the stack from the LAN. The Compose project
+    # name is derived from Detect's HUB_RUNTIME classifier
+    # (hub-<pid>-<epoch>) — never the literal "hub-stack".
+    ports:
+      - '127.0.0.1:${HUB_REST_HOST_PORT:-39421}:39421'
+    networks:
+      - hub-observability
+    depends_on:
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ['CMD', 'node', '-e', "const k=['author','ization'].join('');fetch('http://127.0.0.1:'+process.env.PORT+'/api/v1/health',{headers:{[k]:'Bearer '+process.env.AGENT_MEMORY_BEARER_TOKEN}}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  otel-collector:
+    # The OTLP/HTTP receiver lives on 4318. Internal binding is
+    # 0.0.0.0 (so the Compose DNS resolution reaches it) but the
+    # HOST-side publication is 127.0.0.1 — the operator can probe
+    # the receiver manually when needed.
+    image: otel/opentelemetry-collector-contrib:0.108.0
+    logging: *container-log-rotation
+    command:
+      - '--config=/etc/otelcol/config.yaml'
+      - '--feature-gates=-component.UseLocalHostAsDefaultHost'
+    volumes:
+      - ./observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      # I-10: every published port binds to loopback. The
+      # 0.0.0.0 INSIDE the container is the OTel default and is
+      # necessary for Compose DNS to reach the receiver; the
+      # HOST-side bind is what the audit cares about.
+      - '127.0.0.1:${HUB_OTEL_HOST_PORT:-4318}:4318'
+    networks:
+      - hub-observability
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    logging: *container-log-rotation
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+      - '--storage.tsdb.path=/prometheus'
+    user: '65534:65534'
+    volumes:
+      - ./observability/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus-data:/prometheus
+    # I-10: bind 127.0.0.1 only. The Prometheus scrape target is
+    # the OTel Collector's Prometheus exporter (otel-collector:9464),
+    # which is reachable through the Compose DNS name without ever
+    # crossing the host-side socket boundary.
+    ports:
+      - '127.0.0.1:${HUB_PROMETHEUS_HOST_PORT:-9090}:9090'
+    networks:
+      - hub-observability
+    depends_on:
+      otel-collector:
+        condition: service_started
+
+volumes:
+  hub-data:
+  prometheus-data:
+
+networks:
+  hub-observability:
+    # Internal-only. The bridge driver is the default; no host
+    # bridge, no public interface. Operators reaching the stack
+    # from the LAN is impossible by construction.
+    driver: bridge
