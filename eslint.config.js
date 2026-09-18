@@ -39,6 +39,7 @@ export default tseslint.config(
       'dist/**',
       'packages/*/dist/**',
       'packages/*/dist-*/**',
+      'internal/embed/dist/**',
       'packages/sdk-ts/generated/**',
       'packages/sdk-python/generated/**',
       'slices/**',
