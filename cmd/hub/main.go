@@ -160,6 +160,14 @@ func run(argv []string, stdout, stderr io.Writer) (int, error) {
 		return exitOK, nil
 	case "runtime":
 		return runRuntime(sink, stdout, stderr, cfg, rest, jsonFlag)
+	case "telemetry":
+		// T5 — Optional observability profile control. Mirrors
+		// runRuntime's shape: Detect → NewService → typed flags →
+		// RunTelemetry. Detect's HUB_RUNTIME polymorphism points the
+		// telemetry service at the T5-owned top-level
+		// docker-compose.observability.yml (NOT observability/compose.yaml,
+		// which is read-only under ADR-0004).
+		return runTelemetry(sink, stdout, stderr, cfg, rest, jsonFlag)
 	case "init":
 		// First-run init. The handler is idempotent (an existing
 		// tokens/hub.token is preserved byte-for-byte). All
@@ -270,6 +278,8 @@ func printHelp(sink *output.Sink) {
 		"  hub path <KEY>         print a resolved path (home, runtime, openapi, log, token)",
 		"  hub config <KEY>       print a config value (env-aware)",
 		"  hub config --json      print the full config as JSON",
+		"  hub runtime             Docker / Compose stack lifecycle (up/down/status/logs/ps)",
+		"  hub telemetry           Optional observability profile (loopback-first; up/down/status)",
 		"  hub init               create $HUB_HOME layout + bearer token (idempotent)",
 		"  hub init --json        structured payload, bearer-free",
 		"  hub token show         print a redacted token preview",
@@ -530,6 +540,51 @@ func runRuntime(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, 
 		flags.JSON = true
 	}
 	return RunRuntime(stdout, stderr, rcfg, flags, svc)
+}
+
+// runTelemetry is the dispatch shim from `hub telemetry …` to the
+// telemetry handler in cmd_telemetry.go. The shape is identical to
+// runRuntime's (Detect → NewService → typed flags → RunTelemetry);
+// the only differences are:
+//
+//  1. The handler is RunTelemetry, not RunRuntime.
+//  2. The flags type is TelemetryFlags, not RuntimeFlags.
+//  3. The config type is TelemetryConfig, not RuntimeConfig.
+//
+// T5 owns docker-compose.observability.yml (the top-level
+// observability profile). Detect's HUB_RUNTIME polymorphism points
+// the telemetry service at that file when HUB_RUNTIME is set to the
+// .yml's absolute path — the hermetic test harness relies on this
+// exact contract. observability/compose.yaml stays read-only under
+// ADR-0004; this dispatcher never re-points the Service at the
+// legacy path on its own.
+func runTelemetry(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, rest []string, jsonFlag bool) (int, error) {
+	rt, err := compose.Detect(compose.DetectOptions{RepoRoot: repoRoot})
+	if err != nil {
+		emitError(sink, "hub telemetry: detect: %v", err)
+		return exitOperatorError, nil
+	}
+	svc := compose.NewService(rt, nil)
+	tcfg := TelemetryConfig{
+		RepoRoot:    repoRoot,
+		ComposeFile: rt.ComposeFile,
+		ProjectName: rt.ProjectName,
+		WorkingDir:  rt.WorkingDir,
+	}
+	flags, perr := ParseTelemetryFlags(rest)
+	if perr != nil {
+		emitError(sink, "%v", perr)
+		return exitContractViolation, nil
+	}
+	// Honour a top-level --json so `hub --json telemetry up`
+	// works without forcing the operator to repeat --json after
+	// the subcommand. ParseTelemetryFlags already accepts --json
+	// inline; this OR is just a convenience shortcut that mirrors
+	// runRuntime's behaviour.
+	if jsonFlag {
+		flags.JSON = true
+	}
+	return RunTelemetry(stdout, stderr, tcfg, flags, svc)
 }
 
 // emitError was previously declared here; the function now lives in
