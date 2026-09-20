@@ -201,6 +201,8 @@ func run(argv []string, stdout, stderr io.Writer) (int, error) {
 			flags.JSON = true
 		}
 		return RunOpen(stdout, stderr, flags)
+	case "mcp":
+		return runMcp(sink, os.Stdin, stdout, stderr, rest, jsonFlag)
 	default:
 		emitError(sink, "hub: unknown command %q (try `hub --help`)", command)
 		return exitContractViolation, nil
@@ -286,6 +288,7 @@ func printHelp(sink *output.Sink) {
 		"  hub token rotate       generate a fresh bearer (mode 0600)",
 		"  hub open               serve the embedded Graph Explorer bundle (loopback only)",
 		"  hub open --help        loopback bind, port, json, env-knob docs",
+		"  hub mcp launch --stdio supervise the existing TypeScript MCP process",
 		"  hub doctor             read-only health + contract + policy check",
 		"  hub doctor --json      the same report as a structured payload",
 		"",

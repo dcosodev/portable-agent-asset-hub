@@ -179,7 +179,7 @@
     "/api/v1/bindings": {
       "post": {
         "operationId": "createBinding",
-        "x-mcp.exposed": true,
+        "x-mcp.exposed": false,
         "x-mcp.capability": "binding.write",
         "x-mcp.safety": "mutating",
         "x-idempotent": true,
@@ -303,7 +303,7 @@
     "/api/v1/events": {
       "post": {
         "operationId": "createEvent",
-        "x-mcp.exposed": true,
+        "x-mcp.exposed": false,
         "x-mcp.capability": "event.write",
         "x-mcp.safety": "mutating",
         "x-idempotent": true,
@@ -932,7 +932,7 @@
     "/api/v1/catalog/sync/preview": {
       "post": {
         "operationId": "previewCatalogSync",
-        "x-mcp.exposed": true,
+        "x-mcp.exposed": false,
         "x-mcp.capability": "catalog.sync.preview",
         "x-mcp.safety": "mutating",
         "x-idempotent": true,
@@ -974,7 +974,7 @@
     "/api/v1/catalog/sync/apply": {
       "post": {
         "operationId": "applyCatalogSync",
-        "x-mcp.exposed": true,
+        "x-mcp.exposed": false,
         "x-mcp.capability": "catalog.sync.apply",
         "x-mcp.safety": "mutating",
         "x-idempotent": true,
@@ -1088,7 +1088,7 @@
     "/api/v1/replay": {
       "post": {
         "operationId": "replay",
-        "x-mcp.exposed": true,
+        "x-mcp.exposed": false,
         "x-mcp.capability": "replay.run",
         "x-mcp.safety": "diagnostic",
         "x-idempotent": true,
@@ -1130,7 +1130,7 @@
     "/api/v1/materializations/preview": {
       "post": {
         "operationId": "previewMaterialization",
-        "x-mcp.exposed": true,
+        "x-mcp.exposed": false,
         "x-mcp.capability": "materialization.preview",
         "x-mcp.safety": "safe",
         "x-idempotent": true,
@@ -1222,7 +1222,7 @@
     "/api/v1/materializations/{run_id}/rollback": {
       "post": {
         "operationId": "rollbackMaterialization",
-        "x-mcp.exposed": true,
+        "x-mcp.exposed": false,
         "x-mcp.capability": "materialization.rollback",
         "x-mcp.safety": "destructive",
         "x-idempotent": true,
