@@ -18,3 +18,4 @@ export {
   type HermesRollbackRequest,
   type RestDispatcher,
 } from './adapter.js';
+export { applyReviewed, recomputeBeforeApply, planDigest } from './apply-reviewed.js';

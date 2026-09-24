@@ -203,6 +203,24 @@ func run(argv []string, stdout, stderr io.Writer) (int, error) {
 		return RunOpen(stdout, stderr, flags)
 	case "mcp":
 		return runMcp(sink, os.Stdin, stdout, stderr, rest, jsonFlag)
+	case "hub":
+		// T8 — `hub hub connect …` is the T8 dispatcher surface.
+		// The `hub hub` prefix is per docs/phase0/naming.md
+		// (the binary name IS the product name) and the
+		// `connect` verb is the T8 amendment's only new CLI
+		// surface. The dispatcher refuses anything other than
+		// `connect` here so `hub hub foo` surfaces a clean
+		// contract-violation diagnostic instead of a confusing
+		// `unknown command` fallthrough. The bare `hub connect`
+		// alias is intentionally NOT supported: the slice's
+		// only contract is `hub hub connect …`, and adding a
+		// shortcut would widen the T8 dispatcher surface
+		// beyond what the amendment authorises.
+		if len(rest) > 0 && rest[0] == "connect" {
+			return runConnect(sink, stdout, stderr, cfg, rest[1:], jsonFlag)
+		}
+		emitError(sink, "hub hub: unknown command %q (try `hub hub connect --help`)", strings.Join(rest, " "))
+		return exitContractViolation, nil
 	default:
 		emitError(sink, "hub: unknown command %q (try `hub --help`)", command)
 		return exitContractViolation, nil

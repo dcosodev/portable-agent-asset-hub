@@ -43,13 +43,18 @@ export type StorageDiagnostics = {
   };
 };
 
+export type SqliteStoreOptions = {
+  readOnly?: boolean;
+  mode?: 'read-only' | 'read-write';
+};
+
 export class SqliteStore implements Storage {
   readonly #database: HubDatabase;
   readonly #databasePath: string;
 
-  public constructor(path: string) {
+  public constructor(path: string, options: SqliteStoreOptions = {}) {
     this.#databasePath = path;
-    this.#database = new HubDatabase(path);
+    this.#database = new HubDatabase(path, options);
   }
 
   /** Returns the absolute filesystem path to the underlying SQLite database.
@@ -80,7 +85,7 @@ export class SqliteStore implements Storage {
         events,
         memories,
       };
-    }));
+    }, this.#database.readOnly));
   }
 
   public idempotent<T>(actor: ActorContext, input: IdempotencyInput, fn: (tx: Transaction) => T): IdempotencyResult<T> {

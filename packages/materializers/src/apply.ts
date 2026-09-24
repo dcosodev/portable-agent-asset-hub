@@ -322,11 +322,14 @@ export function applyPlan(
       restoreBackupTree(backupDir, targetRoot);
       try { rmSync(backupDir, { recursive: true, force: true }); } catch { /* best effort */ }
     }
+    throw error;
+  } finally {
+    // Staging is ephemeral apply scratch space, never rollback state.
+    // Remove it on both success and failure so a completed run cannot
+    // leave an empty `.pah/staging/<runId>` tree behind.
     if (stageDir && existsSync(stageDir)) {
       try { rmSync(stageDir, { recursive: true, force: true }); } catch { /* best effort */ }
     }
-    throw error;
-  } finally {
     try { lock.release(); } catch { /* best effort */ }
   }
 }

@@ -12,8 +12,9 @@ export function transaction<T>(
   actor: ActorContext,
   fn: (tx: StorageTransaction) => T,
   repositories: (audit: AuditRepository, assertActive: () => void) => Omit<StorageTransaction, 'audit' | 'profiles' | 'materializations' | 'catalog' | 'catalogSync' | 'skills' | 'relationProposals'>,
+  readOnly = false,
 ): T {
-  db.exec('BEGIN IMMEDIATE');
+  db.exec(readOnly ? 'BEGIN' : 'BEGIN IMMEDIATE');
   let active = true;
   const assertActive = (): void => {
     if (!active) throw new HubError('INTERNAL', 'transaction repository expired', 500);
