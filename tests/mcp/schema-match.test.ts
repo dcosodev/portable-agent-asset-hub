@@ -14,7 +14,9 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expectedToolOperationIds, buildToolRegistry } from '@portable-agent-asset-hub/mcp';
+import { expectedToolOperationIds, buildToolRegistry, GENERATED_TOOLS } from '@portable-agent-asset-hub/mcp';
+import { filterToolsByCapability } from '@portable-agent-asset-hub/mcp';
+import { CAPABILITIES } from '@portable-agent-asset-hub/core';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../..');
@@ -62,5 +64,20 @@ describe('MCP schema matches OpenAPI (S7)', () => {
         expect(tool!.safety, `safety mismatch for ${op.operationId}`).toBe(op['x-mcp.safety']);
       }
     }
+  });
+
+  it('canonical_capabilities_reach_exactly_every_exposed_operation', () => {
+    const spec = loadOpenapi();
+    const exposed = new Set<string>();
+    const hidden = new Set<string>();
+    for (const methods of Object.values(spec.paths)) {
+      for (const op of Object.values(methods)) {
+        if (!op.operationId) continue;
+        (op['x-mcp.exposed'] === true ? exposed : hidden).add(op.operationId);
+      }
+    }
+    const visible = new Set(filterToolsByCapability(GENERATED_TOOLS, CAPABILITIES).map((tool) => tool.operationId));
+    expect(visible).toEqual(exposed);
+    expect([...hidden].filter((id) => visible.has(id))).toEqual([]);
   });
 });

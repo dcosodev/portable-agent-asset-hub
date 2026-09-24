@@ -63,17 +63,6 @@ export const GENERATED_TOOLS: readonly ToolCatalogEntry[] = [
     "idempotent": false
   },
   {
-    "operationId": "createBinding",
-    "capability": "binding.write",
-    "safety": "mutating",
-    "rest": {
-      "method": "POST",
-      "path": "/api/v1/bindings"
-    },
-    "cas": true,
-    "idempotent": true
-  },
-  {
     "operationId": "createProfile",
     "capability": "profile.write",
     "safety": "mutating",
@@ -94,17 +83,6 @@ export const GENERATED_TOOLS: readonly ToolCatalogEntry[] = [
     },
     "cas": false,
     "idempotent": false
-  },
-  {
-    "operationId": "createEvent",
-    "capability": "event.write",
-    "safety": "mutating",
-    "rest": {
-      "method": "POST",
-      "path": "/api/v1/events"
-    },
-    "cas": false,
-    "idempotent": true
   },
   {
     "operationId": "searchMemories",
@@ -239,28 +217,6 @@ export const GENERATED_TOOLS: readonly ToolCatalogEntry[] = [
     "idempotent": false
   },
   {
-    "operationId": "previewCatalogSync",
-    "capability": "catalog.sync.preview",
-    "safety": "mutating",
-    "rest": {
-      "method": "POST",
-      "path": "/api/v1/catalog/sync/preview"
-    },
-    "cas": false,
-    "idempotent": true
-  },
-  {
-    "operationId": "applyCatalogSync",
-    "capability": "catalog.sync.apply",
-    "safety": "mutating",
-    "rest": {
-      "method": "POST",
-      "path": "/api/v1/catalog/sync/apply"
-    },
-    "cas": true,
-    "idempotent": true
-  },
-  {
     "operationId": "listAudit",
     "capability": "audit.read",
     "safety": "safe",
@@ -283,45 +239,12 @@ export const GENERATED_TOOLS: readonly ToolCatalogEntry[] = [
     "idempotent": false
   },
   {
-    "operationId": "replay",
-    "capability": "replay.run",
-    "safety": "diagnostic",
-    "rest": {
-      "method": "POST",
-      "path": "/api/v1/replay"
-    },
-    "cas": false,
-    "idempotent": true
-  },
-  {
-    "operationId": "previewMaterialization",
-    "capability": "materialization.preview",
-    "safety": "safe",
-    "rest": {
-      "method": "POST",
-      "path": "/api/v1/materializations/preview"
-    },
-    "cas": false,
-    "idempotent": true
-  },
-  {
     "operationId": "applyMaterialization",
     "capability": "materialization.apply",
     "safety": "mutating",
     "rest": {
       "method": "POST",
       "path": "/api/v1/materializations/apply"
-    },
-    "cas": true,
-    "idempotent": true
-  },
-  {
-    "operationId": "rollbackMaterialization",
-    "capability": "materialization.rollback",
-    "safety": "destructive",
-    "rest": {
-      "method": "POST",
-      "path": "/api/v1/materializations/{run_id}/rollback"
     },
     "cas": true,
     "idempotent": true
