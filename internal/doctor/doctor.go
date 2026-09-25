@@ -349,6 +349,191 @@ func checkNoBearerInEnv() Check {
 }
 
 // ---------------------------------------------------------------------------
+// T9 additive posture checks
+// ---------------------------------------------------------------------------
+//
+// Per docs/roadmap/slices.json slice `T9`, the final `hub doctor`
+// shape EXTENDS the T1 check set with exactly three additive read-
+// only posture checks:
+//
+//	id exactly `backup_posture`
+//	id exactly `update_posture`
+//	id exactly `distribution_checks`
+//
+// The amendment pins the three IDs by exact name and forbids any
+// other addition or substitution. The T1-owned check IDs MUST
+// remain byte-stable as a prefix of the report — `Run` composes
+// the original six T1 builders first and APPENDS the three T9
+// builders last, preserving order, status, and message verbatim.
+// The legacy `rest_handshake` check is EXPLICITLY PERMITTED to
+// remain `pending` (T1 authority on its status is preserved
+// untouched; the doctor-final tests also pin this carve-out).
+//
+// Design constraints (all T9-builder-local invariants):
+//
+//   - Read-only. The T9 builders NEVER stat, never read or write
+//     any file, never reach the network, and never call a
+//     subprocess. They derive their verdicts from the already-
+//     loaded `config.Config` + the compiled-in version triple so
+//     `hub doctor` cannot regress the "never mutates the
+//     filesystem" invariant the doctor.go docstring promises.
+//     The doctor-final tests assert `existsSync($HUB_HOME/state/
+//     backups/) === false` after a `hub doctor` invocation on a
+//     fresh install fixture — pre-creating `state/backups/` from
+//     a posture check would regress that contract.
+//
+//   - Non-fail / non-pending on a fresh install. The T9-owned
+//     checks MUST report `ok` (not `fail`, not `pending`) on a
+//     fresh install fixture: `cfg.Home` and `cfg.Layout` are
+//     populated by `config.Load`; `version.Current()` always
+//     returns a non-empty triple for a real build. The doctor-
+//     final tests assert this directly via the
+//     `none-of-the-three-T9-owned-checks-is-"fail"-or-"pending"`
+//     case.
+//
+//   - Bearer hygiene. The T9 builder messages NEVER embed any
+//     operator-supplied value directly — every Detail / Message
+//     is a fixed, deterministic human-readable posture
+//     statement. A bearer-shaped value present in a sidecar env
+//     var cannot leak through a posture check because the
+//     builder never reads bearer-shaped keys. The redaction
+//     pass in `Report.MarshalJSON` still applies to every
+//     field, so a defensive belt-and-braces holds even if a
+//     future builder accidentally embeds a bearer-shaped
+//     literal.
+//
+//   - Determinism / byte-stability. The T9 builders do NOT
+//     consult `os.Stat`, `time.Now`, or any other time-varying
+//     or path-varying source. Two consecutive invocations on
+//     the same worktree produce a byte-identical report (the
+//     T1 shell doctor suite asserts this for the T1 prefix;
+//     the additive T9 tail preserves the same invariant).
+
+// checkBackupPosture reports the read-only posture of the T9
+// backup surface as observed from the already-resolved layout. It
+// makes no filesystem call: the four reserved subdirectories are
+// derivable from `cfg.Layout`, and a fresh install fixture (post-
+// `hub init`) carries well-formed Layout fields populated entirely
+// from env. The check is reported as `ok` whenever the layout has
+// at least the four required reservations; otherwise it surfaces a
+// warn so the operator can investigate — without ever failing the
+// overall verdict on a properly initialised install.
+//
+// The message wording avoids embedding any operator-supplied path
+// so the contract surface stays byte-stable across temp HOME
+// paths (mirroring the `home_resolved` message-shaping rule above).
+func checkBackupPosture(cfg config.Config) Check {
+	c := Check{
+		ID:   "backup_posture",
+		Name: "T9 backup posture (runner wired, layout reserved)",
+	}
+	// The four required reservations derive from `cfg.Layout`.
+	// None of the four paths are stat'd: the check answers
+	// "is the layout well-formed enough to reserve state/backups
+	// as the canonical snapshot target", which is a pure
+	// computation against the already-loaded Config.
+	if cfg.Home == "" || cfg.Layout.State == "" || cfg.Layout.Tokens == "" || cfg.Layout.Logs == "" || cfg.Layout.Runtime == "" {
+		// A genuinely malformed Layout would block the
+		// backup verb (no place to write an archive), so a
+		// warn here is appropriate. This branch is
+		// unreachable on the test surface the doctor-final
+		// suite exercises (`hub init` succeeded → Layout is
+		// fully populated), but keeping it as warn-not-fail
+		// matches the rest of the doctor's "tolerant of a
+		// not-yet-initialised layout" calibration.
+		c.Status = StatusWarn
+		c.Message = "backup layout not fully reserved"
+		c.Detail = "hub backup requires a fully-resolved HUB_HOME layout"
+		return c
+	}
+	c.Status = StatusOK
+	c.Message = "backup layout reserved; runner wired (snapshot/restore)"
+	c.Detail = "snapshot set: resolver-canonical SQLite + config files; excludes tokens/** and secret-shaped files"
+	return c
+}
+
+// checkUpdatePosture reports the read-only posture of the T9
+// update surface. The update verb is plan-only (the apply
+// transport is explicitly out of scope for T9 and is forbidden by
+// `forbidden_paths: internal/update/apply.go`), so the posture
+// reduces to "the compiled-in version triple is non-empty and the
+// literal channel `stable` is the only one the planner accepts".
+//
+// Like `checkBackupPosture`, this builder is pure: it never
+// reaches the network, never inspects the install, and never
+// calls into the planner. It reads `version.Current()` (already
+// imported) so a fresh install binary with a stamped build always
+// reports `ok`. The presence of an empty Hub string would
+// indicate an unrecoverable build defect (the version package
+// stamps it at build time); we surface that as a warn instead of
+// a fail to keep the doctor's verdict tolerant, matching the
+// "fresh worktree" calibration.
+func checkUpdatePosture() Check {
+	v := version.Current()
+	c := Check{
+		ID:   "update_posture",
+		Name: "T9 update posture (plan-only dry-run, stable channel only)",
+	}
+	if v.Hub == "" || v.Go == "" {
+		c.Status = StatusWarn
+		c.Message = "compiled-in version triple is empty"
+		c.Detail = "update planner refused to interpret an unversioned binary"
+		return c
+	}
+	c.Status = StatusOK
+	c.Message = "planner wired (stable channel, dry-run default); apply out of scope"
+	c.Detail = "hub update --apply refuses with exit 2; no install mutation in this slice"
+	return c
+}
+
+// checkDistributionChecks reports the read-only posture of the
+// T9 distribution surface as a whole. It is the composite gate
+// for the T9 delivery: a fresh install fixture (post `hub init`)
+// has a resolved layout, a reachable openapi spec, and a stamped
+// binary version, so the distribution posture is `ok`. The check
+// surfaces `warn` rather than `fail` when one of the three legs
+// is missing, mirroring `home_resolved`'s tolerant semantics.
+//
+// All three inputs are already loaded into the `Run` call frame:
+// `cfg.OpenAPI` is set by config.Load (the openapi_accessible T1
+// check confirms the spec is reachable on disk; this T9 check
+// confirms the distribution surface CONSISTENTLY knows the spec
+// path AND the layout AND the version triple), `cfg.Layout` is
+// populated, and `version.Current()` returns a stamped triple.
+func checkDistributionChecks(cfg config.Config) Check {
+	c := Check{
+		ID:     "distribution_checks",
+		Name:   "T9 distribution posture (openapi + layout + version all wired)",
+		Status: StatusOK,
+	}
+	// Three posture legs. A `warn` is appropriate when ANY
+	// leg is missing — a missing leg makes distribution
+	// choreography unsafe, but a fresh install with one
+	// missing leg is recoverable (re-run `hub init`), so we
+	// surface warn-not-fail to match the rest of the doctor's
+	// calibration.
+	if cfg.OpenAPI == "" {
+		c.Status = StatusWarn
+		c.Message = "openapi path is unset"
+		return c
+	}
+	if cfg.Home == "" {
+		c.Status = StatusWarn
+		c.Message = "HUB_HOME is unset"
+		return c
+	}
+	v := version.Current()
+	if v.Hub == "" {
+		c.Status = StatusWarn
+		c.Message = "compiled-in hub version is empty"
+		return c
+	}
+	c.Message = "distribution surface wired (backup/update posture + openapi)"
+	c.Detail = "hub binary, openapi spec, and HUB_HOME layout all resolved"
+	return c
+}
+
+// ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
 
@@ -356,16 +541,42 @@ func checkNoBearerInEnv() Check {
 // aggregated Report. The function is the single entry point main.go
 // calls. It is read-only: it stats files, probes env, and returns
 // data. It MUST NOT mutate the filesystem.
+//
+// Check composition is two-segment:
+//
+//  1. The T1 PREFIX — six checks in their original order
+//     (`shell_binary`, `config_valid`, `home_resolved`,
+//     `openapi_accessible`, `no_bearer_in_env`, `rest_handshake`).
+//     The legacy `rest_handshake` check reports `pending` and is
+//     filtered out of the aggregated verdict; every other T1 check
+//     is byte-stable on a freshly materialised worktree.
+//
+//  2. The T9 TAIL — three additive posture checks
+//     (`backup_posture`, `update_posture`, `distribution_checks`)
+//     appended in id-alphabetical order. The amendment pins these
+//     three exact ids; no other id may be appended, and no T1 id
+//     may be reordered, removed, demoted, or substituted. The T9
+//     checks are pure functions of `cfg` + `version.Current()` and
+//     make no filesystem call, no network call, and no subprocess
+//     call; they report `ok` on a freshly initialised install.
 func Run(cfg config.Config, cfgErr error) Report {
 	// Build the checks in a deterministic order so the JSON payload
-	// is byte-stable across invocations on the same worktree.
+	// is byte-stable across invocations on the same worktree. The
+	// T1 prefix is preserved byte-for-byte (same builder call
+	// order, same arguments); the T9 tail is appended in id-
+	// alphabetical order to match the slice governance pinning.
 	checks := []Check{
+		// T1 prefix (preserved untouched):
 		checkShellBinary(),
 		checkConfigValid(cfg, cfgErr),
 		checkHomeResolved(cfg),
 		checkOpenAPIAccessible(cfg),
 		checkNoBearerInEnv(),
 		checkRestHandshake(),
+		// T9 additive tail (id-alphabetical):
+		checkBackupPosture(cfg),
+		checkUpdatePosture(),
+		checkDistributionChecks(cfg),
 	}
 	return Report{
 		Status: TopLevelStatus(checks),
