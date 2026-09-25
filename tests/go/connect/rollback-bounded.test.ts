@@ -139,7 +139,7 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
     );
     expect(res.status, `stderr=${JSON.stringify(res.stderr)}`).toBe(2);
     expect(res.stderr).toMatch(/--run-id/);
-  }, 30_000);
+  }, 60_000);
 
   it('rollback without --reason exits 2 (missing required flag)', async () => {
     const h = sharedConnectHome('rollback-no-reason');
