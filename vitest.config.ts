@@ -21,5 +21,10 @@ export default defineConfig({
     '@portable-agent-asset-hub/runtime-adapters': new URL('./packages/runtime-adapters/src/index.ts', import.meta.url).pathname,
     '@portable-agent-asset-hub/skill-export': new URL('./packages/skill-export/src/index.ts', import.meta.url).pathname,
   } },
-  test: { include: ['tests/**/*.test.ts'], testTimeout: 20_000, hookTimeout: 30_000 },
+  // hookTimeout is generous because several tests/go/* suites `go build`
+  // the hub binary once per worker inside beforeAll; under CI's shared,
+  // lower-core runners several concurrent `go build`s can transiently
+  // exceed 30s even though the same suite finishes in a few seconds
+  // locally.
+  test: { include: ['tests/**/*.test.ts'], testTimeout: 20_000, hookTimeout: 60_000 },
 });

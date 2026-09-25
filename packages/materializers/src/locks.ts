@@ -57,10 +57,17 @@ export function acquireLock(lockDir: string, harness: HarnessId, profileId: stri
       pid: process.pid,
       acquiredAt: new Date().toISOString(),
     }) + '\n');
-    closeSync(fd);
-    fd = undefined;
+    // The descriptor is deliberately NOT closed here: it stays open for
+    // the whole life of the lock (acquire → apply → release) so the
+    // kernel fd-table holds a reference against the lock path for the
+    // entire apply pipeline. It is closed ONLY inside `release()`.
   } catch (error) {
-    if (fd !== undefined) closeSync(fd);
+    // Local leak guard: only on the initial-write failure path, before
+    // the handle is returned. Observable semantics are unchanged.
+    if (fd !== undefined) {
+      try { closeSync(fd); } catch { /* best effort */ }
+      fd = undefined;
+    }
     if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
       throw new HubError('CONFLICT', `lock already held: ${harness}/${profileId}`, 409);
     }
@@ -76,6 +83,12 @@ export function acquireLock(lockDir: string, harness: HarnessId, profileId: stri
     release(): void {
       if (released) return;
       released = true;
+      // Close the held descriptor exactly once, before unlinking.
+      if (fd !== undefined) {
+        const held = fd;
+        fd = undefined;
+        try { closeSync(held); } catch { /* best effort */ }
+      }
       try {
         if (existsSync(lockPath)) unlinkSync(lockPath);
       } catch {
