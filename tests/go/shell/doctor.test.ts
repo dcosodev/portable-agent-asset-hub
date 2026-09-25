@@ -236,7 +236,36 @@ describe('hub doctor --json — structured contract', () => {
     cleanups.push(res.cleanup);
     expect(res.status).toBe(0);
     const parsed = JSON.parse(res.stdout.trim()) as DoctorReport;
-    expect(parsed.checks.map((c) => c.id)).toEqual(KNOWN_CHECK_IDS);
+    // T9 T1-compatibility carve-out (see docs/roadmap/slices.json T9
+    // entry, scope+allowed_paths annotated carve-out): the strict
+    // full-array equality is relaxed into a subsequence-presence
+    // assertion. The six T1-owned check ids MUST remain present in
+    // their original order as a prefix/subsequence of the report.
+    // Only the three governed additive trailing T9-owned ids
+    // (`backup_posture`, `update_posture`, `distribution_checks`)
+    // are permitted; arbitrary reordering, removal, status
+    // demotion, or substitution of T1-owned ids is forbidden.
+    // The byte-stable JSON contract on the six T1-owned ids (and
+    // every other T1-owned status/behavior expectation) is
+    // preserved untouched — this is the minimal, governed relaxation
+    // required to keep T9 additive.
+    const actual = parsed.checks.map((c) => c.id);
+    expect(actual.length).toBeGreaterThanOrEqual(KNOWN_CHECK_IDS.length);
+    // The six T1-owned ids MUST appear as a contiguous prefix in
+    // their original order; nothing may be reordered, removed, or
+    // substituted at the T1 layer.
+    for (let i = 0; i < KNOWN_CHECK_IDS.length; i += 1) {
+      expect(actual[i], `T1-owned id at position ${i} must be ${KNOWN_CHECK_IDS[i]} (got ${actual[i]}); arbitrary reordering/substitution is forbidden by the T9 T1-compatibility carve-out`).toBe(KNOWN_CHECK_IDS[i]);
+    }
+    // The trailing ids (if any) MUST be drawn from the T9-owned set;
+    // no other id may have been appended, and no T1-owned id may
+    // have been duplicated.
+    const tail = actual.slice(KNOWN_CHECK_IDS.length);
+    const allowedTrailing = new Set(['backup_posture', 'update_posture', 'distribution_checks']);
+    for (const id of tail) {
+      expect(allowedTrailing.has(id), `appended id ${id} is not a governed additive trailing T9-owned id (must be one of: ${[...allowedTrailing].join(', ')})`).toBe(true);
+    }
+    expect(new Set(actual).size, `duplicate check ids: ${JSON.stringify(actual)}`).toBe(actual.length);
   }, 30_000);
 
   it('every_check_has_exactly_the_locked_keys', async () => {

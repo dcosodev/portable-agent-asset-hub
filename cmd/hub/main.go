@@ -203,6 +203,30 @@ func run(argv []string, stdout, stderr io.Writer) (int, error) {
 		return RunOpen(stdout, stderr, flags)
 	case "mcp":
 		return runMcp(sink, os.Stdin, stdout, stderr, rest, jsonFlag)
+	case "backup":
+		// T9 — `hub backup --out <archive>` (snapshot) and
+		// `hub backup --restore <archive>` (restore). The
+		// dispatcher in cmd_backup.go is the single
+		// authoritative handler for the verb; main.go is the
+		// dispatch shim. The amendment pins exactly these two
+		// flags — anything else on the verb is fail-closed
+		// (exit 2). The dispatcher never opens SQLite or
+		// derives a DB path from HUB_HOME; the canonical DB
+		// resolution goes through a tiny Node consumer so the
+		// Go shell stays a transport.
+		return runBackup(sink, stdout, stderr, cfg, rest)
+	case "update":
+		// T9 — `hub update` is the plan-only dry-run by
+		// default. The literal channel `stable` is the only
+		// accepted channel (compiled-only); non-stable
+		// channels are refused pre-network with a non-zero
+		// exit code. `hub update --apply` is refused with
+		// exit code 2 and a message declaring the apply
+		// transport out of scope; no install mutation occurs
+		// on refuse. The dispatcher in cmd_update.go owns
+		// all of this and never reaches for the network or
+		// the filesystem — internal/update is planner-only.
+		return runUpdate(sink, stdout, stderr, cfg, rest)
 	case "hub":
 		// T8 — `hub hub connect …` is the T8 dispatcher surface.
 		// The `hub hub` prefix is per docs/phase0/naming.md
@@ -307,6 +331,13 @@ func printHelp(sink *output.Sink) {
 		"  hub open               serve the embedded Graph Explorer bundle (loopback only)",
 		"  hub open --help        loopback bind, port, json, env-knob docs",
 		"  hub mcp launch --stdio supervise the existing TypeScript MCP process",
+		"  hub backup           snapshot / restore the canonical resolver database (T9)",
+		"  hub backup --out <archive>      snapshot the canonical DB to <archive>",
+		"  hub backup --restore <archive>  restore the canonical DB from <archive>",
+		"  hub backup --help     full T9 backup surface",
+		"  hub update             plan-only dry-run; literal `stable` channel (T9)",
+		"  hub update --apply     refuses exit 2 — apply transport out of scope (T9)",
+		"  hub update --help      full T9 update surface",
 		"  hub doctor             read-only health + contract + policy check",
 		"  hub doctor --json      the same report as a structured payload",
 		"",
