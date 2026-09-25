@@ -362,11 +362,17 @@ function stageRestore(archivePath, dbPath) {
     //     We never pass `-P` (libarchive's `absolute-names`) so the
     //     default is in force; the in-process validation above is
     //     the source of truth, this is defence in depth at the
-    //     system-tar layer.
+    //     system-tar layer. Metadata-stripping flags are further
+    //     split by which `tar` actually supports them — see
+    //     isBsdTar() below.
     const tarArgs = [
       '-xzf', archivePath,
       '-C', stagingDir,
-      '--no-acls', '--no-xattrs', '--no-fflags', '--no-mac-metadata',
+      '--no-acls', '--no-xattrs',
+      // --no-fflags / --no-mac-metadata are libarchive/bsdtar-only —
+      // see isBsdTar() below. GNU tar has no BSD file flags or Mac
+      // extended metadata to strip in the first place.
+      ...(isBsdTar() ? ['--no-fflags', '--no-mac-metadata'] : []),
       '--no-same-permissions',
     ];
     const tarResult = spawnSync('tar', tarArgs, { encoding: 'buffer' });
@@ -558,6 +564,21 @@ function listDirRecursive(root) {
 
 /** The literal set of entry names the snapshot guarantees on the wire. */
 const EXPECTED_ARCHIVE_ENTRIES = Object.freeze(['hub.sqlite']);
+
+// `--no-fflags` and `--no-mac-metadata` are libarchive/bsdtar-only —
+// GNU tar (the default on every Linux CI runner) rejects them outright
+// (exit 64, "unrecognized option"). Detect the system `tar` once and
+// only add them when it is actually bsdtar; GNU tar's own defaults
+// already omit BSD file flags and Mac extended metadata, so skipping
+// the flags there changes nothing observable.
+let cachedIsBsdTar;
+function isBsdTar() {
+  if (cachedIsBsdTar === undefined) {
+    const res = spawnSync('tar', ['--version'], { encoding: 'utf8' });
+    cachedIsBsdTar = res.status === 0 && /bsdtar/i.test(res.stdout ?? '');
+  }
+  return cachedIsBsdTar;
+}
 
 function listArchiveSafely(archivePath) {
   const res = spawnSync('tar', ['-tzf', archivePath], { encoding: 'utf8' });
