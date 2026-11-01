@@ -46,7 +46,7 @@ pnpm --filter @portable-agent-asset-hub/graph-ui start     # build then run dist
 
 Needs a running REST hub to have any data to show — see the "Optional:
 browse the canonical skill graph" step in the root
-[`README.md`](../../README.md#quickstart).
+[`README.md`](../../README.md#quick-start).
 
 Note: `graph-ui` is deliberately outside the root `tsconfig.json` project
 references (it compiles JSX under its own `tsconfig.json` and

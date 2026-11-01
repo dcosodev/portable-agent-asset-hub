@@ -1,5 +1,3 @@
-// packages/materializers/src/rollback.ts
-//
 // The renderer-agnostic rollback pipeline. Given a `runId`, it
 // restores the target files from the staging backup that `applyPlan`
 // created at `<targetRoot>/.pah/backups/<runId>/`. The flow:
@@ -92,7 +90,7 @@ export function rollbackPlan(
   // 1. Resolve target root from the registry FIRST. A successful
   //    applyPlan registers its runId with the (targetRoot, lockDir,
   //    harness, profileId) tuple it actually used. Falling back to a
-  //    manifest scan is the legacy S8 behaviour; the registry path is
+  //    manifest scan is the older behaviour; the registry path is
   //    exact and does not depend on the manifest still being present
   //    on disk at a path the caller did not specify.
   let targetRoot: string | undefined;
@@ -106,7 +104,7 @@ export function rollbackPlan(
     profileId = registered.profileId;
     lockDir = registered.lockDir;
   } else {
-    // 1b. Fallback: scan the well-known manifest paths. The S8
+    // 1b. Fallback: scan the well-known manifest paths. The Hermes
     //     contract places the manifest at
     //     `<targetRoot>/.pah/manifest.v1.json`. The apply pipeline
     //     always writes there, so the rollback only needs to inspect
@@ -129,7 +127,7 @@ export function rollbackPlan(
   }
   if (!targetRoot || !harness || !profileId) {
     // No manifest references this runId; check for an orphaned backup
-    // directory in any well-known location. For the S8 contract the
+    // directory in any well-known location. The
     // only well-known location is the recorded targetRoot of the most
     // recent manifest, so we treat the missing case as unknown.
     throw new HubError('NOT_FOUND', `unknown runId: ${input.runId}`, 404);
@@ -250,7 +248,7 @@ export function rollbackPlan(
 }
 
 /**
- * Find candidate manifest paths. The S8 contract places the manifest
+ * Find candidate manifest paths. The manifest lives
  * at `<targetRoot>/.pah/manifest.v1.json`. The apply pipeline always
  * writes there, so the rollback only needs to inspect that single
  * location. We expose this as a separate function for tests that want

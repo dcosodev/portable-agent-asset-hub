@@ -555,7 +555,7 @@ func (r *Runner) ProbeDatabase(ctx context.Context) (string, error) {
 // PORTABLE_AGENT_ASSET_HUB_DATA_DIR, then platform default. The
 // value is forwarded unchanged so the .mjs child can use it for
 // diagnostics and for the default archive directory if ever
-// requested in a future slice.
+// requested in a future change.
 func (r *Runner) resolveHubHome() string {
 	if r.envProbe != nil {
 		return strings.TrimSpace(r.envProbe("HUB_HOME"))
@@ -596,8 +596,7 @@ func (r *Runner) resolveHubHome() string {
 //     shell still has CWD inside the source tree.
 //  5. Fail-closed: a missing file at every level surfaces a
 //     precise diagnostic naming the anchors tried. The
-//     locator NEVER invents a DB path or a registry — that
-//     is the slice's anti-goal (`non_goals[0]`).
+//     locator NEVER invents a DB path or a registry.
 func (r *Runner) resolveCoreDist() (string, error) {
 	// Collect the candidate absolute paths in priority order.
 	// The configured RepoRoot is the historical fallback

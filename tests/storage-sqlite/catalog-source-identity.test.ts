@@ -1,6 +1,4 @@
-// tests/storage-sqlite/catalog-source-identity.test.ts
-//
-// TDD slice for persisted catalog source identity.
+// Persisted catalog source identity.
 //
 // `catalog_sources` carries two identities: the surrogate `id` and the
 // logical `UNIQUE(owner_user_id, scope_agent_id, kind, locator)` tuple
@@ -8,7 +6,7 @@
 // `INSERT OR IGNORE`, so a caller proposing a *different* id for an
 // already-persisted logical tuple silently loses the write.
 //
-// Normative contracts exercised against a real temp `SqliteStore`:
+// Contracts exercised against a real temp `SqliteStore`:
 //
 //   * `addSource` returns the row that is actually persisted. When the
 //     logical tuple already exists, the caller gets the stored id back,

@@ -52,14 +52,21 @@ integration tests use.
 
 The same operations are available through the generated clients (see
 `packages/sdk-ts/` and `packages/sdk-python/`; regeneration requires
-Java 17 + OpenAPI Generator 7.10.0):
+Java 17 + OpenAPI Generator 7.10.0). These examples call a hub started with
+`pnpm hub:start:temp`, which listens on `127.0.0.1:39421` and requires no token:
 
 ```ts
-// TypeScript: the generated typescript-fetch tree exposes DefaultApi
-// (packages/sdk-ts/generated/); the package root wraps it as Client.
-import { Configuration, DefaultApi } from '@portable-agent-asset-hub/sdk-ts/generated';
+// TypeScript: the package root exports a small Client.
+import { Client } from '@portable-agent-asset-hub/sdk-ts';
 
-const api = new DefaultApi(new Configuration({ basePath: 'http://127.0.0.1:8787' }));
+const client = new Client({ baseUrl: 'http://127.0.0.1:39421' });
+await client.health();
+
+// The generated tree has a method per operation. The package does not export
+// it, so import it by path from inside this repository.
+import { Configuration, DefaultApi } from './packages/sdk-ts/generated/index.js';
+
+const api = new DefaultApi(new Configuration({ basePath: 'http://127.0.0.1:39421' }));
 await api.getHealth();
 ```
 
@@ -68,7 +75,7 @@ await api.getHealth();
 # (packages/sdk-python/generated/).
 import openapi_client
 
-configuration = openapi_client.Configuration(host="http://127.0.0.1:8787")
+configuration = openapi_client.Configuration(host="http://127.0.0.1:39421")
 with openapi_client.ApiClient(configuration) as client:
     openapi_client.DefaultApi(client).get_health()
 ```

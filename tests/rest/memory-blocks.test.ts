@@ -1,6 +1,4 @@
-// tests/rest/memory-blocks.test.ts
-//
-// Normative test for the `listMemoryBlocks` REST surface. Exercises the
+// Tests for the `listMemoryBlocks` REST surface. Exercises the
 // real durable launcher binary against a temp SQLite store, seeds a
 // profile with both USER and MEMORY blocks via `tx.profiles.create`,
 // then asserts:

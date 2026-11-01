@@ -1,14 +1,11 @@
-// packages/migration/src/retirement.ts
-//
-// Slice 10 retirement service. Retirement is the terminal state of a
+// Retirement service. Retirement is the terminal state of a
 // migration run: it freezes the run's bundle, manifest, and audit
 // history into a content-addressed archive under `archiveRoot`, then
 // marks the run as `retired`. Retirement hashes only — it never
 // deletes source data.
 //
-// For S10 GREEN core the surface is pinned; the full archive writer
-// (with compression and content addressing) ships alongside the S11
-// lifecycle.
+// Not fully implemented: the surface is stable, but the archive writer
+// (compression, content addressing) is still to be built.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';

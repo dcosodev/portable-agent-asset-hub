@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/opencode/implementation.ts
-//
 // OpenCode MCP descriptor. The shape is per OpenCode's published
 // config (`mcp.<name>.type=local`, `mcp.<name>.command=[...]`,
 // `mcp.<name>.environment={...}`). We emit exactly one entry named

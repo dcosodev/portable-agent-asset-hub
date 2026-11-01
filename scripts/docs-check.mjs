@@ -1,5 +1,3 @@
-// scripts/docs-check.mjs
-//
 // A documentation contract, not a style checker. It answers three
 // questions that silently rot as the code changes:
 //
@@ -29,7 +27,7 @@ const schemaVersion = Math.max(
     .map(Number),
 );
 
-/** Documents that describe how the shipped system behaves today. */
+/** Documents held to this contract: those that describe the shipped system, plus the archive, for its links. */
 const currentDocs = [
   'README.md',
   'CONTRIBUTING.md',
@@ -47,7 +45,13 @@ const currentDocs = [
   'docs/observability.md',
   'docs/demo.md',
   'docs/faq.md',
-  'docs/engineering-log.md',
+  'docs/api-surface.md',
+  'docs/packages.md',
+  'docs/validation.md',
+  'docs/storage-contract.md',
+  'docs/architecture/go-product-shell.md',
+  'docs/archive/README.md',
+  'docs/archive/engineering-log.md',
   'observability/README.md',
   'slices/README.md',
   'docs/adr/0001-single-sqlite-owner.md',
@@ -92,7 +96,7 @@ for (const relative of currentDocs) {
 
 const readme = readFileSync(resolve(root, 'README.md'), 'utf8');
 
-// Claims that were true of an earlier slice and would mislead now.
+// Claims that were true of an earlier release and would mislead now.
 const staleClaims = [
   [/\b23 operations\b/i, 'the pre-0.2.0 operation count'],
   [/strictly read-only projection/i, 'the pre-0.3.0 read-only BFF claim'],
@@ -101,7 +105,7 @@ const staleClaims = [
 // A document that names a schema version or a migration chain must name the
 // current one. `CHANGELOG.md` and the engineering log record history on
 // purpose and are exempt; every other current document is not.
-const historical = new Set(['CHANGELOG.md', 'docs/engineering-log.md']);
+const historical = new Set(['CHANGELOG.md', 'docs/archive/engineering-log.md']);
 const current = String(schemaVersion).padStart(2, '0');
 const schemaClaims = [
   [new RegExp(`\\bschema (?!${schemaVersion}\\b)\\d+`, 'iu'), 'a schema version that is not the current one'],

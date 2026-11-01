@@ -1,13 +1,11 @@
-// tests/go/rest/_rest-harness.ts
-//
-// Shared subprocess harness for the T6 curated-REST-client test
+// Shared subprocess harness for the curated-REST-client test
 // suite (tests/go/rest/auth.test.ts + token-reader.test.ts). The
 // harness spawns the REAL Go test binary under the repo's Go
 // module (which lives the test files at tests/go/rest/*_test.go
 // next to the TS files in this same directory) — vitest owns the
 // process; the Go `testing` package owns the assertions.
 //
-// Architecture: T6 is a Go-only deliverable (internal/rest/*.go)
+// Architecture: is a Go-only deliverable (internal/rest/*.go)
 // but the test contract specifies .test.ts filenames. Rather than
 // fake-PASS, we run the Go tests through `go test -count=1` from a
 // spawned child process. Each TS test case:

@@ -1,6 +1,4 @@
-// tests/e2e/hermes-materialization.e2e.test.ts
-//
-// E2E for the S8 Hermes materializer: real filesystem, real SQLite, real
+// E2E for the Hermes materializer: real filesystem, real SQLite, real
 // Hermes layout. Verifies the public contract:
 //
 //   1. Build a preview against a temp HOME.
@@ -12,11 +10,11 @@
 //      same observed-digest mismatch that maps to HTTP 412 in the REST
 //      surface.
 //
-// The test never spawns the Hermes CLI itself — that lives in the S10
-// cutover gate. S8's E2E proves the materializer is correct on a real
-// filesystem; S10 proves Hermes consumes the materialization without
+// The test never spawns the Hermes CLI itself — that lives in the migration
+// cutover gate. Hermes's E2E proves the materializer is correct on a real
+// filesystem; migration proves Hermes consumes the materialization without
 // regressions. The forbidden-path invariants are checked here because
-// they belong to the S8 contract, not to Hermes' runtime.
+// they belong to the Hermes contract, not to Hermes' runtime.
 
 import {
   existsSync,
@@ -48,7 +46,7 @@ afterEach(() => {
 });
 
 const tempHome = (label: string): string => {
-  const dir = mkdtempSync(join(tmpdir(), `s8-e2e-${label}-`));
+  const dir = mkdtempSync(join(tmpdir(), `hermes-e2e-${label}-`));
   cleanup.push(dir);
   return dir;
 };
@@ -80,7 +78,7 @@ const seed = (store: Storage): void => {
   });
 };
 
-describe('E2E hermes-materialization (S8)', () => {
+describe('E2E hermes-materialization', () => {
   it('lays out USER.md and MEMORY.md with the rendered bytes and stamps the manifest', () => {
     const home = tempHome('materialize');
     const target = join(home, 'hermes', 'state');

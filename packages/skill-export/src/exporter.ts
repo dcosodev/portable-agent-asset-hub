@@ -1,6 +1,4 @@
-// packages/skill-export/src/exporter.ts
-//
-// `SkillExportCoordinator` — the FASE 5 export coordinator.
+// `SkillExportCoordinator`: the export coordinator.
 //
 // Responsibilities:
 //

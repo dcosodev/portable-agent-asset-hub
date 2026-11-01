@@ -1,11 +1,9 @@
-// tests/skill-export/export-focal.test.ts
-//
-// FASE 5 — skill export focal TDD test. Drives a real temp
+// Skill export focal test. Drives a real temp
 // `SqliteStore` (no in-process mocks) so the suite is bound to the
 // migration 0015, the actor-bound scope contract, and the
 // cross-scope safety guarantees exercised by the CLI.
 //
-// Normative coverage (every assertion is run end-to-end against the
+// Coverage (every assertion is run end-to-end against the
 // compiled package; the CLI is exercised separately in
 // `export-cli.test.ts`):
 //
@@ -166,7 +164,7 @@ afterEach(() => {
   }
 });
 
-describe('FASE 5 — skill export focal', () => {
+describe('skill export focal', () => {
   it('preview is byte-deterministic and never carries body bytes, base64 or absolute paths', () => {
     const dbPath = makeDb();
     const a = actorLocal();

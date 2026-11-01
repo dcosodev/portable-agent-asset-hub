@@ -1,9 +1,7 @@
-// tests/e2e/db-only-skills.e2e.test.ts
-//
-// Fase 3 — DB-only skills e2e. Proves the hermetic contract:
+// DB-only skills e2e. Proves the hermetic contract:
 //
 //   1. Build a temporary fixture root with one skill + one binary resource.
-//   2. Run the Fase1 inventory and Fase2 apply into a brand-new SQLite
+//   2. Run the inventory and apply into a brand-new SQLite
 //      file. The CLI is the real `scripts/import-agent-skills.mjs`
 //      binary so the importer + apply coordinator are exercised exactly
 //      as a downstream consumer would.
@@ -74,7 +72,7 @@ afterEach(async () => {
 });
 
 function tempDir(label: string): string {
-  const dir = mkdtempSync(join(tmpdir(), `fase3-e2e-${label}-`));
+  const dir = mkdtempSync(join(tmpdir(), `db-only-e2e-${label}-`));
   cleanup.push(dir);
   return dir;
 }
@@ -104,14 +102,14 @@ function writeFixture(label: string): Fixture {
   const rootPath = join(workdir, 'skills-root');
   mkdirSync(rootPath, { recursive: true });
   const rootId = 'e2e-fixture-root';
-  const skillName = 'phase3-isolated-skill';
+  const skillName = 'isolated-skill';
   const resourceRelPath = 'assets/marker.bin';
   const body = [
     '---',
     `name: ${skillName}`,
-    'description: phase3 isolated e2e fixture',
+    'description: isolated e2e fixture',
     '---',
-    '# phase3 isolated skill',
+    '# isolated skill',
     '',
     'This body must round-trip exactly through SQLite and the REST/MCP',
     'surfaces. The marker below MUST appear in the `getSkill` body and in',
@@ -412,7 +410,7 @@ async function startMcp(restUrl: string): Promise<McpProcess> {
   return { child, writeFrame, readFrames, stderr: () => stderrBuf, stdoutNoise: () => stdoutNoise, stop };
 }
 
-describe('Fase 3 DB-only skills e2e', () => {
+describe('DB-only skills e2e', () => {
   it('exposes a hermetic DB-only contract: import → delete sources → REST + MCP over real processes', { timeout: 120_000 }, async () => {
     const fixture = writeFixture('roundtrip');
     const imported = await importFixture(fixture);
@@ -484,7 +482,7 @@ describe('Fase 3 DB-only skills e2e', () => {
     try {
       await rest2.waitForReady();
 
-      mcp.writeFrame({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', clientInfo: { name: 'fase3-e2e', version: '0.0.0' }, capabilities: {} } });
+      mcp.writeFrame({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', clientInfo: { name: 'db-only-e2e', version: '0.0.0' }, capabilities: {} } });
       const initFrames = await mcp.readFrames(1);
       expect(initFrames).toHaveLength(1);
       const initResult = initFrames[0]!.result as Record<string, unknown>;

@@ -1,6 +1,4 @@
-// tests/rest/skill-resources.test.ts
-//
-// Phase 1 normative tests for the four skill REST operations:
+// Tests for the four skill REST operations:
 //   GET /api/v1/skills/search
 //   GET /api/v1/skills/{id}
 //   GET /api/v1/skills/{id}/resources

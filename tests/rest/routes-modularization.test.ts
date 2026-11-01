@@ -1,0 +1,190 @@
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const restSrc = resolve(here, '../../packages/rest/src');
+
+/**
+ * Structural assertion suite for the OpenAPI REST modularization. Verifies that
+ * the route table is split into per-domain modules under packages/rest/src/routes
+ * and that app.ts wires them together, without exercising any HTTP semantics.
+ * All checks are static so they are independent of test environment, fixtures,
+ * Java, or the SDK generator.
+ */
+
+type RouteEntry = { method: string; pattern: string; operationId: string; cas: boolean };
+
+const DOMAINS: Array<{ module: string; export: string }> = [
+  { module: 'health', export: 'healthRoutes' },
+  { module: 'admin', export: 'adminRoutes' },
+  { module: 'identities', export: 'identityRoutes' },
+  { module: 'profiles', export: 'profileRoutes' },
+  { module: 'memory-blocks', export: 'memoryBlockRoutes' },
+  { module: 'memories', export: 'memoryRoutes' },
+  { module: 'skills', export: 'skillRoutes' },
+  { module: 'catalog', export: 'catalogRoutes' },
+  { module: 'sync', export: 'syncRoutes' },
+  { module: 'materializations', export: 'materializationRoutes' },
+  { module: 'events', export: 'eventRoutes' },
+  { module: 'relation-proposals', export: 'relationProposalRoutes' },
+  { module: 'explicit-relations', export: 'explicitRelationRoutes' },
+];
+
+const EXPECTED_OPERATION_IDS: ReadonlySet<string> = new Set([
+  'getHealth',
+  'getStatus',
+  'getCapabilities',
+  'getDoctor',
+  'listAudit',
+  'listSnapshots',
+  'replay',
+  'listIdentities',
+  'createBinding',
+  'createProfile',
+  'listMemoryBlocks',
+  'searchMemories',
+  'getMemory',
+  'createMemory',
+  'supersedeMemory',
+  'forgetMemory',
+  'searchSkills',
+  'getSkill',
+  'listSkillResources',
+  'readSkillResource',
+  'getSkillRelations',
+  'replaceSkillRelations',
+  'getSkillDependents',
+  'resolveSkillGraph',
+  'resolveRetrieval',
+  'getGlobalSkillGraph',
+  'getSkillGraph',
+  'getSkillImpact',
+  'listRetrievalEvents',
+  'getRetrievalEventGraph',
+  'getResource',
+  'getCatalog',
+  'searchCatalog',
+  'previewCatalogSync',
+  'applyCatalogSync',
+  'previewMaterialization',
+  'applyMaterialization',
+  'rollbackMaterialization',
+  'createEvent',
+  'listSkillRelationProposals',
+  'createManualSkillRelationProposal',
+  'getSkillRelationProposal',
+  'discoverSkillRelationProposals',
+  'approveSkillRelationProposal',
+  'rejectSkillRelationProposal',
+  'previewSkillRelationProposalApply',
+  'applySkillRelationProposals',
+  'reconcileSkillRelationProposalDuplicates',
+  'listExplicitSkillRelationCandidates',
+  'previewExplicitSkillRelationCandidatesImpact',
+  'stageExplicitSkillRelationCandidates',
+]);
+
+function extractRoutesFromModule(modulePath: string): RouteEntry[] {
+  const source = readFileSync(modulePath, 'utf8');
+  const entries: RouteEntry[] = [];
+  // Match each route entry. The shape has been stable since OpenAPI: `{ method,
+  // pattern, operationId, cas, [paramNames] }`. The `paramNames` field is
+  // optional (single-capture routes may omit it) and the entry may span
+  // multiple lines, so we collapse whitespace inside the braces before
+  // matching the canonical fields.
+  const entryRe = /\{[^{}]*\}/g;
+  let match: RegExpExecArray | null;
+  while ((match = entryRe.exec(source)) !== null) {
+    const block = match[0].replace(/\s+/g, ' ');
+    const method = /method:\s*'([^']+)'/.exec(block);
+    const pattern = /pattern:\s*(\/.*\/[gimsuy]*)/.exec(block);
+    const operationId = /operationId:\s*'([^']+)'/.exec(block);
+    const cas = /cas:\s*(true|false)/.exec(block);
+    if (!method || !pattern || !operationId || !cas) continue;
+    entries.push({
+      method: method[1]!,
+      pattern: pattern[1]!,
+      operationId: operationId[1]!,
+      cas: cas[1] === 'true',
+    });
+  }
+  return entries;
+}
+
+describe('OpenAPI REST routes modularization (structural)', () => {
+  it('route_domain_modules_exist', () => {
+    for (const { module, export: exportName } of DOMAINS) {
+      const path = resolve(restSrc, 'routes', `${module}.ts`);
+      const source = readFileSync(path, 'utf8');
+      // Each module must declare and export the named *Routes const.
+      const declRe = new RegExp(`export\\s+const\\s+${exportName}\\b`, 'm');
+      expect(declRe.test(source), `module ${module}.ts must export const ${exportName}`).toBe(true);
+      // And it must be a non-empty array literal of route entries. The
+      // declaration may include a type annotation: `export const name: T[] = [`.
+      const arrayRe = new RegExp(`export\\s+const\\s+${exportName}\\b[^=]*=\\s*\\[`, 'm');
+      expect(arrayRe.test(source), `module ${module}.ts must declare ${exportName} as an array`).toBe(true);
+    }
+  });
+
+  it('app_imports_every_domain_module', () => {
+    const appSource = readFileSync(resolve(restSrc, 'app.ts'), 'utf8');
+    // Module basename may include '-', so allow word-or-dash in the capture.
+    const importRe = /import\s*\{\s*(\w+Routes)\s*\}\s*from\s*'\.\/routes\/([\w-]+)\.js'/g;
+    const imported = new Map<string, string>();
+    let match: RegExpExecArray | null;
+    while ((match = importRe.exec(appSource)) !== null) {
+      imported.set(match[2]!, match[1]!);
+    }
+    expect(imported.size, 'app.ts must import one *Routes const per domain').toBe(DOMAINS.length);
+    for (const { module, export: exportName } of DOMAINS) {
+      expect(imported.get(module), `app.ts must import ${exportName} from routes/${module}.js`).toBe(exportName);
+    }
+  });
+
+  it('app_no_inline_route_literals', () => {
+    const appSource = readFileSync(resolve(restSrc, 'app.ts'), 'utf8');
+    // app.ts must not contain any local route literal (method/pattern/operationId/cas).
+    // Only the type annotation in the spread site may mention these names.
+    expect(/\{\s*method:\s*'[^']+'\s*,\s*pattern:\s*\//.test(appSource),
+      'app.ts must not contain a route literal (no inline { method, pattern, ... } entries)').toBe(false);
+    // And it must spread each domain module into the final routes table.
+    const spreadCount = (appSource.match(/\.\.\.\w+Routes/g) ?? []).length;
+    expect(spreadCount, 'app.ts must spread each *Routes module into the final routes table').toBe(DOMAINS.length);
+  });
+
+  it('all_39_operation_ids_present_across_modules', () => {
+    const all = new Set<string>();
+    const perModule: Record<string, string[]> = {};
+    for (const { module } of DOMAINS) {
+      const entries = extractRoutesFromModule(resolve(restSrc, 'routes', `${module}.ts`));
+      const ops = entries.map((e) => e.operationId);
+      perModule[module] = ops;
+      for (const op of ops) all.add(op);
+    }
+    expect(all.size, 'no operationId may be duplicated across domain modules').toBe(51);
+    const missing = [...EXPECTED_OPERATION_IDS].filter((op) => !all.has(op)).sort();
+    const extra = [...all].filter((op) => !EXPECTED_OPERATION_IDS.has(op)).sort();
+    expect(missing, `missing operationIds: ${missing.join(',')}`).toEqual([]);
+    expect(extra, `unexpected operationIds: ${extra.join(',')}`).toEqual([]);
+    // Sanity: at least one entry per module (no empty stubs).
+    for (const { module } of DOMAINS) {
+      expect(perModule[module]!.length, `routes/${module}.ts must declare at least one route`).toBeGreaterThan(0);
+    }
+  });
+
+  it('module_route_shapes_are_well_formed', () => {
+    for (const { module, export: exportName } of DOMAINS) {
+      const entries = extractRoutesFromModule(resolve(restSrc, 'routes', `${module}.ts`));
+      for (const entry of entries) {
+        expect(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], `${exportName} method`).toContain(entry.method);
+        expect(entry.pattern.startsWith('/') && entry.pattern.endsWith('/'),
+          `${exportName} pattern must be a RegExp literal`).toBe(true);
+        expect(/^[a-zA-Z][a-zA-Z0-9_]*$/.test(entry.operationId),
+          `${exportName} operationId must be an identifier: ${entry.operationId}`).toBe(true);
+        expect(typeof entry.cas, `${exportName} cas must be boolean`).toBe('boolean');
+      }
+    }
+  });
+});

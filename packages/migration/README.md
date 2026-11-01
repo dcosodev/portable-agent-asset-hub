@@ -15,7 +15,7 @@ source into the hub's canonical storage, safely.
 - **`shadow.ts`** — runs the new path in parallel with the old one without
   cutting over, so behavior can be compared before committing.
 - **`replay.ts`** — replays recorded events/operations against the target,
-  used both for migration and for the S10 gate's replay checks.
+  used both for migration and for the migration gate's replay checks.
 - **`cutover.ts`** — the actual switch from old source to new, once shadow
   validation is satisfied.
 - **`rollback.ts`** — undoes a cutover.
@@ -33,9 +33,9 @@ source into the hub's canonical storage, safely.
 
 This package operates on the same `core` domain types and the same storage
 adapters as the rest of the hub — it is not a one-off script, it's a
-first-class surface with its own gate (S10; see the root
-[`README.md`](../../README.md#staged-gates-s0s10)) covering migration
-safety, replay, and retirement.
+first-class surface with its own gate, `pnpm migration:gate` (see
+[`docs/validation.md`](../../docs/validation.md#local-gates)), covering
+migration safety, replay, and retirement.
 
 ## Build
 

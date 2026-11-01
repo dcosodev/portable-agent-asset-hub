@@ -1,5 +1,3 @@
-// tests/scripts/import-agent-skills.test.ts
-//
 // Real end-to-end CLI test for `scripts/import-agent-skills.mjs`.
 //
 // Coverage:

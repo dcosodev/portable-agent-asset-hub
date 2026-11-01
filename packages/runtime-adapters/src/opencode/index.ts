@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/opencode/index.ts
-//
 // OpenCode harness implementation. The harness-native config file is
 // `opencode.json` at the agent root; the wrapper is `AGENTS.md`.
 

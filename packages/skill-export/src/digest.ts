@@ -1,5 +1,3 @@
-// packages/skill-export/src/digest.ts
-//
 // Deterministic digest helpers used by the export plan. The plan
 // never carries wall-clock timestamps so the digest is reproducible
 // across runs; the only allowed inputs are content fields

@@ -1,6 +1,4 @@
-// packages/core/src/importer/secret-scan.ts
-//
-// Phase 2 high-confidence secret scanner for skill pack resources.
+// High-confidence secret scanner for skill pack resources.
 //
 // Contract:
 //   * Match-only; values are NEVER returned. Callers only see the

@@ -27,7 +27,7 @@
 //     `Redact` replaces the match with the literal "<<REDACTED>>"
 //     token so the operator can see that something was stripped
 //     without learning the value. `LooksLikeBearer` exposes the
-//     predicate so tests and the s11 gate can probe output without
+//     predicate so tests can probe output without
 //     coupling to the redactor.
 package output
 
@@ -94,7 +94,7 @@ func (s *Sink) IsInteractive() bool { return !s.isCI }
 // the rendered line does not already end with one, so callers do not
 // need to remember to terminate every line. This makes the contract
 // surface (help, version, path, config) byte-deterministic for the
-// s11 gate's line-by-line assertions while preserving the historical
+// shell tests' line-by-line assertions while preserving the historical
 // "PassPrintf("%s", line)" call shape.
 func (s *Sink) Printf(format string, a ...any) error {
 	return s.writeLine(s.Out, format, a...)
@@ -144,8 +144,8 @@ func (s *Sink) writeLine(fn SinkFn, format string, a ...any) error {
 // ----------------------------------------------------------------------------
 //
 // Three categories of bearer-shaped strings are recognised. The regex
-// set is small and explicit so the s11 gate can probe output and so
-// tests can exercise each pattern in isolation.
+// set is small and explicit so tests can probe output and exercise
+// each pattern in isolation.
 
 // BearerPrefix is the canonical Authorization header prefix the
 // hub-rest client emits. Both `Bearer ` and `bearer ` (case
@@ -177,9 +177,8 @@ var jwtRe = regexp.MustCompile(`\b[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0
 const redactedMarker = "<<REDACTED>>"
 
 // LooksLikeBearer reports whether the input contains ANY bearer-shaped
-// string. It is the predicate the s11 gate uses: every captured
-// stdout/stderr line is fed through LooksLikeBearer and the gate fails
-// closed if a hit is reported.
+// string. Callers feed captured stdout/stderr lines through it and
+// fail closed if a hit is reported.
 func LooksLikeBearer(s string) bool {
 	if s == "" {
 		return false

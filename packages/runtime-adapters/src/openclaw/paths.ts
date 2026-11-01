@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/openclaw/paths.ts
-//
 // OpenClaw layout:
 //
 //     MEMORY.md                  — wrapper (OpenClaw's native pointer)

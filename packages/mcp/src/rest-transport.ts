@@ -1,5 +1,3 @@
-// packages/mcp/src/rest-transport.ts
-//
 // Transport that calls the real REST surface. The MCP server never opens
 // a database, never reads from disk, never has a "local mode" fallback.
 // If the REST base URL is unreachable the call fails with a structured

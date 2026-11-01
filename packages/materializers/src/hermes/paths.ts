@@ -1,6 +1,4 @@
-// packages/materializers/src/hermes/paths.ts
-//
-// Hermes-specific path layout. The plan mandates three materialised
+// Hermes-specific path layout: three materialised
 // files at the target root — USER.md, MEMORY.md, SKILL.md — plus the
 // manifest itself. Every relative path is fixed by the adapter
 // contract so a renderer swap cannot accidentally relocate files.
@@ -39,23 +37,19 @@ export function renderHermesUser(profile: Profile): Buffer {
 
 /**
  * Render a Hermes MEMORY.md from the canonical MEMORY blocks. Same
- * canonicalisation rules as Slice 4's `materializeProfile` (LF, no
+ * canonicalisation rules as `materializeProfile` (LF, no
  * BOM, no trailing CRLF) so byte-identity across processes holds.
  */
 export function renderHermesMemory(profile: Profile): Buffer {
-  // Reuse the S4 helper so the byte format is identical to a
-  // profile-mapped materialisation. Slice 8 ships a Hermes-specific
-  // adapter but the byte contract is shared.
+  // Reuse the profile helper so the byte format is identical to a
+  // profile-mapped materialisation.
   const materialized = materializeProfile(profile);
   return materialized.bytes;
 }
 
 /**
- * Render a Hermes SKILL.md. Slice 8 has no skill store yet, so this
- * file is the empty header — Slice 6 already publishes a `skills`
- * route and the S10 cutover will fill SKILL.md from the SDK output.
- * Until then the file is stable and its digest is part of the
- * manifest contract.
+ * Render a Hermes SKILL.md. This file is an empty header: it is stable
+ * and its digest is part of the manifest contract.
  */
 export function renderHermesSkill(profile: Profile): Buffer {
   // Stable placeholder so the renderer produces a deterministic file.

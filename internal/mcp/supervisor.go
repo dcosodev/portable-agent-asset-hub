@@ -2,8 +2,7 @@
 // child process and bridges its stdio with the parent's. The
 // supervisor is intentionally minimal: it does NOT understand
 // JSON-RPC, parse MCP envelopes, or interpret the payloads
-// passing through it. T7's contract is "supervise the existing
-// TS MCP" — every byte on the wire belongs to the TypeScript
+// passing through it. Every byte on the wire belongs to the TypeScript
 // MCP source of truth, and the supervisor's only job is to keep
 // the child alive, propagate lifecycle signals, and redact
 // bearer-shaped strings that surface through its own diagnostic
@@ -72,8 +71,8 @@ type BackoffConfig struct {
 	// restart sleeps Min; the second sleeps Min*2; and so on up
 	// to Max. A non-positive Min is treated as 1ms.
 	Min time.Duration
-	// Max caps the inter-restart delay. T7's contract pins the
-	// cap at 400ms (tests assert the schedule never exceeds
+	// Max caps the inter-restart delay. `hub mcp launch` sets the
+	// cap to 400ms (tests assert the schedule never exceeds
 	// 1.5xMax as a rounding slack). A non-positive Max falls
 	// back to Min so the schedule stays bounded.
 	Max time.Duration

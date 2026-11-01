@@ -1,7 +1,5 @@
-// tests/go/init/rotate.test.ts
-//
-// T3 contract for `hub token rotate`. Per docs/roadmap/slices.json
-// (T3) — "verify no bearer in logs after rotate" and the exit
+// Contract for `hub token rotate`.
+// — "verify no bearer in logs after rotate" and the exit
 // criteria "rotate produces a working REST session".
 //
 // The tests are real subprocess tests. Every case spawns the
@@ -200,7 +198,7 @@ describe('hub token rotate — bearer hygiene (no leakage)', () => {
 // ---------------------------------------------------------------------------
 // Safe restart semantics — the rotate subcommand must never crash
 // on a partially initialised home (e.g. when tokens/ exists but
-// hub.token is missing) — T3's safety contract is "rotate must
+// hub.token is missing) — The safety contract is "rotate must
 // produce a working token, always".
 // ---------------------------------------------------------------------------
 

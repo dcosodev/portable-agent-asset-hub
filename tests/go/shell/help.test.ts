@@ -1,6 +1,4 @@
-// tests/go/shell/help.test.ts
-//
-// T1 real-subprocess contract for `hub --help` / `hub help` /
+// Real-subprocess contract for `hub --help` / `hub help` /
 // `hub` (no argv). The tests build a temp hub binary with
 // `go build -trimpath` (via _hub-harness) and assert on the LIVE
 // subprocess output. The contract surface locked in here:

@@ -22,8 +22,8 @@ TypeScript SDK and the REST/MCP surfaces.
 Same rule as the TypeScript SDK: regenerate with the pinned toolchain.
 
 ```sh
-pnpm s6:generate   # requires Java 17 + OpenAPI Generator 7.10.0
-pnpm s6:drift      # confirms the contract and the generated output agree
+pnpm sdk:generate   # requires Java 17 + OpenAPI Generator 7.10.0
+pnpm openapi:drift      # confirms openapi/openapi.yaml and the generated output agree
 ```
 
 ## See also

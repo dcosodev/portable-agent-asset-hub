@@ -16,7 +16,7 @@ async function makeTar(name, setup) {
   return tar;
 }
 async function check(tar) {
-  try { await exec(process.execPath, ['scripts/s0-package-check.mjs', '--tar', tar], { cwd }); return true; }
+  try { await exec(process.execPath, ['scripts/root-package-check.mjs', '--tar', tar], { cwd }); return true; }
   catch { return false; }
 }
 try {

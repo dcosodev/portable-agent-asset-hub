@@ -1,5 +1,3 @@
-// packages/materializers/src/openclaw/plugin-manifest.ts
-//
 // OpenClaw plugin manifest builder. The plugin manifest is the
 // descriptor the host loads when wiring the OpenClaw adapter into a
 // runtime. It pins the renderer version + snapshot/profile the plugin
@@ -8,8 +6,7 @@
 //
 // Contract (see `integrations/openclaw/openclaw.plugin.schema.json`):
 //
-//   * `kind` is always `'openclaw'` — the S9 surface only ships one
-//     plugin kind.
+//   * `kind` is always `'openclaw'`: there is only one plugin kind.
 //   * `name` / `version` are author-supplied.
 //   * `snapshotId` / `profileId` tie the plugin to the snapshot+profile
 //     pair the manifest was generated from. Two plugins for two
@@ -20,9 +17,9 @@
 //     forces the host to reload — the chain keeps the plugin
 //     timestamped to the renderer.
 //   * `entry` is the JS entry point the host spawns. Always
-//     `'index.js'` for the S9 reference implementation.
+//     `'index.js'`.
 //   * `commands` lists the plugin commands the host surfaces. The
-//     default `init` + `recall` set matches the S9 plan; consumers can
+//     default set is `init` + `recall`; consumers can
 //     append their own without touching this file.
 //   * `requiredCapabilities` is the list of capabilities a host must
 //     grant before invoking any of the commands. The OpenClaw daemon
@@ -32,7 +29,7 @@
 //     based on the run's permissions).
 //
 // No Tencent, /v2, /v3, COS, or proxy references anywhere — the
-// schema test (tests/s9-schemas.test.ts) asserts the JSON-stringified
+// schema test (tests/openclaw-schemas.test.ts) asserts the JSON-stringified
 // manifest never contains these tokens.
 
 import { OPENCLAW_RENDERER_VERSION } from './manifest.js';
@@ -75,7 +72,7 @@ export interface BuildOpenclawPluginManifestInput {
   profileId: string;
   stateDir: string;
   capabilities: readonly string[];
-  /** Optional command list override; defaults to the S9 reference set. */
+  /** Optional command list override; defaults to `init` + `recall`. */
   commands?: readonly OpenclawPluginCommand[];
 }
 

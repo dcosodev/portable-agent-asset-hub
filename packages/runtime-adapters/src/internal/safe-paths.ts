@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/internal/safe-paths.ts
-//
 // Path hardening helpers shared by the preview and apply pipelines.
 //
 // `assertSafeRelativePath` is the gate every renderer output must

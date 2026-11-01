@@ -1,16 +1,10 @@
-// tests/go/distribution/backup-cli-surface.test.ts
+// Real-subprocess contract for the `hub backup` CLI surface.
 //
-// T9 RED real-subprocess contract for the `hub backup` CLI surface.
+// The surface is exactly `hub backup --out <archive>` and
+// `hub backup --restore <archive>`.
 //
-// Contract source of truth — docs/roadmap/slices.json slice `T9`:
-//
-//   audit_requirements[0]
-//     "verify hub backup surface is exactly `hub backup --out <archive>`
-//      and `hub backup --restore <archive>`"
-//
-// The amendment pins EXACTLY two flags. Anything else on the `backup`
-// verb is outside the authorised surface and must be refused, and both
-// pinned flags take a value.
+// There are EXACTLY two flags. Anything else on the `backup` verb
+// must be refused, and both flags take a value.
 //
 // Exit-code convention (docs/architecture/go-product-shell.md, already
 // enforced by every shipped verb):
@@ -18,15 +12,6 @@
 //   1  operator error
 //   2  contract violation
 //
-// RED STATE at authoring time: cmd/hub/main.go has no `backup` case, so
-// the dispatcher answers every argv below with
-// `hub: unknown command "backup"` on stderr and exit 2.
-//
-// Note on accidental GREEN: because the pre-T9 fallthrough ALSO exits 2,
-// every exit-2 expectation here is preceded by `assertDispatched(res,
-// 'backup')`, which fails while stderr still carries the dispatcher's
-// `unknown command` diagnostic. An exit-2 assertion can therefore only
-// be satisfied by a real T9 refusal, never by the missing verb.
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { join } from 'node:path';
@@ -59,7 +44,7 @@ const CASE_TIMEOUT_MS = 120_000;
 // 1. `hub backup --help` — the verb is reachable and self-documenting.
 // ---------------------------------------------------------------------------
 
-describe('hub backup — help surface (T9)', () => {
+describe('hub backup — help surface', () => {
   it('`hub backup --help` exits 0 and documents both pinned flags on stdout', async () => {
     const fx = fixture('backup-help');
     const res = await runHubInFixture(fx, ['backup', '--help']);
@@ -70,8 +55,8 @@ describe('hub backup — help surface (T9)', () => {
     // Help is a contract artefact → stdout. Diagnostics → stderr.
     expect(res.stdout).not.toBe('');
     expect(res.stderr).toBe('');
-    // The amendment pins exactly these two flags; the help block must
-    // enumerate both so an operator can reconstruct the surface from
+    // The help block must enumerate both flags so an operator can
+    // reconstruct the surface from
     // `--help` alone.
     expect(res.stdout).toMatch(/--out\b/u);
     expect(res.stdout).toMatch(/--restore\b/u);
@@ -97,10 +82,10 @@ describe('hub backup — help surface (T9)', () => {
 // ---------------------------------------------------------------------------
 // 2. Unknown verb / unknown flag under `backup` — fail-closed exit 2.
 //
-// `assertDispatched` is the accidental-GREEN guard for every case here.
+// `assertDispatched` guards every case here against the unknown-command path.
 // ---------------------------------------------------------------------------
 
-describe('hub backup — unknown verb and unknown flag are fail-closed (T9)', () => {
+describe('hub backup — unknown verb and unknown flag are fail-closed', () => {
   it('`hub backup snapshot` (unknown positional verb) exits 2 with a diagnostic on stderr', async () => {
     const fx = fixture('backup-unknown-verb');
     const res = await runHubInFixture(fx, ['backup', 'snapshot']);
@@ -119,7 +104,7 @@ describe('hub backup — unknown verb and unknown flag are fail-closed (T9)', ()
   }, CASE_TIMEOUT_MS);
 
   it('`hub backup --upload` (invented transport flag) exits 2 — no transport is authorised', async () => {
-    // non_goals: "inventing any backup transport, registry, or DB
+    // "inventing any backup transport, registry, or DB
     // fallback outside resolver-canonical SQLite+config".
     const fx = fixture('backup-transport-flag');
     const res = await runHubInFixture(fx, ['backup', '--upload', 'https://example.invalid/x']);
@@ -136,7 +121,7 @@ describe('hub backup — unknown verb and unknown flag are fail-closed (T9)', ()
 // mutually-exclusive combination of the two, are contract violations.
 // ---------------------------------------------------------------------------
 
-describe('hub backup — --out / --restore parse contract (T9)', () => {
+describe('hub backup — --out / --restore parse contract', () => {
   it('`hub backup --out` with no value exits 2 with a diagnostic', async () => {
     const fx = fixture('backup-out-no-value');
     const res = await runHubInFixture(fx, ['backup', '--out']);
@@ -154,8 +139,8 @@ describe('hub backup — --out / --restore parse contract (T9)', () => {
   }, CASE_TIMEOUT_MS);
 
   it('`hub backup --out X --restore Y` (snapshot and restore at once) exits 2', async () => {
-    // The amendment describes `--out` as the snapshot direction and
-    // `--restore` as the restore direction. They are two distinct
+    // `--out` is the snapshot direction and
+    // `--restore` the restore direction. They are two distinct
     // operations; asking for both in one invocation has no defined
     // meaning and must be refused rather than silently picking one.
     const fx = fixture('backup-both-flags');
@@ -174,11 +159,8 @@ describe('hub backup — --out / --restore parse contract (T9)', () => {
     const missing = join(fx.home, 'does-not-exist.tar.gz');
     const res = await runHubInFixture(fx, ['backup', '--restore', missing]);
     assertDispatched(res, 'backup');
-    // A missing input archive is an operator error (1) or a contract
-    // violation (2) depending on how the production author classifies
-    // it; the amendment does not pin which. The pinned behaviour is
-    // "does not succeed" plus "leaves no artefact behind", so that is
-    // all this asserts — no invented exit code.
+    // The exit code for a missing input archive is not asserted, only
+    // "does not succeed" plus "leaves no artefact behind".
     expect(res.status).not.toBe(0);
     expect(res.stderr).not.toBe('');
   }, CASE_TIMEOUT_MS);

@@ -1,26 +1,18 @@
-// tests/go/connect/_connect-harness.ts
-//
-// Shared subprocess harness for the T8 hub-connect test suite
+// Shared subprocess harness for the hub-connect test suite
 // (tests/go/connect/*.test.ts). The harness builds the hub binary
 // ONCE per vitest worker with `go build -trimpath` into a per-suite
 // temp directory, and exposes a small runner that captures stdout,
 // stderr, and exit code.
 //
-// Architecture mirrors tests/go/shell/_hub-harness.ts (T1) and
-// tests/go/mcp/_mcp-harness.ts (T7):
+// Architecture mirrors tests/go/shell/_hub-harness.ts and
+// tests/go/mcp/_mcp-harness.ts:
 //   * Build once per vitest worker (`go build -o <tmp>/hub`).
 //   * Run with the caller-supplied argv and a sanitised env.
 //   * Capture stdout/stderr/exit; assert on the result.
 //
-// The T8 slice is "hub hub connect preview|apply|rollback" — a thin
-// delegate to the existing TypeScript materializer surface. The
-// production wiring (cmd/hub/cmd_connect.go + internal/connect/**)
-// does not exist yet; this harness drives the BUILT binary and the
-// .test.ts files assert on the contract surface. Today every test
-// is RED: the binary exits 2 with "unknown command 'hub'" because
-// cmd/hub/main.go has no `connect` case yet. Once T8 ships
-// production, the same .test.ts files flip GREEN with no source
-// changes — the assertions ARE the contract.
+// `hub hub connect preview|apply|rollback` is a thin delegate to the
+// TypeScript materializer surface. This harness drives the BUILT binary
+// and the .test.ts files assert on its output.
 //
 // Hermetic isolation:
 //   * HUB_HOME points at a per-call fresh temp directory.
@@ -63,7 +55,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 // repo root (the directory holding cmd/, internal/, go.mod).
 const repoRoot = resolve(here, '..', '..', '..');
 
-// Repo-local openapi.yaml — the T1 doctor expects this. T8 tests
+// Repo-local openapi.yaml — the base doctor expects this. These tests
 // don't probe the openapi surface, but we still set it so the
 // config loader never silently falls back to the binary's cwd
 // (which would resolve to "/" when hub is run from a temp dir).
@@ -117,9 +109,7 @@ export function buildConnectBinary(): ConnectBuildResult {
 /**
  * Clear the cached binary. Tests that mutate the source tree
  * between vitest runs call this so the next build picks up the
- * change. The T8 RED suite deliberately does NOT need this — the
- * production code does not exist yet — but the helper is here for
- * parity with the T6/T7 harnesses.
+ * change.
  */
 export function resetConnectBinary(): void {
   if (cachedBuildTmp && existsSync(cachedBuildTmp)) {
@@ -169,7 +159,7 @@ export async function runConnect(
     'HUB_BEARER_TOKEN',
     'HUB_BEARER_TOKEN_FILE',
     'HUB_BEARER_TOKEN_SOURCE',
-    // T8 owns `hub hub connect`; future env knobs (HUB_CONNECT_TARGET_ROOT,
+    // This suite owns `hub hub connect`; future env knobs (HUB_CONNECT_TARGET_ROOT,
     // HUB_CONNECT_COMMAND, …) will be added by the production author. The
     // harness deliberately clears every HUB_CONNECT_* env var so tests
     // can opt-in per case without leaking across workers.
@@ -348,9 +338,7 @@ export interface CanonicalConnectFixture {
  * `AGENT_MEMORY_AGENT_ID` and fall back to the canonical defaults
  * `usr_local` / `agt_local`. Connect tests MUST seed the real
  * Profile under that exact same scope, and forward the exact same
- * env vars to every subprocess, so the moment the production
- * `buildActor()` learns to honour the convention the assertions
- * flip GREEN with zero fixture churn.
+ * env vars to every subprocess, so they match what the production `buildActor()` uses.
  *
  * Hard rule: this fixture MUST NOT introduce test-specific or
  * fixture-only actor identities. If a test needs a non-canonical
@@ -443,9 +431,9 @@ export function createCanonicalConnectFixture(
 export { repoRoot, repoOpenAPI };
 
 // ---------------------------------------------------------------------------
-// Cross-process HUB_HOME + receipt helpers (Phase B).
+// Cross-process HUB_HOME + receipt helpers.
 //
-// The T8 amendment rewires the connect verbs as three INDEPENDENT
+// The connect verbs run as three INDEPENDENT
 // subprocesses (A=preview, B=apply, C=rollback). They share the
 // same $HUB_HOME on disk — preview never writes, apply writes a
 // durable receipt at $HUB_HOME/state/connect/receipts/<runId>.json,
@@ -465,8 +453,8 @@ export { repoRoot, repoOpenAPI };
  * Allocate a single HUB_HOME that all three subprocesses
  * (preview, apply, rollback) share. Returns the absolute path
  * and a cleanup callback. The path is created on disk empty;
- * preview is the FIRST process to touch it, and per the
- * amendment preview MUST NOT create any state inside it.
+ * preview is the FIRST process to touch it, and it MUST NOT
+ * create any state inside it.
  */
 export function sharedConnectHome(label: string): {
   home: string;
@@ -500,8 +488,7 @@ export function sharedConnectHome(label: string): {
  * the inherited env; only HUB_HOME, HUB_OPENAPI, and the
  * caller-supplied envOverride survive. Tests that want a bearer
  * present must inject it via envOverride — the runner will still
- * strip it from the child unless they explicitly bypass (Phase B
- * never bypasses; this is for hygiene assertions only).
+ * strip it from the child (this is for hygiene assertions only).
  */
 export async function runConnectOnSharedHome(
   argv: readonly string[],
@@ -518,7 +505,7 @@ export async function runConnectOnSharedHome(
 }
 
 /**
- * Canonical receipt location per the amendment:
+ * Canonical receipt location:
  *   $HUB_HOME/state/connect/receipts/<runId>.json
  *
  * The receipt MUST only exist AFTER a successful apply; preview
@@ -557,7 +544,7 @@ export function readReceipt(home: string, runId: string): string | null {
 /**
  * Returns the stat for the canonical receipt file or null if
  * the file is absent. Tests assert perms/mode via this helper:
- * the amendment mandates dir 0700 + file 0600. The function
+ * the expected modes are dir 0700 + file 0600. The function
  * deliberately surfaces the raw stat so tests can also catch
  * symlink-in-path (via lstat under the hood) and ownership
  * regressions.
@@ -599,7 +586,7 @@ export function statReceiptsDir(home: string): ReceiptsDirStat {
 
 /**
  * Walk the receipts directory and snapshot the filename +
- * stat-mtime list. The amendment requires that
+ * stat-mtime list. Expected:
  *
  *   1. Preview leaves this directory empty (zero entries).
  *   2. Apply writes exactly ONE file (the runId under test).
@@ -615,7 +602,7 @@ export interface ReceiptsListing {
 export function listReceipts(home: string): ReceiptsListing {
   const dir = receiptsDir(home);
   if (!existsSync(dir)) return { entries: [] };
-  // The receipts directory is flat per the amendment. A real
+  // The receipts directory is flat. A real
   // directory listing (not recursive) is exactly what we want.
   return { entries: readdirSync(dir) };
 }
@@ -680,7 +667,7 @@ export function snapshotDirSafe(root: string): DirSnapshot {
  *  pipeline is allowed to leave behind. Anything else appearing
  *  under $HUB_HOME after preview is a hidden-state regression.
  *
- *  The amendment pins:
+ *  The allowed entries:
  *    - state/connect/receipts/<runId>.json (apply only)
  *    - state/connect/receipts/ (dir, apply only)
  *    - everything else is hidden state and must NOT be created

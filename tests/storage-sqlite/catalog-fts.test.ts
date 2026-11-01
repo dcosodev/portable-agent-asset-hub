@@ -1,8 +1,6 @@
-// tests/storage-sqlite/catalog-fts.test.ts
+// Catalog FTS5 surface.
 //
-// TDD slice for the catalog FTS5 surface.
-//
-// Normative contracts exercised against a real temp `SqliteStore`:
+// Contracts exercised against a real temp `SqliteStore`:
 //
 //   Migration & backfill
 //   ────────────────────

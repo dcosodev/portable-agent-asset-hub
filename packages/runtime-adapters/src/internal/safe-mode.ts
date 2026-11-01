@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/internal/safe-mode.ts
-//
 // The apply pipeline refuses to set any file mode that has setuid,
 // setgid, or sticky bits. The constant surface is exposed via a
 // single helper so callers do not have to re-derive the mask from

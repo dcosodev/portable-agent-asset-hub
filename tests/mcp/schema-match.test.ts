@@ -1,9 +1,5 @@
-// tests/mcp/schema-match.test.ts
-//
-// Normative test: the MCP capability matrix must match the OpenAPI
-// contract byte-for-byte. S7 plan mandates:
-//
-//   mcp_schema_matches_openapi
+// The MCP capability matrix must match the OpenAPI
+// contract byte-for-byte.
 //
 // The matrix declares which capability unlocks which tool. The OpenAPI
 // contract declares, for every operation, an `x-mcp.capability` extension
@@ -38,7 +34,7 @@ function loadOpenapi(): { paths: Record<string, Record<string, OperationInfo>> }
   return JSON.parse(raw) as { paths: Record<string, Record<string, OperationInfo>> };
 }
 
-describe('MCP schema matches OpenAPI (S7)', () => {
+describe('MCP schema matches OpenAPI', () => {
   it('every_openapi_operation_is_in_the_tool_registry', () => {
     const spec = loadOpenapi();
     const operationIds = new Set<string>();

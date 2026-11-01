@@ -1,10 +1,8 @@
-// tests/runtime-adapters/runtime-adapters.test.ts
-//
-// TDD slice for the FASE 4 `@portable-agent-asset-hub/runtime-adapters`
+// `@portable-agent-asset-hub/runtime-adapters`
 // package. Every assertion is parameterised over the five harness
 // families the package supports.
 //
-// Normative contracts exercised:
+// Contracts exercised:
 //
 //   Preview / parse / serialise
 //   ────────────────────────────

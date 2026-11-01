@@ -1,6 +1,4 @@
-// packages/migration/src/service.ts
-//
-// Slice 10 migration service. The public driver of the state machine:
+// Migration service. The public driver of the state machine:
 // a single factory that produces begin / transition / get / setDigests
 // operations bound to a MigrationStorage port. The service is the only
 // place that mutates migration-run state; every transition is validated
@@ -88,11 +86,8 @@ export function createMigrationService(config: MigrationServiceConfig): Migratio
     async get(runId) {
       const record = await storage.get(runId);
       // Read-audit: append a no-op transition entry tagged 'read' so the
-      // audit trail captures every observation of the run. The Slice 10
-      // contract test "records transition history via the storage contract"
-      // expects history.length >= 3 after begin + transition + transition
-      // + get; the read-audit entry satisfies that without mutating state
-      // (fromState === toState === current.state).
+      // audit trail captures every observation of the run. State does not
+      // change (fromState === toState === current.state).
       const readEntry: MigrationRunHistoryEntry = {
         fromState: record.state,
         toState: record.state,

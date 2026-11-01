@@ -1,17 +1,8 @@
-// tests/materializers/connect/apply-reviewed.test.ts
+// Owner TypeScript recompute-before-apply at
+// `packages/materializers/src/hermes/apply-reviewed.ts`. Every test drives a
+// real materializer (`computePreview` / `applyPlan`).
 //
-// T8 RED contract — owner TypeScript recompute-before-apply
-// (digest/recompute/CAS, AMENDMENT-aligned).
-//
-// The governance allowlist authorises a future production module at
-// `packages/materializers/src/hermes/apply-reviewed.ts`. That file
-// does NOT exist yet. This test file pins the API and behaviour of
-// the missing surface WITHOUT faking it: every test drives a real
-// materializer (`computePreview` / `applyPlan`) so the moment
-// production lands, the same `.test.ts` flips GREEN with zero
-// changes.
-//
-// Contract summary (authorised amendment):
+// Contract summary:
 //
 //   * Preview process A (real TS, real plan) emits `planDigest`
 //     — the SHA-256 of the canonical plan CONTENT. Volatile
@@ -56,11 +47,11 @@
 //   from '@portable-agent-asset-hub/materializers/hermes'` would
 //   throw at module resolution time, surfacing as vitest's
 //   "Cannot find module" import error rather than an
-//   assertion-shaped RED. The seam below probes for the
+//   assertion failure. The seam below probes for the
 //   production surface via `probeProductionSurface()`: when
 //   the file is missing, the probe returns a typed report
 //   (`{ kind: 'missing', reason }`) that the assertions below
-//   translate into a clear, assertion-shaped RED message.
+//   translate into a clear, assertion failure.
 //
 //   Every assertion in this file uses the probe report to
 //   surface the missing production surface as a vitest failure
@@ -299,7 +290,7 @@ const projectPlanContent = (plan: {
  *     `applyReviewed` export for runtime assertion.
  *
  * The probe NEVER falls back to a fake or in-memory stub — that
- * would silently weaken CAS and is forbidden by the slice.
+ * would silently weaken CAS.
  */
 async function probeProductionSurface(): Promise<
   | { kind: 'missing'; reason: string; path: string }
@@ -308,7 +299,7 @@ async function probeProductionSurface(): Promise<
   if (!existsSync(HERMES_APPLY_REVIEWED_PATH)) {
     return {
       kind: 'missing',
-      reason: `packages/materializers/src/hermes/apply-reviewed.ts is not on disk; T8 owner-TS recompute-before-apply surface has not landed yet. Path probed: ${HERMES_APPLY_REVIEWED_PATH}`,
+      reason: `packages/materializers/src/hermes/apply-reviewed.ts is not on disk; owner-TS recompute-before-apply surface has not landed yet. Path probed: ${HERMES_APPLY_REVIEWED_PATH}`,
       path: HERMES_APPLY_REVIEWED_PATH,
     };
   }
@@ -356,7 +347,7 @@ afterEach(() => {
   }
 });
 
-describe('materializers/connect/apply-reviewed — owner-TS recompute-before-apply (T8, amendment)', () => {
+describe('materializers/connect/apply-reviewed — owner-TS recompute-before-apply', () => {
   let store: Storage;
   let targetRoot: string;
   let lockDir: string;
@@ -369,18 +360,15 @@ describe('materializers/connect/apply-reviewed — owner-TS recompute-before-app
 
   // -----------------------------------------------------------------
   // 1. Production surface presence. The owner-TS file MUST exist
-  //    and MUST export an `applyReviewed` function. Until it
-  //    lands, every other assertion in this file is RED via the
-  //    probe. Once the file lands, the probe flips to `present`
-  //    and the contract assertions below drive.
+  //    and MUST export an `applyReviewed` function.
   // -----------------------------------------------------------------
   it('owner-TS apply-reviewed surface exists at packages/materializers/src/hermes/apply-reviewed.ts', async () => {
     const probe = await probeProductionSurface();
     if (probe.kind === 'missing') {
-      // Assertion-shaped RED: explains exactly what is missing and
+      // Explains exactly what is missing and
       // where, instead of failing through module-resolution noise.
       expect.fail(
-        `T8 owner-TS production surface missing. ${probe.reason}. ` +
+        `owner-TS production surface missing. ${probe.reason}. ` +
         'The contract this test pins is: ' +
         '`export async function applyReviewed(ctx, request): Promise<ApplyReviewedResult>` where ' +
         '`request = { preview: PreviewResult, reviewedDigest, observedDigest?, expectedDigest?, reason, requestId?, targetRoot, lockDir }` and ' +
@@ -401,7 +389,7 @@ describe('materializers/connect/apply-reviewed — owner-TS recompute-before-app
   //    contract surface; production MUST compute the same
   //    value.
   // -----------------------------------------------------------------
-  it('planDigest is byte-stable across two previews; volatile runId/generatedAt MUST be normalised out (amendment)', async () => {
+  it('planDigest is byte-stable across two previews; volatile runId/generatedAt MUST be normalised out', async () => {
     const { computePreview } = await import(
       '@portable-agent-asset-hub/materializers'
     );
@@ -564,7 +552,7 @@ describe('materializers/connect/apply-reviewed — owner-TS recompute-before-app
         `Verified preconditions: planDigest(A)=${planDigestA} ` +
         `planDigest(B)=${planDigestB} (different). Once production ` +
         'lands, the SAME assertion will expect `applyReviewed` to throw ' +
-        'a HubError with code `PREVIEW_STALE` (or its amendment-equivalent) ' +
+        'a HubError with code `PREVIEW_STALE` (or its equivalent) ' +
         'and the target to remain byte-identical to its pre-apply state.',
       );
       return;
@@ -589,8 +577,8 @@ describe('materializers/connect/apply-reviewed — owner-TS recompute-before-app
       thrown = error;
     }
 
-    // The apply MUST refuse with a typed error. The amendment
-    // names `PREVIEW_STALE` as the canonical code; we accept
+    // The apply MUST refuse with a typed error. `PREVIEW_STALE`
+    // is the canonical code; we accept
     // any HubError whose message references the digest
     // divergence so a future code rename does not regress the
     // audit trail silently.

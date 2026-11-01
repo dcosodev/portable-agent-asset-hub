@@ -1,11 +1,8 @@
-// tests/go/mcp/restart-backoff.test.ts
-//
-// T7 real-subprocess contract for the MCP stdio supervisor's bounded
+// Real-subprocess contract for the MCP stdio supervisor's bounded
 // restart/backoff behaviour. The Go test file
 // tests/go/mcp/restart-backoff_test.go is the source of truth for
-// every assertion; this TS file is the thin subprocess wrapper
-// required by the slice contract (.test.ts naming + real subprocess +
-// hermetic fixtures).
+// every assertion; this TS file is a thin wrapper so the suite runs
+// under vitest as a real subprocess with hermetic fixtures.
 //
 // Strategy mirrors tests/go/rest/auth.test.ts:
 //   1. Compile the Go tests via _mcp-harness.ts (one `go test -c` per

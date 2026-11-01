@@ -1,6 +1,4 @@
-// tests/go/shell/_hub-harness.ts
-//
-// Shared subprocess harness for the T1 Go-shell subprocess tests
+// Shared subprocess harness for the Go-shell subprocess tests
 // (version / help / doctor). The harness builds the hub binary ONCE
 // per test process with `go build -trimpath` into a per-suite temp
 // directory, and exposes a small runner that captures stdout, stderr,
@@ -41,7 +39,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 // repo root (the directory holding cmd/, internal/, go.mod).
 const repoRoot = resolve(here, '..', '..', '..');
 
-// Repo-local openapi.yaml is the canonical T1 target. The doctor test
+// Repo-local openapi.yaml is the canonical target. The doctor test
 // asserts it is readable; the version/help tests are openapi-
 // independent but still need it set so the config loader never
 // silently falls back to "<repoRoot>/openapi/openapi.yaml" — that
@@ -61,8 +59,7 @@ export interface HubBuildResult {
  * Build the hub binary with `go build -trimpath` into a per-call temp
  * directory. The function caches the result so callers that need a
  * fresh build (e.g. after editing Go source) can clear the cache via
- * `resetHubBinary()`. The default behaviour — one build per process —
- * matches the s11 gate's hermetic test.
+ * `resetHubBinary()`. The default is one build per process.
  */
 export function buildHubBinary(): HubBuildResult {
   if (cachedBinary && cachedBuildTmp && existsSync(cachedBinary)) {
@@ -236,7 +233,7 @@ export { repoRoot, repoOpenAPI };
  * The patterns are intentionally conservative: a substring must look
  * like a 20+ char long opaque token, prefixed by "Bearer "/"bearer "
  * (case-insensitive), or be a JWT triple-segment shape. This is the
- * shape the s11 gate rejects.
+ * shape the tests reject.
  */
 // Bearer-shape predicates, mirrored from internal/output/output.go
 // (LooksLikeBearer). Each is a top-level constant so vitest's

@@ -1,5 +1,3 @@
-// packages/materializers/src/manifest.ts
-//
 // Manifest v1 helpers: build a manifest from renderer output, hash it,
 // read it back from disk, and compute the SHA-256 of a manifest that
 // already lives on disk. The digest is byte-deterministic across
@@ -50,9 +48,9 @@ export function buildMaterializationPlan(input: {
     // is the renderer's self-reporting surface; the integrity check
     // lives at apply time (stage hash verify + post-rename verify),
     // where it can refuse to write any byte whose digest disagrees
-    // with the manifest. This split lets the S8 contract test a
+    // with the manifest. This split lets a contract test exercise a
     // renderer's declared digest without forcing it to match in-memory
-    // bytes — see `tests/s8-contracts.test.ts` "produces a stable
+    // bytes — see `tests/hermes-contracts.test.ts` "produces a stable
     // 64-char SHA-256 digest for the same plan in a fresh process".
   }
   return {

@@ -1,5 +1,3 @@
-// packages/core/src/skills/validation.ts
-//
 // Centralized path / size / mode / mime / utf-8 validation for the
 // skill repository. Every check throws a `HubError('VALIDATION', …)`
 // with HTTP 400 (or 413 for size violations) so the REST app surfaces

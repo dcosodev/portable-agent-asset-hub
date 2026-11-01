@@ -1,5 +1,3 @@
-// tests/telemetry/otlp-process-smoke.test.ts
-//
 // Real OTLP smoke: spawn the compiled launcher with telemetry enabled,
 // point its OTLP HTTP exporter at a local fake receiver, drive a few
 // requests, then verify the captured payloads contain the expected

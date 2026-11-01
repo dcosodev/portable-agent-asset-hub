@@ -1,6 +1,4 @@
-// tests/rest/catalog-control-plane.test.ts
-//
-// Normative test for the catalog control plane REST surfaces wired by
+// Tests for the catalog control plane REST surfaces wired by
 // the launcher: `getCatalog`, `previewCatalogSync`, and
 // `applyCatalogSync`. Exercises the real durable launcher binary
 // against a temp SQLite store so the route dispatch hits the real

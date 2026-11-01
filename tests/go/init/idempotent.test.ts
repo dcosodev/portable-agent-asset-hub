@@ -1,10 +1,7 @@
-// tests/go/init/idempotent.test.ts
-//
-// T3 contract for `hub init`. The init subcommand is idempotent:
+// Contract for `hub init`. The init subcommand is idempotent:
 // running it twice on the same HUB_HOME produces the SAME layout
 // (state/, runtime/, logs/, tokens/) AND does not destroy an
-// existing token. The audit requirement per
-// docs/roadmap/slices.json (T3):
+// existing token. Requirements:
 //
 //   * verify second init is idempotent
 //   * token permissions are 0600
@@ -180,7 +177,7 @@ describe('hub init — second invocation is idempotent', () => {
   it('preserves_token_through_init_after_rotate', async () => {
     fx = setup();
     // Init → rotate → init. The third init must NOT clobber the
-    // rotated token. This is the safety property T3 audits against:
+    // rotated token. This is the safety property audits against:
     // `hub init` is supposed to be idempotent, and a stray re-init
     // must NEVER regenerate the token.
     const r1 = await runHubOnFreshHome(['init'], { env: { HUB_HOME: fx.home } });

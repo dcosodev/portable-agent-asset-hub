@@ -1,6 +1,4 @@
-// tests/go/open/rejects-non-loopback.test.ts
-//
-// T4 contract — negative path. The dispatcher MUST refuse any bind
+// contract — negative path. The dispatcher MUST refuse any bind
 // address that is not the loopback interface. The test covers:
 //
 //   * `hub open --bind 0.0.0.0`           → exit 2 (fail-closed)
@@ -93,7 +91,7 @@ const CASES: Case[] = [
   },
 ];
 
-describe('hub open — rejects non-loopback bind (T4 contract)', () => {
+describe('hub open — rejects non-loopback bind', () => {
   for (const c of CASES) {
     it(c.name, async () => {
       const res = await runOpen(

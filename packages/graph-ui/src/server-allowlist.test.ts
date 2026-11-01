@@ -1,5 +1,3 @@
-// packages/graph-ui/src/server-allowlist.test.ts
-//
 // The BFF is read-mostly: it forwards a small, exact allowlist of governed
 // relation mutations and refuses everything else. These tests pin the
 // allowlist against a stub upstream that echoes back what it received, so a

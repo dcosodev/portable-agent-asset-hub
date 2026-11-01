@@ -1,5 +1,3 @@
-// tests/observability/docker-stack-contract.test.ts
-//
 // Vitest wrapper for `scripts/docker-stack-contract.mjs`. The contract
 // script is the authoritative source of truth (it is also runnable on
 // its own via `node scripts/docker-stack-contract.mjs`); this test only

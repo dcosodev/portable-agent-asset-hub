@@ -1,5 +1,3 @@
-// tests/materializers/hermes-adapter-cas.test.ts
-//
 // Regression test for `hermesApply`'s CAS contract.
 //
 // `hermesApply` re-runs `hermesPreview` internally rather than taking

@@ -1,19 +1,19 @@
 // Package version is the single source of truth for the hub shell's
-// version triple. Per docs/phase0/naming.md the shell's canonical
+// version triple. The shell's canonical
 // product name is `hub`; per docs/architecture/go-product-shell.md
 // the version subcommand prints three values:
 //
 //	hub     — Go shell build version
-//	rest    — TypeScript REST runtime version (deferred; "unknown" until wired in T1..T9)
-//	openapi — openapi/openapi.yaml info.version (deferred; "unknown" until wired in T1..T9)
+//	rest    — TypeScript REST runtime version ("unknown" until wired in)
+//	openapi — openapi/openapi.yaml info.version ("unknown" until wired in)
 //
-// At T0.5 only the Go shell version is meaningful. The other two are
+// Today only the Go shell version is meaningful. The other two are
 // reported as the literal string "unknown" so the JSON payload stays
 // stable across shells and so downstream contracts do not have to
 // branch on "missing field" vs "unknown version".
 //
 // The Values type is exported as the JSON payload surface used by
-// `hub version --json` and inspected by the s11 gate. The Info struct
+// `hub version --json` and inspected by the shell tests. The Info struct
 // is the human-readable shape used by `hub version`.
 package version
 
@@ -24,23 +24,23 @@ import (
 )
 
 // Hub is the canonical Go shell version. Bump on every release that
-// ships a contract-visible change; the gate (s11) compares this string
+// ships a contract-visible change; the shell tests compare this string
 // byte-for-byte against the build output, so do not include a Go
 // commit hash that changes per build — the shell version IS a contract
 // surface, not a build identifier. The build identifier is GoVersion
 // (runtime) and ServiceLabel (constant).
 const Hub = "0.1.0"
 
-// ServiceLabel is the canonical product-shell name (see
-// docs/phase0/naming.md). It is constant across all hub builds.
+// ServiceLabel is the canonical product-shell name.
+// It is constant across all hub builds.
 const ServiceLabel = "hub"
 
-// REST is the TypeScript REST runtime version. Wired in T1 (hub
+// REST is the TypeScript REST runtime version. Wired later (hub
 // version should reflect the running hub-rest). Until then we emit
 // "unknown" so the JSON payload stays well-formed.
 const REST = "unknown"
 
-// OpenAPI is the OpenAPI specification version. Wired in T6 (curated
+// OpenAPI is the OpenAPI specification version. Wired later (curated
 // REST client). Until then we emit "unknown" so the JSON payload
 // stays well-formed.
 const OpenAPI = "unknown"
@@ -61,7 +61,7 @@ type Info struct {
 
 // Values is the structured --json surface used by `hub version --json`
 // and forwarded to scripts that wire the version handshake (see
-// docs/phase0/handshake.md). Field names are stable; downstream
+// docs/architecture/go-product-shell.md). Field names are stable; downstream
 // orchestrators parse this object, never the prose payload.
 //
 // We hand-roll the JSON encoding rather than relying on the
@@ -69,8 +69,8 @@ type Info struct {
 // to an ALPHABETICAL key order (go, hub, openapi, rest, service)
 // so orchestrators that extract substring slices (rare but legal)
 // see a deterministic shape — independent of any future field
-// re-ordering inside the struct. The s11 gate asserts presence of
-// the five canonical keys; the shell tests assert the textual
+// re-ordering inside the struct. The shell tests assert presence of
+// the five canonical keys and that the textual
 // order matches the sorted order.
 type Values struct {
 	Service string `json:"service"`
@@ -129,7 +129,7 @@ func CurrentInfo() Info {
 //
 //	hub 0.1.0 (go1.24.3)
 //
-// The s11 gate asserts this exact format.
+// The shell tests assert this exact format.
 func (i Info) String() string {
 	// runtime.Version() returns e.g. "go1.27.0" — the "go" prefix is
 	// already present, so the format is "<service> <hub> (<go>)"

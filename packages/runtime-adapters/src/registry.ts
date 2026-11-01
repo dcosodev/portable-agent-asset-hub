@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/registry.ts
-//
 // The harness → renderer dispatcher. Adding a new harness means
 // extending `HarnessId` and registering the renderer here; no other
 // file has to change.

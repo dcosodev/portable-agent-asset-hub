@@ -7,11 +7,11 @@ Supersedes: none.
 Related: `.hermes/plans/2026-08-25_235111-opentelemetry-grafana-implementation-orchestration.md`.
 
 Current implementation note: the original decision was delivered beyond its
-neutral-kernel slice. REST and MCP now propagate W3C context, the Compose stack
+neutral kernel. REST and MCP now propagate W3C context, the Compose stack
 ships Collector/Prometheus/Tempo/Grafana, and `pnpm observability:gate` plus
 `pnpm docker:gate` enforce privacy, cardinality, fail-open and runtime behavior.
-The decision and non-goals below remain authoritative; slice-specific wording
-in Consequences records the state when the ADR was first accepted.
+The decision and non-goals below remain authoritative; Consequences records the
+state when the ADR was first accepted.
 
 ## Context
 
@@ -59,7 +59,7 @@ for these answers. Adoption must be:
 6. **Node SDK isolation.** The Node SDK, OTLP exporters, batch processors and
    resource detectors live under `@portable-agent-asset-hub/telemetry/node`.
    The root export remains free of Node-specific dependencies so the kernel
-   can be imported from edge runtimes in future slices without dragging the
+   can be imported from edge runtimes later without dragging the
    SDK.
 7. **Testing subpath.** `@portable-agent-asset-hub/telemetry/testing`
    re-exports the public-stable `InMemorySpanExporter` and
@@ -70,7 +70,7 @@ for these answers. Adoption must be:
    accepted for operational infrastructure.
 9. **Local Grafana first.** Cloud adoption, retention policies, pseudonymous
    multi-tenant correlation and DEBUG-level raw payloads are explicit
-   unresolved questions (plan §9) and are not enabled in this slice.
+   unresolved questions (plan §9) and are not enabled by this decision.
 10. **Process-bound correlation.** Reserved headers (`authorization`,
     `traceparent`, `tracestate`, `baggage`, `x-agent-runtime`,
     `x-agent-client-version`, `x-request-id`) are stripped from any
@@ -79,11 +79,11 @@ for these answers. Adoption must be:
 
 ## Consequences
 
-- Core code paths remain unchanged in this slice; only `packages/telemetry`,
+- Core code paths remain unchanged at first; only `packages/telemetry`,
   the workspace shared files (`tsconfig.json`, `vitest.config.ts`, root
   `package.json`) and the test directory `tests/telemetry/` receive writes.
 - `rest`, `storage-sqlite`, `mcp`, `materializers` and pre-existing tests
-  stay untouched in this slice; they integrate in later slices.
+  stay untouched at first; they integrate later.
 - The 3 PRE-EXISTING test failures (0020 relation proposal migration not
   yet propagated through schema tests) remain untouched; the kernel is
   independent of that migration.

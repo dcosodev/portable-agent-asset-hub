@@ -1,6 +1,4 @@
-// cmd/hub/cmd_connect.go
-//
-// T8 dispatcher for `hub hub connect preview|apply|rollback`.
+// Dispatcher for `hub hub connect preview|apply|rollback`.
 //
 // The connect verb is a thin orchestrator: parse argv in the Go
 // shell, fork the canonical `internal/connect/connect_runner.mjs`
@@ -18,8 +16,7 @@
 // The dispatcher NEVER reaches into a forbidden path (no SqliteStore
 // import, no `packages/storage-sqlite/**` import, no domain
 // materializer implementation). It only consumes the
-// `internal/connect.ConnectFlags` / `Runner` surface that the
-// amendment authorises.
+// `internal/connect.ConnectFlags` / `Runner` surface.
 
 package main
 
@@ -80,8 +77,8 @@ func runConnect(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, 
 	result, err := runConnectVerb(ctx, runner, flags)
 	if err != nil {
 		// Transport-level failure: Node missing, runner missing, IO
-		// failure. The slice classifies these as operator / runtime
-		// errors (exit 1) so a CI pipeline can distinguish "the
+		// failure. These are operator / runtime errors (exit 1) so a
+		// CI pipeline can distinguish "the
 		// adapter refused" (exit 1 + payload) from "the harness is
 		// broken" (exit 1 + no payload).
 		emitError(sink, "%v", err)
@@ -236,8 +233,8 @@ func runConnectVerb(ctx context.Context, runner *connect.Runner, flags connect.C
 	}
 }
 
-// connectRunContext is the dispatcher-side ctx factory. The slice
-// keeps ctx threading explicit so a future signal-handling
+// connectRunContext is the dispatcher-side ctx factory. ctx threading
+// stays explicit so a future signal-handling
 // enhancement can cancel a runaway adapter without changing every
 // call site. Today it returns context.Background() — there is no
 // operator signal surface wired into the dispatch path.

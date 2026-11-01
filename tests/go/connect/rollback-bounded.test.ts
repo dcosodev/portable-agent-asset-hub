@@ -1,9 +1,6 @@
-// tests/go/connect/rollback-bounded.test.ts
+// Cross-process rollback bounded by the durable receipt.
 //
-// T8 RED contract — cross-process rollback bounded by the durable
-// receipt (digest/recompute/CAS, AMENDMENT-aligned).
-//
-// Three load-bearing pieces (per docs/roadmap/slices.json amendment):
+// Three load-bearing pieces:
 //
 //   1. Three INDEPENDENT subprocesses. Preview A runs in its own
 //      process, exits; apply B runs in a fresh process against the
@@ -16,7 +13,7 @@
 //
 //   2. UNKNOWN / MALFORMED / CORRUPT / OVERSIZED / SYMLINK / WRONG-
 //      ADAPTER / WRONG-PATH receipt → rollback exits 1 (operator /
-//      runtime error per the amendment), writes nothing, and does
+//      runtime error), writes nothing, and does
 //      NOT call the rollback adapter.
 //
 //   3. A second rollback of the SAME runId after a successful
@@ -24,14 +21,6 @@
 //      manifest carries the runId, and the rollback adapter refuses
 //      to roll back a manifest that is already at the pre-apply
 //      state.
-//
-// LIMITATION (declared here, not invented around): the T8 amendment
-// does not yet bind a productive Storage (SqliteStore is forbidden
-// for the connect child per the slice). Until production lands,
-// every test below is RED via the "unknown command" exit-2
-// diagnostic. The assertions check the OUTCOME — receipt presence,
-// bytes, perms, process exit — they do NOT substitute a stub for
-// the materializer.
 //
 // Hermetic fixtures:
 //   * HUB_HOME → per-scenario mkdtemp shared across A/B/C
@@ -73,12 +62,10 @@ const RUN_ID_REGEX = /^run_[A-Za-z0-9._-]+$/u;
 interface PreviewPayloadShape {
   observedDigest?: string;
   planDigest?: string;
-  // The amendment pins planDigest as the canonical SHA-256 of the
-  // plan CONTENT (volatile metadata normalised out); planDigest MAY
-  // be the field name in the JSON envelope. The apply expects
+  // planDigest is the canonical SHA-256 of the plan CONTENT
+  // (volatile metadata normalised out). The apply expects
   // --reviewed-digest to equal planDigest. Tests below accept BOTH
-  // observedDigest and planDigest so the assertion survives a
-  // contract rename between amendment revisions.
+  // observedDigest and planDigest.
 }
 
 interface ApplyPayloadShape {
@@ -93,16 +80,16 @@ interface RollbackPayloadShape {
 }
 
 function extractPreviewDigest(payload: PreviewPayloadShape): string {
-  // The amendment pins planDigest as the value the operator carries
-  // to apply as --reviewed-digest. Some pre-amendment envelopes
+  // planDigest is the value the operator carries to apply as
+  // --reviewed-digest. Some older envelopes
   // call this observedDigest; either is acceptable. The apply path
-  // (per the amendment) compares the operator's --reviewed-digest
+  // compares the operator's --reviewed-digest
   // against the recomputed planDigest in a fresh process.
   const candidate = payload.planDigest ?? payload.observedDigest ?? '';
   return candidate;
 }
 
-describe('hub hub connect rollback — durable cross-process rollback (T8, amendment)', () => {
+describe('hub hub connect rollback — durable cross-process rollback', () => {
   let home: { home: string; cleanup: () => void } | undefined;
   let target: { targetRoot: string; cleanup: () => void } | undefined;
   let databaseCleanup: (() => void) | undefined;
@@ -219,7 +206,7 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
   }, 30_000);
 
   // -----------------------------------------------------------------
-  // 3. Unknown runId refused. The cross-process amendment is
+  // 3. Unknown runId refused. The cross-process contract is
   //    explicit: rollback in a fresh process reads the durable
   //    receipt; an unknown runId means "no receipt on disk".
   //    The diagnostic must surface the missing-receipt refusal
@@ -240,12 +227,12 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
       ],
       h.home,
     );
-    // The amendment pins exit 1 for "missing receipt" / adapter
-    // refusal — exit 2 is reserved for CLI contract violations.
+    // Exit 1 for "missing receipt" / adapter refusal — exit 2 is
+    // reserved for CLI contract violations.
     expect(res.status, `stderr=${JSON.stringify(res.stderr)}`).toBe(1);
     expect(res.stderr).not.toBe('');
 
-    // The amendment forbids WRITES on a refused rollback. The
+    // A refused rollback writes nothing. The
     // receipts directory must NOT be created by a refused
     // rollback — only apply writes to it. This is the cross-
     // process write-side-effect invariant: refused rollback
@@ -273,7 +260,7 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
     const validRunId = 'run_unit_invalid_receipt_matrix';
 
     async function seedValidReceipt(h: string): Promise<string> {
-      // The amendment pins the receipt schema:
+      // The receipt schema:
       //   { schemaVersion, runId, targetRoot, lockDir,
       //     harness, profileId, observedDigest, writtenAt }
       // The fixture uses a real-looking targetRoot so the
@@ -474,12 +461,6 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
   // 5. Happy-path preview → apply → rollback round-trip.
   //    Three INDEPENDENT subprocesses; no in-memory state
   //    survives between them; the receipt is the only bridge.
-  //
-  //    Phase A limitation: production code does not exist; the
-  //    three subprocesses all exit 2 today. Once production
-  //    lands, the SAME assertions flip GREEN: status=0 on every
-  //    step, the receipt appears on disk after apply with the
-  //    canonical schema, and the rollback restores the target.
   // -----------------------------------------------------------------
   it('preview → apply → rollback three-process round-trip: status 0 on every step, receipt written by apply, rollback restores target', async () => {
     const h = sharedConnectHome('roundtrip-shared');
@@ -512,8 +493,7 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
       database.env,
     );
 
-    // Phase A: status 2; Phase B-GREEN: status 0.
-    // Either way, the post-preview invariants below MUST hold:
+    // The post-preview invariants below MUST hold:
     expect(preview.status, `preview stderr=${JSON.stringify(preview.stderr)}`).toBeGreaterThanOrEqual(0);
     if (preview.status === 0) {
       // Preview MUST NOT have written the receipt directory.
@@ -530,9 +510,7 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
     }
 
     // Target byte-identical after preview (no writes, no
-    // deletes, no chmods). Applies to BOTH Phase A (preview
-    // refused, never reached the target) AND Phase B-GREEN
-    // (preview succeeded and is read-only).
+    // deletes, no chmods).
     const afterPreviewTarget = snapshotDirSafe(t.targetRoot);
     expect(afterPreviewTarget.files.size).toBe(beforeTarget.files.size);
     for (const [rel, before] of beforeTarget.files) {
@@ -544,14 +522,12 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
 
     // Step B — apply in a SECOND process. Captures the runId
     // from the apply payload; the runId MUST come from the
-    // apply step's materializer output (NOT a hardcoded
-    // fixture — the amendment forbids it).
+    // apply step's materializer output, NOT a hardcoded fixture.
     const previewPayload = JSON.parse(preview.stdout || '{}') as PreviewPayloadShape;
     const reviewedDigest = extractPreviewDigest(previewPayload);
     if (preview.status !== 0) {
-      // Phase A: preview failed; skip the rest with an
-      // assertion-shaped RED so the test fails cleanly without
-      // crashing on JSON.parse.
+      // Skip the rest with an assertion so the test fails cleanly
+      // without crashing on JSON.parse.
       expect.fail(
         `preview subprocess failed (status=${preview.status}); cannot exercise apply→rollback in RED phase. stderr=${JSON.stringify(preview.stderr)}. ` +
         'Once production lands, this test asserts: apply status=0, ' +
@@ -625,16 +601,16 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
     expect((rollbackPayload.restored ?? []).length, 'rollback did not restore any files').toBeGreaterThan(0);
 
     // Receipt file MUST still exist after rollback — the
-    // amendment pins the receipt as the durable runId store;
+    // receipt is the durable runId store;
     // the rollback subprocess does NOT delete the receipt.
     expect(receiptExists(h.home, applyPayload.runId!)).toBe(true);
 
-    // Receipt stat invariants. The amendment pins dir 0700 +
-    // file 0600. The mode bits are asserted via statSync.
+    // Receipt stat invariants: dir 0700 + file 0600. The mode
+    // bits are asserted via statSync.
     const receiptStat = statReceipt(h.home, applyPayload.runId!);
     expect(receiptStat).not.toBeNull();
     // 0600 = 0o100600. Mask off the file-type bits and
-    // compare; the amendment requires exactly rw for owner
+    // compare; exactly rw for owner
     // and nothing for group/other.
     const PERM_MASK = 0o777;
     expect(
@@ -653,16 +629,12 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
   }, 120_000);
 
   // -----------------------------------------------------------------
-  // 6. Double-rollback refused. The cross-process amendment
+  // 6. Double-rollback refused. The cross-process contract
   //    pins: a second rollback of the SAME runId is exit 1
   //    (the live manifest no longer carries the runId after
   //    the first rollback restored it).
   //
-  //    Phase A: the second rollback exits 2 today because
-  //    `hub hub connect` is unknown. The test asserts the
-  //    exit code is 1 OR 2 with a non-empty stderr — i.e.
-  //    the rollback subprocess REFUSED. Once production
-  //    lands, the assertion tightens to exit=1.
+  //    The second rollback exits 1: the subprocess REFUSED.
   // -----------------------------------------------------------------
   it('second rollback of an already-restored runId is refused (exit 1; cross-process no-double-rollback)', async () => {
     const h = sharedConnectHome('rollback-double');
@@ -729,8 +701,8 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
     );
     expect(firstRollback.status, `first rollback stderr=${JSON.stringify(firstRollback.stderr)}`).toBe(0);
 
-    // Second rollback of the SAME runId. The cross-process
-    // amendment refuses: no manifest carries runId after the
+    // Second rollback of the SAME runId. It is
+    // refused: no manifest carries runId after the
     // first restore.
     const secondRollback = await runConnectOnSharedHome(
       [
@@ -766,8 +738,7 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
 
   // -----------------------------------------------------------------
   // 7. Rollback CLI is minimal: no --target-root, no --profile,
-  //    no --reviewed-digest. The amendment pins the verb's flag
-  //    surface.
+  //    no --reviewed-digest.
   // -----------------------------------------------------------------
   it('rollback --target-root exits 2 (rollback does not declare --target-root)', async () => {
     const h = sharedConnectHome('rollback-extra-target');
@@ -786,7 +757,7 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
       h.home,
     );
     // The CLI boundary must reject --target-root on rollback
-    // because the amendment pins rollback's flag surface as
+    // because rollback's flag surface is
     // minimal (--run-id, --reason, --request-id, --json). The
     // disambiguating diagnostic must mention the unknown flag
     // (or otherwise show the rejection came from the rollback
@@ -805,7 +776,7 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
   // -----------------------------------------------------------------
   // 8. Receipt bytes carry the canonical schema. Once production
   //    lands, the receipt JSON MUST include every required key
-  //    the amendment pins (schemaVersion, runId, targetRoot,
+  //    (schemaVersion, runId, targetRoot,
   //    lockDir, harness, profileId, observedDigest, writtenAt).
   // -----------------------------------------------------------------
   it('receipt JSON includes the canonical bounded schema (schemaVersion, runId, targetRoot, lockDir, harness, profileId, observedDigest, writtenAt)', async () => {
@@ -860,11 +831,10 @@ describe('hub hub connect rollback — durable cross-process rollback (T8, amend
     expect(receiptBytes, `receipt missing at ${receiptPath(h.home, applyPayload.runId!)}`).not.toBeNull();
     const receipt = JSON.parse(receiptBytes!) as Record<string, unknown>;
 
-    // Bounded schema: every key the amendment pins MUST be
+    // Bounded schema: every key MUST be
     // present; the schema MUST be deterministic / versioned;
     // unknown keys beyond the bounded set are NOT allowed
-    // (the amendment forbids fake state / fake plan in the
-    // receipt).
+    // (no fake state / fake plan in the receipt).
     const REQUIRED_KEYS = [
       'schemaVersion',
       'runId',

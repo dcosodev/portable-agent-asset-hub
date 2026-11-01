@@ -1,11 +1,9 @@
-// tests/storage-sqlite/skill-storage.test.ts
-//
-// Phase 1 normative contract for the skill versioned storage surface.
+// Contract for the skill versioned storage surface.
 // Drives a real temp `SqliteStore` (no in-process mocks) so the test
 // suite is bound to the actual migration, audit, scope and CAS
 // contracts exercised by the REST launcher.
 //
-// Normative surface:
+// Surface:
 //
 //   Migration 0015
 //   ──────────────
@@ -100,7 +98,7 @@ function utf8Bytes(text: string): Buffer {
   return Buffer.from(text, 'utf8');
 }
 
-describe('Phase 1 skill versioned storage', () => {
+describe('skill versioned storage', () => {
   it('migrates contiguously through the current schema and creates the canonical tables', async () => {
     const dbPath = freshDb();
     const store = new SqliteStore(dbPath);
@@ -185,8 +183,8 @@ describe('Phase 1 skill versioned storage', () => {
       expect(head?.version).toBe(1);
       expect(head?.logicalKey).toBe('skill:default:skills/demo');
 
-      // FTS picked up the body (the audit fix that moved triggers to
-      // skill_versions so the body is always present at trigger time).
+      // FTS picked up the body: the triggers live on skill_versions so the
+      // body is always present at trigger time.
       const hits = store.transaction(a, (tx) => tx.skills.skillSearch(scope, 'Skill Body'));
       expect(hits.map((entry) => entry.id)).toContain('skl_demo');
     } finally {

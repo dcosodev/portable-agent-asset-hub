@@ -1,12 +1,11 @@
 // Planner for `hub update`. The planner is the read-only half of
-// the T9 amendment's `hub update` contract: given parsed flags
+// the `hub update` command: given parsed flags
 // and the Go shell's authoritative version triple, it produces
 // a small, deterministic Plan that the dispatcher renders to
 // stdout. The planner NEVER reaches the network, NEVER reads the
 // filesystem, and NEVER inspects the installed hub binary —
-// those are deferred to a future separately governed apply
-// transport (which is itself forbidden by this slice's
-// forbidden_paths: no internal/update/apply.go).
+// those belong to a future apply transport, which deliberately does
+// not exist (no internal/update/apply.go).
 //
 // Two outcomes are possible:
 //
@@ -43,23 +42,15 @@ import (
 // ApplyOutOfScopeMessage is the operator-facing diagnostic the
 // dispatcher emits on stderr when the planner reports
 // PlanApplyRefused. The message is a constant — pinned in this
-// slice — so a CI pipeline can grep on its presence without
-// snapshot drift, and so the audit trail records the exact
-// wording the T9 amendment authorises.
-//
-// Per docs/roadmap/slices.json slice `T9`:
-//
-//	"hub update --apply refuses with exit code 2 and a message
-//	 declaring the apply transport out of scope; no install
-//	 mutation occurs on refuse"
+// version — so a CI pipeline can grep on its presence without
+// snapshot drift, and so the audit trail records the exact wording.
 //
 // The message MUST be self-explanatory: it states the refuse
-// reason, the slice ownership (the apply transport is reserved
-// for a future slice), and the absence of any side effect on
-// the install. A future orchestrator can grep on the literal
+// reason and the absence of any side effect on the install.
+// A future orchestrator can grep on the literal
 // "apply transport" substring to detect this refuse class
 // without parsing the exit code alone.
-const ApplyOutOfScopeMessage = "hub update --apply: apply transport is out of scope for this slice and must be added by a future separately governed slice; no install mutation occurred"
+const ApplyOutOfScopeMessage = "hub update --apply: apply transport is out of scope for this version; no install mutation occurred"
 
 // Plan is the read-only summary the dispatcher renders on
 // stdout for the dry-run path. The fields are exhaustive: every
@@ -165,9 +156,8 @@ func BuildPlan(flags UpdateFlags, current version.Values) Plan {
 	// Dry-run path. The Plan is the literal receipt of
 	// "this is what an apply WOULD do, given the pinned
 	// inputs" — nothing more. There is no download URL, no
-	// remote release data, no transport. The amendment
-	// explicitly forbids hardcoded remote release data
-	// pretending to be a real update; the rendered summary
+	// remote release data, no transport, and no hardcoded
+	// release data pretending to be a real update; the rendered summary
 	// is the operator-facing proof that the planner is
 	// read-only.
 	channel := flags.Channel
@@ -259,10 +249,9 @@ func boolString(b bool) string {
 }
 
 // Help returns the help-block lines the dispatcher prints for
-// `hub update --help`. The text is a fixed string so the T9
+// `hub update --help`. The text is a fixed string so the
 // test suite can assert on its shape without snapshot drift;
-// the amendment pins exactly the `--apply` and `stable`
-// surface, and both must be discoverable from --help alone.
+// `--apply` and `stable` must both be discoverable from --help alone.
 //
 // The function returns a slice (rather than writing directly
 // to a writer) so tests can compare the lines verbatim and so
@@ -270,7 +259,7 @@ func boolString(b bool) string {
 // without re-allocating the underlying buffer.
 func Help() []string {
 	return []string{
-		"hub update — plan-only dry-run; --apply refuses (T9)",
+		"hub update — plan-only dry-run; --apply refuses",
 		"",
 		"Usage:",
 		"  hub update                 print the plan summary (default; no network, no install)",
@@ -285,8 +274,7 @@ func Help() []string {
 		"",
 		"Apply policy:",
 		"  --apply is refused with exit code 2 and a message declaring the apply transport",
-		"  out of scope for this slice; no install mutation occurs on refuse.",
-		"  The apply transport must be added by a future separately governed slice.",
+		"  out of scope for this version; no install mutation occurs on refuse.",
 		"",
 		"Exit codes:",
 		"  0  success — plan summary printed on stdout",

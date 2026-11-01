@@ -1,5 +1,3 @@
-// scripts/gate-evidence.d.ts
-//
 // Minimal type declarations for `scripts/gate-evidence.mjs`. The
 // helper is plain ESM JavaScript (no build step); TS tests import it
 // for typecheck-time type safety. The signatures are kept in sync

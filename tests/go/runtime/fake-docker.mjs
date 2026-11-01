@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* global process */
-// tests/go/runtime/fake-docker.mjs — hermetic docker shim for T2 tests.
+// tests/go/runtime/fake-docker.mjs — hermetic docker shim for now tests.
 // See tests/go/runtime/_runtime-harness.ts for the contract.
 //
 // This script is launched by a tiny shell wrapper that resolves
@@ -124,7 +124,7 @@ function locateComposeVerb(argv) {
         if (t.startsWith('-')) {
           // Skip the value for short flags that take a value.
           // We treat `-p`, `-f`, `--project`, `--file` as value
-          // flags. This is enough for the T2 surface; a future
+          // flags. This is enough for the surface; a future
           // flag that takes a value would need an explicit
           // addition here.
           if (t === '-p' || t === '-f' || t === '--project' || t === '--file') {

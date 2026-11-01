@@ -17,7 +17,7 @@ import (
 	"hub/internal/output"
 )
 
-// McpFlags is the deliberately narrow T7 CLI surface.
+// McpFlags is the deliberately narrow CLI surface.
 type McpFlags struct {
 	Launch bool
 	Stdio  bool

@@ -1,5 +1,3 @@
-// packages/core/src/skills/relation-identity.ts
-//
 // Shared identity & equivalence helpers for skill relations.
 //
 // One source of truth for "what is a relation" and "what makes two

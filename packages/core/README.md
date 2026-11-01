@@ -53,4 +53,4 @@ pnpm --filter @portable-agent-asset-hub/core build
 ```
 
 Consumed via `dist/index.js` (see `package.json#main`) once built; see the
-root [`README.md`](../../README.md#quickstart) for the full workspace build.
+root [`README.md`](../../README.md#quick-start) for the full workspace build.

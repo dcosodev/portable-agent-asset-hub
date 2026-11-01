@@ -1,27 +1,7 @@
-// tests/gate-evidence.test.ts
-//
-// TDD gate for the per-invocation evidence helpers introduced for the
-// S10→S8→S5 traceability audit. The tests are RED first: they were
-// committed BEFORE the helper existed and now they must pass against
-// `scripts/gate-evidence.mjs`.
-//
-// Coverage:
-//   1. snapshotBeforeOverwrite preserves an existing artifact on disk
-//      and returns its digest + bytes (so the caller can record both
-//      paths).
-//   2. Two consecutive snapshotBeforeOverwrite calls with DIFFERENT
-//      runIds preserve BOTH copies — this is the core "do not lose
-//      the first S8 invocation" requirement from the audit.
-//   3. recordStepLog writes the per-step log + meta.json, returns
-//      digest/path/bytes triples, and the gate artifact never embeds
-//      the body.
-//   4. The end-to-end S10 behavior: when S10 captures an s8-gate.json
-//      with status=FAIL (first invocation) and then S9's nested S8
-//      overwrites the file with status=PASS (second invocation),
-//      BOTH status outcomes remain reachable: (a) S10's own artifact
-//      keeps `s8_failed: true`, (b) the previous s8-gate.json snapshot
-//      lives under `artifacts/.evidence/<runId>/` with status=FAIL and
-//      SHA-256 digest match.
+// Parent gates run child gates more than once against one artifact path. These
+// tests pin that a later PASS never hides an earlier FAIL: each invocation's
+// snapshot, log and digest stay reachable under its own runId, and gate artifacts
+// store only path + digest + bytes, never output bodies.
 
 import { describe, it, expect } from 'vitest';
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync, mkdirSync } from 'node:fs';
@@ -58,12 +38,12 @@ function removeAll(): void {
 describe('gate-evidence: buildRunId', () => {
   it('produces a stable, sortable, file-path-safe runId', () => {
     const fixed = new Date('2026-08-21T10:12:13.597Z');
-    const a = buildRunId('s10-s8-regression', fixed);
-    const b = buildRunId('s10-s8-regression', new Date('2026-08-21T10:12:14.000Z'));
-    const c = buildRunId('s10-s9-regression', fixed);
-    expect(a).toBe('s10-s8-regression-2026-08-21T10-12-13-597Z');
-    expect(b).toBe('s10-s8-regression-2026-08-21T10-12-14-000Z');
-    expect(c).toBe('s10-s9-regression-2026-08-21T10-12-13-597Z');
+    const a = buildRunId('migration-hermes-regression', fixed);
+    const b = buildRunId('migration-hermes-regression', new Date('2026-08-21T10:12:14.000Z'));
+    const c = buildRunId('migration-openclaw-regression', fixed);
+    expect(a).toBe('migration-hermes-regression-2026-08-21T10-12-13-597Z');
+    expect(b).toBe('migration-hermes-regression-2026-08-21T10-12-14-000Z');
+    expect(c).toBe('migration-openclaw-regression-2026-08-21T10-12-13-597Z');
     expect(a < b).toBe(true); // sortable
   });
 });
@@ -72,11 +52,11 @@ describe('gate-evidence: evidencePaths', () => {
   it('returns a directory under artifacts/.evidence/<runId> and a snapshot file', () => {
     const { snapshotPath, evidenceDir } = evidencePaths({
       repoRoot: '/tmp/repo',
-      runId: 's10-s8-regression-2026-08-21T10-12-13-597Z',
-      artifactPath: 'artifacts/s8-gate.json',
+      runId: 'migration-hermes-regression-2026-08-21T10-12-13-597Z',
+      artifactPath: 'artifacts/hermes-gate.json',
     });
-    expect(evidenceDir).toContain('artifacts/.evidence/s10-s8-regression-');
-    expect(snapshotPath).toMatch(/s8-gate\.json\.snapshot\.json$/);
+    expect(evidenceDir).toContain('artifacts/.evidence/migration-hermes-regression-');
+    expect(snapshotPath).toMatch(/hermes-gate\.json\.snapshot\.json$/);
   });
 });
 
@@ -85,20 +65,20 @@ describe('gate-evidence: snapshotBeforeOverwrite', () => {
     const repo = makeRepo('missing');
     const out = snapshotBeforeOverwrite({
       repoRoot: repo,
-      artifactPath: join(repo, 'artifacts', 's8-gate.json'),
-      runId: 's10-s8-regression-2026-08-21T10-12-13-597Z',
+      artifactPath: join(repo, 'artifacts', 'hermes-gate.json'),
+      runId: 'migration-hermes-regression-2026-08-21T10-12-13-597Z',
     });
     expect(out.ok).toBe(true);
     expect(out.existed).toBe(false);
     expect(out.snapshotDigest).toBe(null);
   });
 
-  it('captures the pre-overwrite s8-gate.json (first invocation PASS)', () => {
+  it('captures the pre-overwrite hermes-gate.json (first invocation PASS)', () => {
     const repo = makeRepo('pass');
-    const artifactPath = join(repo, 'artifacts', 's8-gate.json');
-    const payload = JSON.stringify({ gate: 's8', status: 'PASS', verdict: 'PASS', note: 'invocation-1' });
+    const artifactPath = join(repo, 'artifacts', 'hermes-gate.json');
+    const payload = JSON.stringify({ gate: 'hermes', status: 'PASS', verdict: 'PASS', note: 'invocation-1' });
     writeFileSync(artifactPath, payload);
-    const runId = 's10-s8-regression-2026-08-21T10-12-13-597Z';
+    const runId = 'migration-hermes-regression-2026-08-21T10-12-13-597Z';
     const out = snapshotBeforeOverwrite({ repoRoot: repo, artifactPath, runId });
     expect(out.ok).toBe(true);
     expect(out.existed).toBe(true);
@@ -108,21 +88,21 @@ describe('gate-evidence: snapshotBeforeOverwrite', () => {
     expect(readFileSync(out.snapshotPath!, 'utf8')).toBe(payload);
   });
 
-  it('preserves BOTH snapshots when called twice with DIFFERENT runIds (audit core)', () => {
+  it('preserves BOTH snapshots when called twice with DIFFERENT runIds (core guarantee)', () => {
     const repo = makeRepo('both');
-    const artifactPath = join(repo, 'artifacts', 's8-gate.json');
+    const artifactPath = join(repo, 'artifacts', 'hermes-gate.json');
 
-    // FIRST s8 invocation: FAIL because S5 failed upstream.
-    writeFileSync(artifactPath, JSON.stringify({ gate: 's8', status: 'FAIL', verdict: 'FAIL', note: 'invocation-1-FROM-S5-FAIL' }));
-    const runId1 = 's10-s8-regression-2026-08-21T10-12-13-597Z';
+    // FIRST hermes invocation: FAIL because catalog failed upstream.
+    writeFileSync(artifactPath, JSON.stringify({ gate: 'hermes', status: 'FAIL', verdict: 'FAIL', note: 'invocation-1-FROM-catalog-FAIL' }));
+    const runId1 = 'migration-hermes-regression-2026-08-21T10-12-13-597Z';
     const snap1 = snapshotBeforeOverwrite({ repoRoot: repo, artifactPath, runId: runId1 });
     expect(snap1.ok).toBe(true);
 
-    // Caller now overwrites the on-disk artifact with the SECOND s8
-    // invocation (from S9): PASS, because S5 has been fixed since.
-    writeFileSync(artifactPath, JSON.stringify({ gate: 's8', status: 'PASS', verdict: 'PASS', note: 'invocation-2-FROM-S9-NESTED-S8' }));
+    // Caller now overwrites the on-disk artifact with the SECOND hermes
+    // invocation (from OpenClaw): PASS, because catalog has been fixed since.
+    writeFileSync(artifactPath, JSON.stringify({ gate: 'hermes', status: 'PASS', verdict: 'PASS', note: 'invocation-2-FROM-OpenClaw-NESTED-Hermes' }));
 
-    const runId2 = 's10-s8-regression-via-s9-2026-08-21T10-40-54-350Z';
+    const runId2 = 'migration-hermes-regression-via-openclaw-2026-08-21T10-40-54-350Z';
     const snap2 = snapshotBeforeOverwrite({ repoRoot: repo, artifactPath, runId: runId2 });
     expect(snap2.ok).toBe(true);
 
@@ -132,9 +112,9 @@ describe('gate-evidence: snapshotBeforeOverwrite', () => {
     const firstSnapshot = JSON.parse(readFileSync(snap1.snapshotPath!, 'utf8'));
     const secondSnapshot = JSON.parse(readFileSync(snap2.snapshotPath!, 'utf8'));
     expect(firstSnapshot.status).toBe('FAIL');
-    expect(firstSnapshot.note).toBe('invocation-1-FROM-S5-FAIL');
+    expect(firstSnapshot.note).toBe('invocation-1-FROM-catalog-FAIL');
     expect(secondSnapshot.status).toBe('PASS');
-    expect(secondSnapshot.note).toBe('invocation-2-FROM-S9-NESTED-S8');
+    expect(secondSnapshot.note).toBe('invocation-2-FROM-OpenClaw-NESTED-Hermes');
     expect(snap1.snapshotPath).not.toBe(snap2.snapshotPath);
     // Original artifact still reflects the second invocation.
     expect(JSON.parse(readFileSync(artifactPath, 'utf8')).status).toBe('PASS');
@@ -142,9 +122,9 @@ describe('gate-evidence: snapshotBeforeOverwrite', () => {
 
   it('preserves the earlier copy when called twice with the SAME runId (renames to .previous-<sha>.json)', () => {
     const repo = makeRepo('same-runid');
-    const artifactPath = join(repo, 'artifacts', 's5-evidence.json');
+    const artifactPath = join(repo, 'artifacts', 'catalog-evidence.json');
     writeFileSync(artifactPath, 'first');
-    const runId = 's8-s5-regression-2026-08-21T10-12-13-597Z';
+    const runId = 'hermes-catalog-regression-2026-08-21T10-12-13-597Z';
     const first = snapshotBeforeOverwrite({ repoRoot: repo, artifactPath, runId });
     expect(first.ok).toBe(true);
     // Caller overwrites the artifact then calls again with the same runId.
@@ -162,22 +142,22 @@ describe('gate-evidence: snapshotBeforeOverwrite', () => {
 describe('gate-evidence: recordStepLog', () => {
   it('returns log_digest/log_path/log_bytes and writes a meta.json sibling', () => {
     const repo = makeRepo('log');
-    const runId = 's10-s8-regression-2026-08-21T10-12-13-597Z';
-    const stdout = 'pnpm s8:gate\n2026-08-21T10:12:13 ... stdout body';
-    const stderr = 'fatal: missing s5 contract\n';
+    const runId = 'migration-hermes-regression-2026-08-21T10-12-13-597Z';
+    const stdout = 'pnpm hermes:gate\n2026-08-21T10:12:13 ... stdout body';
+    const stderr = 'fatal: missing catalog contract\n';
     const out = recordStepLog({
       repoRoot: repo,
       runId,
-      stepName: '13-s8-regression',
-      command: 'pnpm s8:gate',
+      stepName: '13-hermes-regression',
+      command: 'pnpm hermes:gate',
       exitCode: 2,
       status: 'FAIL',
       stdout,
       stderr,
       startAt: '2026-08-21T10:12:13.000Z',
       endAt: '2026-08-21T10:13:40.000Z',
-      artifactPath: 'artifacts/s8-gate.json',
-      snapshotPath: `artifacts/.evidence/${runId}/s8-gate.json.snapshot.json`,
+      artifactPath: 'artifacts/hermes-gate.json',
+      snapshotPath: `artifacts/.evidence/${runId}/hermes-gate.json.snapshot.json`,
     });
     expect(out.ok).toBe(true);
     expect(out.logDigest).toBe(sha256(stdout));
@@ -188,7 +168,7 @@ describe('gate-evidence: recordStepLog', () => {
     expect(existsSync(out.metadataPath!)).toBe(true);
     const meta = JSON.parse(readFileSync(out.metadataPath!, 'utf8'));
     expect(meta.runId).toBe(runId);
-    expect(meta.stepName).toBe('13-s8-regression');
+    expect(meta.stepName).toBe('13-hermes-regression');
     expect(meta.exitCode).toBe(2);
     expect(meta.status).toBe('FAIL');
     expect(meta.stdoutBytes).toBe(stdout.length);
@@ -203,9 +183,9 @@ describe('gate-evidence: recordStepLog', () => {
     const huge = 'X'.repeat(64 * 1024);
     const out = recordStepLog({
       repoRoot: repo,
-      runId: 's10-s8-regression-2026-08-21T10-12-13-597Z',
-      stepName: '13-s8-regression',
-      command: 'pnpm s8:gate',
+      runId: 'migration-hermes-regression-2026-08-21T10-12-13-597Z',
+      stepName: '13-hermes-regression',
+      command: 'pnpm hermes:gate',
       exitCode: 2,
       status: 'FAIL',
       stdout: huge,
@@ -223,35 +203,24 @@ describe('gate-evidence: recordStepLog', () => {
   });
 });
 
-describe('gate-evidence: end-to-end S10 traceability contract', () => {
-  // This is the audit's exact scenario, replayed on a fresh repoRoot:
-  //   1. S10 step 13 runs S8 directly. S8 fails (S5 failed upstream).
-  //   2. S10 captures s8_failed=true and the FAIL snapshot digest+path.
-  //   3. S10 step 14 runs S9, which internally runs S8 (step 12). That
-  //      nested S8 invocation overwrites artifacts/s8-gate.json with
-  //      status=PASS and emits a DIFFERENT runId.
-  //   4. After S10 finishes:
-  //        - artifacts/s10-gate.json must record BOTH invocations
-  //          (runIds + paths + distinct snapshots).
-  //        - S10 must NOT silently flip s8_failed to false just because
-  //          a later invocation passed.
-  //        - The first snapshot must remain reachable via its runId-scoped
-  //          path and the digest recorded on s10-gate.json must match
-  //          the snapshot file.
+describe('gate-evidence: end-to-end migration traceability contract', () => {
+  // A direct Hermes run FAILs, then a nested Hermes run overwrites the artifact with
+  // PASS. The migration artifact must record both runs and keep hermes_failed=true,
+  // and the first snapshot must stay reachable with a matching digest.
 
-  it('keeps both S8 invocations traceable when S10 records the FAIL first and the PASS later', () => {
+  it('keeps both Hermes invocations traceable when migration records the FAIL first and the PASS later', () => {
     const repo = makeRepo('e2e');
-    const artifactPath = join(repo, 'artifacts', 's8-gate.json');
+    const artifactPath = join(repo, 'artifacts', 'hermes-gate.json');
 
-    // First S8 invocation: S10 directly invokes `pnpm s8:gate`. s5 internally
-    // failed, so s8 reports FAIL. S10 records runId1 + snapshot.
+    // First Hermes invocation: migration directly invokes `pnpm hermes:gate`. catalog internally
+    // failed, so hermes reports FAIL. migration records runId1 + snapshot.
     const payload1 = JSON.stringify({
-      gate: 's8', status: 'FAIL', verdict: 'FAIL',
-      summary: { steps_failed: 1, s8_own_failures: ['11-s5-regression'] },
+      gate: 'hermes', status: 'FAIL', verdict: 'FAIL',
+      summary: { steps_failed: 1, hermes_own_failures: ['11-catalog-regression'] },
       emitted_at: '2026-08-21T10:12:13.597Z',
     });
     writeFileSync(artifactPath, payload1);
-    const runId1 = 's10-s8-regression-2026-08-21T10-12-13-597Z';
+    const runId1 = 'migration-hermes-regression-2026-08-21T10-12-13-597Z';
     const snap1 = snapshotBeforeOverwrite({ repoRoot: repo, artifactPath, runId: runId1 });
     expect(snap1.ok).toBe(true);
 
@@ -259,43 +228,43 @@ describe('gate-evidence: end-to-end S10 traceability contract', () => {
     const log1 = recordStepLog({
       repoRoot: repo,
       runId: runId1,
-      stepName: '13-s8-regression',
-      command: 'pnpm s8:gate',
+      stepName: '13-hermes-regression',
+      command: 'pnpm hermes:gate',
       exitCode: 2,
       status: 'FAIL',
-      stdout: 'pnpm s8:gate (invocation 1)',
-      stderr: '11-s5-regression: FAIL — s5 status=FAIL',
+      stdout: 'pnpm hermes:gate (invocation 1)',
+      stderr: '11-catalog-regression: FAIL — catalog status=FAIL',
       startAt: '2026-08-21T10:12:13.000Z',
       endAt: '2026-08-21T10:13:40.000Z',
-      artifactPath: 'artifacts/s8-gate.json',
+      artifactPath: 'artifacts/hermes-gate.json',
       snapshotPath: snap1.snapshotPath ?? '',
     });
     expect(log1.ok).toBe(true);
 
-    // S10's own verdict: even though the next invocation may pass, s10
-    // observed a FAIL — the gate must NOT flip s8_failed just because a
+    // migration's own verdict: even though the next invocation may pass, migration
+    // observed a FAIL — the gate must NOT flip hermes_failed just because a
     // future re-run succeeds.
-    const s10FirstDecision: { s8_failed: boolean; s8_runId: string } = { s8_failed: true, s8_runId: runId1 };
+    const migrationFirstDecision: { hermes_failed: boolean; hermes_runId: string } = { hermes_failed: true, hermes_runId: runId1 };
 
-    // Second S8 invocation: S10's step 14 runs S9, S9's step 12 runs S8.
-    // By then S5 has been fixed, so S8 PASSES. S10 captures runId2 + snap.
+    // Second Hermes invocation: migration's step 14 runs OpenClaw, OpenClaw's step 12 runs Hermes.
+    // By then catalog has been fixed, so Hermes PASSES. migration captures runId2 + snap.
     const payload2 = JSON.stringify({
-      gate: 's8', status: 'PASS', verdict: 'PASS',
-      summary: { steps_failed: 0, s8_own_failures: [] },
+      gate: 'hermes', status: 'PASS', verdict: 'PASS',
+      summary: { steps_failed: 0, hermes_own_failures: [] },
       emitted_at: '2026-08-21T10:40:55.000Z',
     });
     writeFileSync(artifactPath, payload2);
-    const runId2 = 's10-s8-via-s9-2026-08-21T10-40-54-350Z';
+    const runId2 = 'migration-hermes-via-openclaw-2026-08-21T10-40-54-350Z';
     const snap2 = snapshotBeforeOverwrite({ repoRoot: repo, artifactPath, runId: runId2 });
     expect(snap2.ok).toBe(true);
 
-    // Build the would-be s10-gate.json "invocations" section.
-    const s10Invocations: Array<Record<string, unknown>> = [
+    // Build the would-be migration-gate.json "invocations" section.
+    const migrationInvocations: Array<Record<string, unknown>> = [
       {
-        name: 's8-regression-invocation-1',
-        scope: 's10-direct',
+        name: 'hermes-regression-invocation-1',
+        scope: 'migration-direct',
         runId: runId1,
-        artifact_path: 'artifacts/s8-gate.json',
+        artifact_path: 'artifacts/hermes-gate.json',
         snapshot_path: snap1.snapshotPath,
         snapshot_digest: snap1.snapshotDigest,
         observed_status: 'FAIL',
@@ -307,10 +276,10 @@ describe('gate-evidence: end-to-end S10 traceability contract', () => {
         log_bytes: log1.logBytes,
       },
       {
-        name: 's8-regression-invocation-2',
-        scope: 's10-via-s9',
+        name: 'hermes-regression-invocation-2',
+        scope: 'migration-via-openclaw',
         runId: runId2,
-        artifact_path: 'artifacts/s8-gate.json',
+        artifact_path: 'artifacts/hermes-gate.json',
         snapshot_path: snap2.snapshotPath,
         snapshot_digest: snap2.snapshotDigest,
         observed_status: 'PASS',
@@ -320,84 +289,75 @@ describe('gate-evidence: end-to-end S10 traceability contract', () => {
       },
     ];
 
-    // What s10-gate.json would write. We serialize + re-parse so the
+    // What migration-gate.json would write. We serialize + re-parse so the
     // test exercises the JSON shape the gate actually emits.
-    const s10ArtifactPath = join(repo, 'artifacts', 's10-gate.json');
-    const s10Payload = {
-      gate: 's10',
+    const migrationArtifactPath = join(repo, 'artifacts', 'migration-gate.json');
+    const migrationPayload = {
+      gate: 'migration',
       status: 'FAIL',
       verdict: 'FAIL',
-      s8_failed: s10FirstDecision.s8_failed,
-      s8_status: 'PASS', // final on-disk
-      s8_invocations: s10Invocations,
-      failed_steps: ['13-s8-regression', '13b-s8-artifact'],
+      hermes_failed: migrationFirstDecision.hermes_failed,
+      hermes_status: 'PASS', // final on-disk
+      hermes_invocations: migrationInvocations,
+      failed_steps: ['13-hermes-regression', '13b-hermes-artifact'],
     };
-    writeFileSync(s10ArtifactPath, JSON.stringify(s10Payload, null, 2) + '\n');
+    writeFileSync(migrationArtifactPath, JSON.stringify(migrationPayload, null, 2) + '\n');
 
     // Read it back and assert the contract.
-    const s10 = JSON.parse(readFileSync(s10ArtifactPath, 'utf8'));
-    expect(s10.s8_failed).toBe(true);
-    expect(s10.verdict).toBe('FAIL');
-    expect(s10.s8_invocations.length).toBe(2);
-    expect(s10.s8_invocations[0].observed_status).toBe('FAIL');
-    expect(s10.s8_invocations[1].observed_status).toBe('PASS');
-    expect(s10.s8_invocations[0].snapshot_path).not.toBe(s10.s8_invocations[1].snapshot_path);
+    const migration = JSON.parse(readFileSync(migrationArtifactPath, 'utf8'));
+    expect(migration.hermes_failed).toBe(true);
+    expect(migration.verdict).toBe('FAIL');
+    expect(migration.hermes_invocations.length).toBe(2);
+    expect(migration.hermes_invocations[0].observed_status).toBe('FAIL');
+    expect(migration.hermes_invocations[1].observed_status).toBe('PASS');
+    expect(migration.hermes_invocations[0].snapshot_path).not.toBe(migration.hermes_invocations[1].snapshot_path);
 
-    const recordedDigest: string = s10.s8_invocations[0].snapshot_digest;
-    const observedDigest: string = createHash('sha256').update(readFileSync(s10.s8_invocations[0].snapshot_path)).digest('hex');
+    const recordedDigest: string = migration.hermes_invocations[0].snapshot_digest;
+    const observedDigest: string = createHash('sha256').update(readFileSync(migration.hermes_invocations[0].snapshot_path)).digest('hex');
     expect(recordedDigest).toBe(observedDigest);
 
-    const recordedDigest2: string = s10.s8_invocations[1].snapshot_digest;
-    const observedDigest2: string = createHash('sha256').update(readFileSync(s10.s8_invocations[1].snapshot_path)).digest('hex');
+    const recordedDigest2: string = migration.hermes_invocations[1].snapshot_digest;
+    const observedDigest2: string = createHash('sha256').update(readFileSync(migration.hermes_invocations[1].snapshot_path)).digest('hex');
     expect(recordedDigest2).toBe(observedDigest2);
 
     // The two snapshot digests must be DIFFERENT (different payloads, different files).
     expect(recordedDigest).not.toBe(recordedDigest2);
 
     // The first snapshot still says FAIL on disk.
-    const firstSnapshot = JSON.parse(readFileSync(s10.s8_invocations[0].snapshot_path, 'utf8'));
+    const firstSnapshot = JSON.parse(readFileSync(migration.hermes_invocations[0].snapshot_path, 'utf8'));
     expect(firstSnapshot.status).toBe('FAIL');
     // The second snapshot says PASS on disk.
-    const secondSnapshot = JSON.parse(readFileSync(s10.s8_invocations[1].snapshot_path, 'utf8'));
+    const secondSnapshot = JSON.parse(readFileSync(migration.hermes_invocations[1].snapshot_path, 'utf8'));
     expect(secondSnapshot.status).toBe('PASS');
   });
 });
 
-// ===========================================================================
-// S10-specific evidence helpers (recordInvocationEvidence).
-//
-// The S10 audit wires the helper directly into runStep for steps 13 and 14
-// so two distinct S8 invocations (S10→S8 direct, S9→S8 nested) and the
-// S10→S9 direct invocation can all be captured structurally with non-
-// mixing runIds, digests, and snapshot paths. These tests pin the helper's
-// contract; the s10-gate.mjs integration relies on it.
-// ===========================================================================
 
 describe('gate-evidence: recordInvocationEvidence', () => {
   it('snapshots the observed artifact AND records the stdout/stderr log under a single runId, then returns a structured entry', () => {
     const repo = makeRepo('record-inv');
-    const observedArtifactAbs = join(repo, 'artifacts', 's8-gate.json');
-    const prior = JSON.stringify({ gate: 's8', status: 'PASS', note: 'from-an-earlier-run' });
+    const observedArtifactAbs = join(repo, 'artifacts', 'hermes-gate.json');
+    const prior = JSON.stringify({ gate: 'hermes', status: 'PASS', note: 'from-an-earlier-run' });
     writeFileSync(observedArtifactAbs, prior);
 
-    const parentRunId = 's10-gate-2026-08-21T10-12-13-597Z';
-    const invRunId = 's10-s8-regression-2026-08-21T10-12-13-597Z';
+    const parentRunId = 'migration-gate-2026-08-21T10-12-13-597Z';
+    const invRunId = 'migration-hermes-regression-2026-08-21T10-12-13-597Z';
 
     const entry = recordInvocationEvidence({
       repoRoot: repo,
       parentRunId,
       invocationRunId: invRunId,
-      invocationName: 's8-direct-from-s10',
-      scope: 's10-direct',
-      command: 'pnpm s8:gate',
+      invocationName: 'hermes-direct-from-migration',
+      scope: 'migration-direct',
+      command: 'pnpm hermes:gate',
       exitCode: 0,
       status: 'PASS',
-      stdout: 'pnpm s8:gate (from S10 step 13)',
+      stdout: 'pnpm hermes:gate (from migration step 13)',
       stderr: '',
       startAt: '2026-08-21T10:12:13.000Z',
       endAt: '2026-08-21T10:40:54.000Z',
       observedArtifactPath: observedArtifactAbs,
-      observedArtifact: { gate: 's8', status: 'PASS', verdict: 'PASS', emitted_at: '2026-08-21T10:40:54.000Z' },
+      observedArtifact: { gate: 'hermes', status: 'PASS', verdict: 'PASS', emitted_at: '2026-08-21T10:40:54.000Z' },
     });
 
     // The helper must signal success …
@@ -405,15 +365,15 @@ describe('gate-evidence: recordInvocationEvidence', () => {
     // … and write all the on-disk evidence under ONE runId directory.
     expect(entry.runId).toBe(invRunId);
     expect(entry.parentRunId).toBe(parentRunId);
-    expect(entry.scope).toBe('s10-direct');
-    expect(entry.invocationName).toBe('s8-direct-from-s10');
+    expect(entry.scope).toBe('migration-direct');
+    expect(entry.invocationName).toBe('hermes-direct-from-migration');
     expect(entry.exitCode).toBe(0);
     expect(entry.observed_status).toBe('PASS');
     expect(entry.observed_verdict).toBe('PASS');
     expect(entry.emitted_at).toBe('2026-08-21T10:40:54.000Z');
     expect(entry.observedArtifactPath).toBe(observedArtifactAbs);
 
-    // The snapshot of the OBSERVED artifact (s8-gate.json) must exist on
+    // The snapshot of the OBSERVED artifact (hermes-gate.json) must exist on
     // disk with a digest that matches the prior body, and its path must
     // live under the parent's runId-scoped evidence dir.
     expect(entry.snapshot.existed).toBe(true);
@@ -430,108 +390,108 @@ describe('gate-evidence: recordInvocationEvidence', () => {
     const meta = JSON.parse(readFileSync(entry.log.metadataPath!, 'utf8'));
     expect(meta.runId).toBe(invRunId);
     expect(meta.parentRunId).toBe(parentRunId);
-    expect(meta.scope).toBe('s10-direct');
-    expect(meta.command).toBe('pnpm s8:gate');
+    expect(meta.scope).toBe('migration-direct');
+    expect(meta.command).toBe('pnpm hermes:gate');
   });
 
   it('keeps two invocations of the same observed artifact traceable: distinct runIds, distinct snapshot files, distinct log files', () => {
     const repo = makeRepo('record-inv-multi');
-    const observedArtifactPath = join(repo, 'artifacts', 's8-gate.json');
+    const observedArtifactPath = join(repo, 'artifacts', 'hermes-gate.json');
 
-    // First invocation: S10→S8 directly. S5 is broken so S8 reports FAIL.
-    writeFileSync(observedArtifactPath, JSON.stringify({ gate: 's8', status: 'FAIL', verdict: 'FAIL', note: 'inv-1-from-s10' }));
+    // First invocation: migration→Hermes directly. catalog is broken so Hermes reports FAIL.
+    writeFileSync(observedArtifactPath, JSON.stringify({ gate: 'hermes', status: 'FAIL', verdict: 'FAIL', note: 'inv-1-from-migration' }));
     const inv1 = recordInvocationEvidence({
       repoRoot: repo,
-      parentRunId: 's10-gate-2026-08-21T10-12-13-597Z',
-      invocationRunId: 's10-s8-regression-2026-08-21T10-12-13-597Z',
-      invocationName: 's8-direct-from-s10',
-      scope: 's10-direct',
-      command: 'pnpm s8:gate',
+      parentRunId: 'migration-gate-2026-08-21T10-12-13-597Z',
+      invocationRunId: 'migration-hermes-regression-2026-08-21T10-12-13-597Z',
+      invocationName: 'hermes-direct-from-migration',
+      scope: 'migration-direct',
+      command: 'pnpm hermes:gate',
       exitCode: 2,
       status: 'FAIL',
-      stdout: 'pnpm s8:gate (inv 1)',
-      stderr: '11-s5-regression: FAIL',
+      stdout: 'pnpm hermes:gate (inv 1)',
+      stderr: '11-catalog-regression: FAIL',
       startAt: '2026-08-21T10:12:13.000Z',
       endAt: '2026-08-21T10:40:54.000Z',
       observedArtifactPath,
-      observedArtifact: { gate: 's8', status: 'FAIL', verdict: 'FAIL', emitted_at: '2026-08-21T10:40:54.000Z', summary: { steps_failed: 1 } },
+      observedArtifact: { gate: 'hermes', status: 'FAIL', verdict: 'FAIL', emitted_at: '2026-08-21T10:40:54.000Z', summary: { steps_failed: 1 } },
     });
     expect(inv1.ok).toBe(true);
     expect(inv1.observed_status).toBe('FAIL');
     expect(inv1.observed_verdict).toBe('FAIL');
 
     // Real flow: before the second invocation runs, the producer overwrites
-    // the on-disk artifact (e.g. S9 step 12 finishing its S8 run). Mirror
+    // the on-disk artifact (e.g. OpenClaw step 12 finishing its Hermes run). Mirror
     // that here so the snapshot the SECOND invocation captures reflects
     // the post-overwrite state (PASS), not the stale FAIL body.
-    writeFileSync(observedArtifactPath, JSON.stringify({ gate: 's8', status: 'PASS', verdict: 'PASS', note: 'inv-2-from-s9' }));
+    writeFileSync(observedArtifactPath, JSON.stringify({ gate: 'hermes', status: 'PASS', verdict: 'PASS', note: 'inv-2-from-openclaw' }));
 
-    // S10's step 14 runs S9, S9's step 12 runs S8 a SECOND time. That
+    // migration's step 14 runs OpenClaw, OpenClaw's step 12 runs Hermes a SECOND time. That
     // nested invocation is recorded under a DIFFERENT runId — even though
     // it observes the SAME on-disk path, it must not erase the first
     // invocation's snapshot, log, or entry.
-    const s9Step12Entry = recordInvocationEvidence({
+    const openclawStep12Entry = recordInvocationEvidence({
       repoRoot: repo,
-      parentRunId: 's9-gate-2026-08-21T10-40-54-300Z', // s9's own runId — observed by S10 via s9-gate.json
-      invocationRunId: 's8-gate-2026-08-21T10-40-55-000Z', // S8's runId, as observed by S10 in the final s8-gate.json
-      invocationName: 's8-direct-from-s9-step-12',
-      scope: 's10-via-s9',
-      command: 'pnpm s8:gate',
+      parentRunId: 'openclaw-gate-2026-08-21T10-40-54-300Z', // openclaw's own runId — observed by migration via openclaw-gate.json
+      invocationRunId: 'hermes-gate-2026-08-21T10-40-55-000Z', // Hermes's runId, as observed by migration in the final hermes-gate.json
+      invocationName: 'hermes-direct-from-openclaw-step-12',
+      scope: 'migration-via-openclaw',
+      command: 'pnpm hermes:gate',
       exitCode: 0,
       status: 'PASS',
-      stdout: 'pnpm s8:gate (inv 2, by S9 step 12)',
+      stdout: 'pnpm hermes:gate (inv 2, by OpenClaw step 12)',
       stderr: '',
       startAt: '2026-08-21T10:40:54.000Z',
       endAt: '2026-08-21T10:40:55.000Z',
       observedArtifactPath,
-      observedArtifact: { gate: 's8', status: 'PASS', verdict: 'PASS', emitted_at: '2026-08-21T10:40:55.000Z', summary: { steps_failed: 0 } },
+      observedArtifact: { gate: 'hermes', status: 'PASS', verdict: 'PASS', emitted_at: '2026-08-21T10:40:55.000Z', summary: { steps_failed: 0 } },
     });
-    expect(s9Step12Entry.ok).toBe(true);
-    expect(s9Step12Entry.observed_status).toBe('PASS');
-    expect(s9Step12Entry.observed_verdict).toBe('PASS');
+    expect(openclawStep12Entry.ok).toBe(true);
+    expect(openclawStep12Entry.observed_status).toBe('PASS');
+    expect(openclawStep12Entry.observed_verdict).toBe('PASS');
 
     // Both snapshot files are still on disk and content-distinct.
-    expect(inv1.snapshot.path).not.toBe(s9Step12Entry.snapshot.path);
+    expect(inv1.snapshot.path).not.toBe(openclawStep12Entry.snapshot.path);
     expect(existsSync(inv1.snapshot.path!)).toBe(true);
-    expect(existsSync(s9Step12Entry.snapshot.path!)).toBe(true);
+    expect(existsSync(openclawStep12Entry.snapshot.path!)).toBe(true);
     const firstSnap = JSON.parse(readFileSync(inv1.snapshot.path!, 'utf8'));
-    const secondSnap = JSON.parse(readFileSync(s9Step12Entry.snapshot.path!, 'utf8'));
+    const secondSnap = JSON.parse(readFileSync(openclawStep12Entry.snapshot.path!, 'utf8'));
     expect(firstSnap.status).toBe('FAIL');
-    expect(firstSnap.note).toBe('inv-1-from-s10');
+    expect(firstSnap.note).toBe('inv-1-from-migration');
     expect(secondSnap.status).toBe('PASS');
-    expect(inv1.snapshot.digest).not.toBe(s9Step12Entry.snapshot.digest);
+    expect(inv1.snapshot.digest).not.toBe(openclawStep12Entry.snapshot.digest);
   });
 
-  it('records the S10→S9 direct invocation with its own runId, snapshot of s9-gate.json, and digests (no mix with nested S8)', () => {
-    const repo = makeRepo('record-s9-direct');
-    const s9ArtifactAbs = join(repo, 'artifacts', 's9-gate.json');
-    writeFileSync(s9ArtifactAbs, JSON.stringify({ gate: 's9', status: 'PASS', verdict: 'PASS' }));
+  it('records the migration→OpenClaw direct invocation with its own runId, snapshot of openclaw-gate.json, and digests (no mix with nested Hermes)', () => {
+    const repo = makeRepo('record-openclaw-direct');
+    const openclawArtifactAbs = join(repo, 'artifacts', 'openclaw-gate.json');
+    writeFileSync(openclawArtifactAbs, JSON.stringify({ gate: 'openclaw', status: 'PASS', verdict: 'PASS' }));
 
     const entry = recordInvocationEvidence({
       repoRoot: repo,
-      parentRunId: 's10-gate-2026-08-21T10-12-13-597Z',
-      invocationRunId: 's10-s9-regression-2026-08-21T10-40-54-350Z',
-      invocationName: 's9-direct-from-s10',
-      scope: 's10-direct',
-      command: 'pnpm s9:gate',
+      parentRunId: 'migration-gate-2026-08-21T10-12-13-597Z',
+      invocationRunId: 'migration-openclaw-regression-2026-08-21T10-40-54-350Z',
+      invocationName: 'openclaw-direct-from-migration',
+      scope: 'migration-direct',
+      command: 'pnpm openclaw:gate',
       exitCode: 0,
       status: 'PASS',
-      stdout: 'pnpm s9:gate (from S10 step 14)',
+      stdout: 'pnpm openclaw:gate (from migration step 14)',
       stderr: '',
       startAt: '2026-08-21T10:40:54.000Z',
       endAt: '2026-08-21T10:50:00.000Z',
-      observedArtifactPath: s9ArtifactAbs,
+      observedArtifactPath: openclawArtifactAbs,
       observedArtifact: {
-        gate: 's9', status: 'PASS', verdict: 'PASS',
-        runId: 's9-gate-2026-08-21T10-40-54-300Z',
+        gate: 'openclaw', status: 'PASS', verdict: 'PASS',
+        runId: 'openclaw-gate-2026-08-21T10-40-54-300Z',
         emitted_at: '2026-08-21T10:50:00.000Z',
         steps: {
-          '12-s8-regression': {
-            name: '12-s8-regression',
+          '12-hermes-regression': {
+            name: '12-hermes-regression',
             status: 'PASS',
             evidence: {
-              runId: 's9-gate-2026-08-21T10-40-54-300Z',
-              meta_path: `${repo}/artifacts/.evidence/s9-gate-2026-08-21T10-40-54-300Z/12-s8-regression.meta.json`,
+              runId: 'openclaw-gate-2026-08-21T10-40-54-300Z',
+              meta_path: `${repo}/artifacts/.evidence/openclaw-gate-2026-08-21T10-40-54-300Z/12-hermes-regression.meta.json`,
             },
           },
         },
@@ -539,32 +499,32 @@ describe('gate-evidence: recordInvocationEvidence', () => {
     });
 
     expect(entry.ok).toBe(true);
-    expect(entry.scope).toBe('s10-direct');
-    expect(entry.parentRunId).toBe('s10-gate-2026-08-21T10-12-13-597Z');
-    expect(entry.runId).toBe('s10-s9-regression-2026-08-21T10-40-54-350Z');
+    expect(entry.scope).toBe('migration-direct');
+    expect(entry.parentRunId).toBe('migration-gate-2026-08-21T10-12-13-597Z');
+    expect(entry.runId).toBe('migration-openclaw-regression-2026-08-21T10-40-54-350Z');
     // The snapshot path is recorded and matches the prior body.
     expect(entry.snapshot.existed).toBe(true);
     expect(existsSync(entry.snapshot.path!)).toBe(true);
-    expect(entry.snapshot.digest).toBe(sha256(readFileSync(s9ArtifactAbs, 'utf8')));
+    expect(entry.snapshot.digest).toBe(sha256(readFileSync(openclawArtifactAbs, 'utf8')));
   });
 
   it('handles a missing observed artifact gracefully (first-ever invocation: no prior body to snapshot)', () => {
     const repo = makeRepo('record-missing');
     const entry = recordInvocationEvidence({
       repoRoot: repo,
-      parentRunId: 's10-gate-2026-08-21T10-12-13-597Z',
-      invocationRunId: 's10-s8-regression-2026-08-21T10-12-13-597Z',
-      invocationName: 's8-direct-from-s10',
-      scope: 's10-direct',
-      command: 'pnpm s8:gate',
+      parentRunId: 'migration-gate-2026-08-21T10-12-13-597Z',
+      invocationRunId: 'migration-hermes-regression-2026-08-21T10-12-13-597Z',
+      invocationName: 'hermes-direct-from-migration',
+      scope: 'migration-direct',
+      command: 'pnpm hermes:gate',
       exitCode: 0,
       status: 'PASS',
       stdout: '',
       stderr: '',
       startAt: '2026-08-21T10:12:13.000Z',
       endAt: '2026-08-21T10:40:54.000Z',
-      observedArtifactPath: join(repo, 'artifacts', 's8-gate.json'),
-      observedArtifact: { gate: 's8', status: 'PASS', verdict: 'PASS', emitted_at: '2026-08-21T10:40:54.000Z' },
+      observedArtifactPath: join(repo, 'artifacts', 'hermes-gate.json'),
+      observedArtifact: { gate: 'hermes', status: 'PASS', verdict: 'PASS', emitted_at: '2026-08-21T10:40:54.000Z' },
     });
 
     expect(entry.ok).toBe(true);
@@ -576,54 +536,45 @@ describe('gate-evidence: recordInvocationEvidence', () => {
   });
 });
 
-// ===========================================================================
-// S10 step 13/14 fail-closed contract.
-//
-// The audit mandates that S10 must not flip `s8_failed` to false just
-// because a later S8 invocation passed. The aggregator logic must look at
-// the FIRST invocation's outcome first; only flip when the FIRST observed
-// PASS. Same rule must apply to `s9_invocation` for symmetry. The test
-// below pins the aggregator contract by exercising it on a synthetic
-// invocations list.
-// ===========================================================================
+// The first invocation dominates: a later PASS must not flip `hermes_failed`.
 
-describe('S10 invocations aggregator: first-invocation-dominates fail-closed', () => {
-  // Helper that mirrors the S10 aggregation logic. The S10 script owns
+describe('migration invocations aggregator: first-invocation-dominates fail-closed', () => {
+  // Helper that mirrors the migration aggregation logic. The migration script owns
   // the same predicate so that a future regression can't quietly invert
   // it; tests pin both the predicate and the surface field shape.
-  function aggregateS8(invocations: Array<{ scope: string; observed_status: string; observed_verdict?: string | null; exit_code: number; }>) {
+  function aggregateHermes(invocations: Array<{ scope: string; observed_status: string; observed_verdict?: string | null; exit_code: number; }>) {
     // FAIL wins for the FIRST invocation; later PASSes never flip it back.
-    const direct = invocations.find((i) => i.scope === 's10-direct') ?? null;
-    const viaS9 = invocations.find((i) => i.scope === 's10-via-s9') ?? null;
-    const s8_failed = !!(
+    const direct = invocations.find((i) => i.scope === 'migration-direct') ?? null;
+    const viaOpenclaw = invocations.find((i) => i.scope === 'migration-via-openclaw') ?? null;
+    const hermes_failed = !!(
       (direct && (direct.exit_code !== 0 || direct.observed_status !== 'PASS')) ||
-      (viaS9 && (viaS9.exit_code !== 0 || viaS9.observed_status !== 'PASS'))
+      (viaOpenclaw && (viaOpenclaw.exit_code !== 0 || viaOpenclaw.observed_status !== 'PASS'))
     );
-    return { s8_failed };
+    return { hermes_failed };
   }
 
-  it('keeps s8_failed=true when the FIRST invocation (S10-direct) FAILed even if the second (S10-via-S9) passed', () => {
-    const out = aggregateS8([
-      { scope: 's10-direct',  observed_status: 'FAIL', exit_code: 2 },
-      { scope: 's10-via-s9',  observed_status: 'PASS', exit_code: 0 },
+  it('keeps hermes_failed=true when the FIRST invocation (migration-direct) FAILed even if the second (migration-via-OpenClaw) passed', () => {
+    const out = aggregateHermes([
+      { scope: 'migration-direct',  observed_status: 'FAIL', exit_code: 2 },
+      { scope: 'migration-via-openclaw',  observed_status: 'PASS', exit_code: 0 },
     ]);
-    expect(out.s8_failed).toBe(true);
+    expect(out.hermes_failed).toBe(true);
   });
 
-  it('keeps s8_failed=true when the SECOND (S10-via-S9) invocation FAILed', () => {
-    const out = aggregateS8([
-      { scope: 's10-direct',  observed_status: 'PASS', exit_code: 0 },
-      { scope: 's10-via-s9',  observed_status: 'FAIL', exit_code: 2 },
+  it('keeps hermes_failed=true when the SECOND (migration-via-OpenClaw) invocation FAILed', () => {
+    const out = aggregateHermes([
+      { scope: 'migration-direct',  observed_status: 'PASS', exit_code: 0 },
+      { scope: 'migration-via-openclaw',  observed_status: 'FAIL', exit_code: 2 },
     ]);
-    expect(out.s8_failed).toBe(true);
+    expect(out.hermes_failed).toBe(true);
   });
 
-  it('reports s8_failed=false when BOTH invocations passed', () => {
-    const out = aggregateS8([
-      { scope: 's10-direct', observed_status: 'PASS', exit_code: 0 },
-      { scope: 's10-via-s9', observed_status: 'PASS', exit_code: 0 },
+  it('reports hermes_failed=false when BOTH invocations passed', () => {
+    const out = aggregateHermes([
+      { scope: 'migration-direct', observed_status: 'PASS', exit_code: 0 },
+      { scope: 'migration-via-openclaw', observed_status: 'PASS', exit_code: 0 },
     ]);
-    expect(out.s8_failed).toBe(false);
+    expect(out.hermes_failed).toBe(false);
   });
 });
 

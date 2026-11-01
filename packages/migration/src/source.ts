@@ -1,6 +1,4 @@
-// packages/migration/src/source.ts
-//
-// Slice 10 source-adapter port. Defines the structural shape every
+// Source-adapter port. Defines the structural shape every
 // migration source adapter must conform to: a stable `adapterId`, a
 // `sourceDigest` (the canonical digest of the source database or
 // upstream bundle), and a `rows` object whose keys are the table names

@@ -1,5 +1,3 @@
-// packages/core/src/skills/retrieval-dto.ts
-//
 // Wire-stable DTO types for the retrieval events surfaces
 // (`GET /retrieval-events` and `GET /retrieval-events/{id}/graph`).
 //

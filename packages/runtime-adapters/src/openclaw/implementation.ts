@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/openclaw/implementation.ts
-//
 // OpenClaw MCP descriptor is a logical CLI fragment shaped like the
 // JSON payload accepted by `openclaw mcp set --server <path>`:
 //

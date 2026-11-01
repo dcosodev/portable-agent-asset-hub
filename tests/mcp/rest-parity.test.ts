@@ -1,12 +1,7 @@
-// tests/mcp/rest-parity.test.ts
-//
-// Normative test: the MCP tool layer is a thin facade over REST. Every
+// The MCP tool layer is a thin facade over REST. Every
 // observable side effect of a tool call (HTTP method, path, status, JSON
 // envelope, headers) must be byte-identical to the underlying REST
-// invocation. S7 plan mandates:
-//
-//   mcp_rejects_model_identity_override
-//   mcp_forwards_scope_cas_idempotency_reason
+// invocation.
 //
 // The test drives the tool layer through a stub HTTP transport so we
 // never need a real REST server in the unit test. The stdio smoke test
@@ -31,7 +26,7 @@ const CATALOG: ToolCatalogEntry[] = [
   { operationId: 'getMemory', capability: 'memory.read', safety: 'safe', rest: { method: 'GET', path: '/api/v1/memories/{id}' }, cas: false, idempotent: true },
   { operationId: 'searchCatalog', capability: 'catalog.read', safety: 'safe', rest: { method: 'GET', path: '/api/v1/catalog/search' }, cas: false, idempotent: false },
   { operationId: 'getHealth', capability: 'health.read', safety: 'safe', rest: { method: 'GET', path: '/api/v1/health' }, cas: false, idempotent: true },
-  // Phase 1 skill tools: parity with REST, same wrapper shape.
+  // Skill tools: parity with REST, same wrapper shape.
   { operationId: 'searchSkills', capability: 'skill.read', safety: 'safe', rest: { method: 'GET', path: '/api/v1/skills/search' }, cas: false, idempotent: false },
   { operationId: 'getSkill', capability: 'skill.read', safety: 'safe', rest: { method: 'GET', path: '/api/v1/skills/{id}' }, cas: false, idempotent: false },
   { operationId: 'listSkillResources', capability: 'skill.resource.read', safety: 'safe', rest: { method: 'GET', path: '/api/v1/skills/{id}/resources' }, cas: false, idempotent: false },
@@ -45,7 +40,7 @@ const actor: ActorContext = createActorContext({
   capabilities: ['read', 'write.memory', 'memory.supersede', 'skill.read', 'skill.resource.read'],
 });
 
-describe('MCP tool layer parity with REST (S7)', () => {
+describe('MCP tool layer parity with REST', () => {
   let recorded: TransportRequest[] = [];
   let responses: TransportResponse[] = [];
   let invoker: ReturnType<typeof buildMcpToolInvoker>;
@@ -328,7 +323,7 @@ describe('MCP tool layer parity with REST (S7)', () => {
   });
 });
 
-describe('Phase 1 skill tools parity with REST', () => {
+describe('skill tools parity with REST', () => {
   let recorded: TransportRequest[] = [];
   let responses: TransportResponse[] = [];
   let invoker: ReturnType<typeof buildMcpToolInvoker>;

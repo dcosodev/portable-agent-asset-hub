@@ -2,8 +2,7 @@
 // hub/internal/mcp via the public package API.
 //
 // The tests live at tests/go/mcp/*_test.go (not in internal/mcp/) on
-// purpose: the T7 contract is "supervises the existing TypeScript
-// MCP" and the test surface is a separate subprocess boundary driven
+// purpose: the test surface is a separate subprocess boundary driven
 // by tests/go/mcp/*.test.ts. The TS harness (tests/go/mcp/_mcp-harness.ts)
 // compiles this file with `go test -c` and spawns the resulting
 // binary; the Go testing package owns every assertion in this file.
@@ -13,8 +12,7 @@
 // lifecycle, and redaction semantics. The "external MCP" used in
 // these tests is a FAKE — a small Node program spawned via
 // `node -e <script>` — which is hermetic and never touches
-// packages/mcp/** or the real REST surface. The slice contract is
-// explicit: "fake external MCP only, never fake product".
+// packages/mcp/** or the real REST surface.
 //
 // The tests do NOT touch cmd/hub, openapi/, packages/, or
 // observability/. They only import hub/internal/mcp and stdlib.
@@ -108,7 +106,7 @@ func extractAfter(s, needle string) string {
 // The script is intentionally minimal — it has no JSON validation,
 // no tool registry, no REST transport — because the supervisor
 // under test is not responsible for understanding MCP payloads
-// (T7 contract: "no payload transformation").
+// (no payload transformation).
 //
 // `exitAfter` is the number of stdin lines to receive before the
 // script exits 0. 0 = run forever.
@@ -1218,9 +1216,8 @@ func readFileString(t *testing.T, p string) string {
 }
 
 // Silence unused-import warnings for symbols kept around for future
-// tests (json, errors, net, http, etc.) — the slice explicitly
-// forbids modifying the test file outside of test additions, but
-// the imports are still referenced through mcp.* types.
+// tests (json, errors, net, http, etc.). The imports are still
+// referenced through mcp.* types.
 var _ = json.Marshal
 var _ = errors.New
 var _ = atomic.AddInt32

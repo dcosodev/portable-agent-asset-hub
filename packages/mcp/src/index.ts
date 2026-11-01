@@ -1,5 +1,3 @@
-// packages/mcp/src/index.ts
-//
 // Public surface of the @portable-agent-asset-hub/mcp package. The MCP
 // server is a thin facade over REST: it never opens a database, never
 // reads from disk, and never has a "local mode" fallback. If the

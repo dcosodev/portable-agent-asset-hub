@@ -1,6 +1,4 @@
-// packages/core/src/importer/index.ts
-//
-// Public entry point for the Phase 2 importer contract surface. The
+// Public entry point for the importer contract surface. The
 // surface is pure: types, derivations, the high-confidence secret
 // scanner and the deterministic mime detector. Any filesystem or
 // SQLite access lives in `@portable-agent-asset-hub/storage-files`.

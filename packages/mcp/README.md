@@ -37,10 +37,9 @@ hub over stdio.
 MCP facade trivially safe to run alongside REST without risking a second
 writer to the database.
 
-Of the 51 OpenAPI operations, 34 are exposed as MCP tools (`x-mcp.exposed:
-true`); the remainder — mostly the Graph Explorer's human-facing reads —
-are REST-only by design. See the root
-[`README.md`](../../README.md#api-surface-at-a-glance) for the full table.
+Only operations with `x-mcp.exposed: true` become MCP tools; the rest,
+including the Graph Explorer's human-facing reads, are REST-only by design. See
+[`docs/api-surface.md`](../../docs/api-surface.md) for the full table.
 
 ## Build & run
 

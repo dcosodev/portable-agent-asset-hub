@@ -1,10 +1,6 @@
-// packages/materializers/src/index.ts
-//
-// Renderer-agnostic public surface for the S8 materializer. Every
-// renderer (hermes, openclaw) and every consumer (REST, MCP, SDKs)
-// imports from this entry point. Slice 9 (OpenClaw) reuses the same
-// apply/rollback pipeline by swapping the renderer adapter; this
-// index never changes for that swap.
+// Renderer-agnostic public surface of the materializers. Every renderer
+// (hermes, openclaw) and every consumer (REST, MCP, SDKs) imports from
+// this entry point.
 //
 // Re-export strategy: explicit `export {}` for each symbol so the
 // public surface is greppable and survives accidental renames in the

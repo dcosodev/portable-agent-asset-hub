@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/opencode/paths.ts
-//
 // OpenCode layout:
 //
 //     AGENTS.md                  — wrapper (pointer to the hub)

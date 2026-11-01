@@ -1,8 +1,4 @@
-// cmd/hub/cmd_token.go
-//
-// Token subcommand handler for the hub product shell. Per
-// docs/roadmap/slices.json (T3 — First-run init, bearer token,
-// runtime config) the token surface is:
+// Token subcommand handler for the hub product shell. The token surface is:
 //
 //	hub token show [--json]
 //	hub token rotate [--json]
@@ -56,7 +52,7 @@ import (
 )
 
 // tokenShowResult is the structured --json payload. Schema is
-// locked at T3. Do NOT add a `value` / `token` / `bearer` field
+// locked. Do NOT add a `value` / `token` / `bearer` field
 // — that would defeat the redaction contract.
 type tokenShowResult struct {
 	Len       int    `json:"len"`

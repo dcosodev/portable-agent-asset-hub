@@ -9,14 +9,13 @@ kept only when their outcome documents a decision.
 
 ## `1-spike-skills`
 
-The S1 spike answered one question: **should the hub extract runtime code
+This spike answered one question: **should the hub extract runtime code
 from the upstream `TencentCloud/TencentDB-Agent-Memory` project (MIT), or
 implement a clean-room, contract-informed design of its own?**
 
-- **Verdict:** `GO_WITH_PIVOT` (see [`1-spike-skills/go-no-go.md`](1-spike-skills/go-no-go.md)) —
-  direct code extraction was rejected (**NO-GO**); proceeding to a
-  clean-room implementation informed by the upstream contract shapes was
-  approved (**GO**). The decision and its consequences are recorded in
+- **Verdict** (see [`1-spike-skills/go-no-go.md`](1-spike-skills/go-no-go.md)):
+  direct code extraction was rejected, and a clean-room implementation informed
+  by the upstream contract shapes was approved. The decision and its consequences are recorded in
   [ADR 0003](../docs/adr/0003-tencent-extraction-boundary.md).
 - **Provenance:** the reviewed upstream file set, pinned to commit
   `97f94654280b2932c35ba4806a491999ed244cc9`, is recorded in
@@ -24,8 +23,8 @@ implement a clean-room, contract-informed design of its own?**
   and in [`docs/upstream-reuse.yaml`](../docs/upstream-reuse.yaml).
 - **Contents:** a minimal skills-surface prototype (SQLite store, MCP
   stdio server, REST/MCP parity tests, security tests) with its own gate
-  scripts, mirroring in miniature the staged-gate methodology described in
-  [`docs/engineering-log.md`](../docs/engineering-log.md).
+  scripts, a small version of the method described in
+  [`docs/archive/engineering-log.md`](../docs/archive/engineering-log.md).
 
 ## Evidence note
 

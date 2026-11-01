@@ -1,6 +1,4 @@
-// tests/go/telemetry/loopback-only.test.ts
-//
-// T5 I-10 (loopback-first publication) contract for `hub telemetry
+// I-10 (loopback-first publication) contract for `hub telemetry
 // status --health-url=<url>`. The tests build the hub binary with
 // `go build -trimpath` (via _telemetry-harness), then exercise the
 // live binary against a fake `docker` shim AND a real loopback HTTP
@@ -189,7 +187,7 @@ describe('hub telemetry status — loopback acceptance (I-10)', () => {
   }, 60_000);
 
   it('health_url_127_0_0_1_with_json_form_is_deterministic', async () => {
-    // Regression lock: T2's status surface supports --json; T5 must
+    // Regression lock: The status surface supports --json; must
     // emit the same envelope so downstream orchestrators can
     // consume both runtimes uniformly.
     const rig = setupLoopbackRig('health-json');
@@ -338,7 +336,7 @@ describe('hub telemetry status — IPv6 loopback acceptance', () => {
 // Loopback — fail-open on probe error
 // ---------------------------------------------------------------------------
 
-describe('hub telemetry status — fail-open on probe error (I-08)', () => {
+describe('hub telemetry status — fail-open on probe error', () => {
   const cleanups: Array<() => void> = [];
   afterEach(() => {
     while (cleanups.length) {
@@ -348,7 +346,7 @@ describe('hub telemetry status — fail-open on probe error (I-08)', () => {
   });
 
   it('unreachable_loopback_url_returns_populated_http_health_with_error', async () => {
-    // I-08 (fail-open telemetry): the HTTP probe MUST NOT crash
+    // Fail-open telemetry: the HTTP probe MUST NOT crash
     // the status surface. When the loopback URL is unreachable,
     // the Service layer populates http_health with the error
     // verbatim and the surrounding Status call still returns the
@@ -377,7 +375,7 @@ describe('hub telemetry status — fail-open on probe error (I-08)', () => {
     expect(httpHealth).toBeDefined();
     expect(httpHealth.url).toBe('http://127.0.0.1:1/status');
     // HTTPStatus is 0 when the connection refused before any
-    // response was received — the canonical I-08 fail-open shape.
+    // response was received — the canonical fail-open shape.
     expect(httpHealth.http_status).toBe(0);
     // The error message is populated (non-empty).
     expect(typeof httpHealth.error).toBe('string');

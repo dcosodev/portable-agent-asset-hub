@@ -1,6 +1,4 @@
-// packages/storage-sqlite/src/skill-pack-coordinator.ts
-//
-// Phase 2 — Skill pack apply coordinator.
+// Skill pack apply coordinator.
 //
 // Responsibility split:
 //

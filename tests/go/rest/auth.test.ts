@@ -1,7 +1,5 @@
-// tests/go/rest/auth.test.ts
-//
-// T6 real-subprocess contract for the curated REST client. This
-// file owns the .test.ts naming required by the slice, but the
+// Real-subprocess contract for the curated REST client. This
+// file runs the suite under vitest, but the
 // assertions live in Go:
 //
 //   tests/go/rest/auth_test.go       (table-driven httptest.Server)

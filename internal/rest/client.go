@@ -1,6 +1,5 @@
 // Package rest is the curated, stdlib-only Go REST client for the
-// hub product shell (T6 — Curated Go REST client, per
-// docs/roadmap/implementation-plan.md).
+// hub product shell.
 //
 // Scope:
 //   - The package wraps net/http with a thin, opinionated surface
@@ -8,7 +7,7 @@
 //     capabilities, catalog, catalog/search, skills/{id},
 //     skills/search, memories, memories/{id}, memories/search,
 //     memory-blocks). It does NOT cover write endpoints yet —
-//     those are reserved for a future slice.
+//     those are reserved for a future change.
 //   - Every outbound request that has a non-empty bearer carries
 //     it in the Authorization header ONLY. The token bytes never
 //     appear in logs, error messages, or HubError fields.

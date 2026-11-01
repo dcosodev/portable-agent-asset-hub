@@ -1,5 +1,3 @@
-// packages/rest/src/launcher.ts
-//
 // Process-level entrypoint that wires the @portable-agent-asset-hub/rest
 // HTTP server to a real @portable-agent-asset-hub/storage-sqlite backend
 // and exposes it on the loopback interface (or, with a bearer verifier,

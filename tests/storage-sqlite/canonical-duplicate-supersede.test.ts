@@ -1,5 +1,3 @@
-// tests/storage-sqlite/canonical-duplicate-supersede.test.ts
-//
 // Tests for supersedeCanonicalDuplicates + reconcileCanonicalDuplicates
 // (third-batch cleanup phase).
 //

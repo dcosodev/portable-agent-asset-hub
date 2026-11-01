@@ -1,5 +1,3 @@
-// packages/mcp/src/identity.ts
-//
 // Process-bound identity. The MCP server derives its identity from the
 // host process at boot and exposes it through a descriptor. The model
 // layer is NEVER allowed to substitute this identity — any tool call

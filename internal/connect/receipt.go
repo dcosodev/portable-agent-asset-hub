@@ -1,5 +1,5 @@
 // internal/connect/receipt.go — durable rollback receipt reader +
-// writer for the T8 cross-process rollback bridge.
+// writer for the cross-process rollback bridge.
 //
 // The durable receipt lives at:
 //
@@ -7,8 +7,7 @@
 //
 // It is the ONLY state a separate rollback subprocess can rehydrate
 // the run from; there is no Go-side registry, no Go-side SQLite
-// handle, no Go-side in-memory runId map (per T8 amendment §"no Go
-// digest / SQLite / registry").
+// handle, no Go-side in-memory runId map.
 //
 // Two pieces land in this file:
 //
@@ -24,13 +23,11 @@
 //
 //     Extra top-level keys are refused (fail-closed). Secrets-shaped
 //     keys/values are refused at any depth of a second-level
-//     `metadata` object (the amendment pins this exact shape:
-//     "no secrets-shaped keys").
+//     `metadata` object.
 //
 //  2. Store reader/writer primitives — writeReceipt, readReceipt,
-//     listReceipts, receiptPathFor. They are kept narrowly aligned
-//     to what the amendment authorizes: "receipt I/O + validate +
-//     atomic temp+rename; no domain logic". The mirror exists so a
+//     listReceipts, receiptPathFor. They do receipt I/O, validation
+//     and atomic temp+rename, with no domain logic. The mirror exists so a
 //     Go process that does not need to spawn the .mjs child can
 //     still validate a receipt path during a dry-run / help flow
 //     without duplicating the security checks the .mjs child runs.
@@ -82,22 +79,19 @@ import (
 // ReceiptSchemaVersion is the canonical bounded schemaVersion the
 // store accepts. Older or future versions are refused.
 //
-// The amendment pins versioning as a hard require — schemaVersion=0
-// is refused (legacy), schemaVersion=2..N are refused (future). A
-// v2 surface lands via a future slice amendment, not via silently
-// widening the existing reader.
+// Versioning is required: schemaVersion=0 is refused (legacy) and
+// schemaVersion=2..N are refused (future). A v2 schema has to be
+// added explicitly, not by silently widening the existing reader.
 const ReceiptSchemaVersion = 1
 
 // MaxReceiptBytes caps the size of a single receipt file so an
 // attacker cannot exhaust the operator's tty by writing a 100 MB
-// "receipt". The amendment pins 64 KiB as the bound; oversized
-// receipts fail closed.
+// "receipt". Receipts over 64 KiB fail closed.
 const MaxReceiptBytes int64 = 64 * 1024
 
-// receiptsSubdir is the canonical sub-path under HUB_HOME. The
-// amendment pins this exact location (I-15: receipt under
-// $HUB_HOME/state/connect/receipts/, NEVER inside the user
-// canonical data directory).
+// receiptsSubdir is the canonical sub-path under HUB_HOME: receipts
+// live under $HUB_HOME/state/connect/receipts/, NEVER inside the
+// user canonical data directory.
 const receiptsSubdir = "state/connect/receipts"
 
 // receiptsDirMode is the canonical POSIX mode the receipts
@@ -190,7 +184,7 @@ func ReceiptPath(hubHome, runId string) string {
 //  3. targetRoot / lockDir are absolute paths (the renderer
 //     only writes absolute paths; relative paths leak the
 //     operator's cwd and break reproducibility)
-//  4. harness is "hermes" (the only harness T8 authorises;
+//  4. harness is "hermes" (the only harness authorises;
 //     apply + rollback paths close on "openclaw" at this layer)
 //  5. profileId matches prf_<alnum>._-
 //  6. observedDigest is exactly 64 lowercase hex characters
@@ -416,9 +410,8 @@ func writeReceipt(hubHome string, r Receipt) (string, error) {
 		return "", err
 	}
 	finalPath := filepath.Join(dir, r.RunID+".json")
-	// Refuse to silently overwrite an existing receipt. The
-	// amendment pins "exactly one <runId>.json per apply" so a
-	// re-write would be a duplicate-state regression. The .mjs
+	// Refuse to silently overwrite an existing receipt: there is
+	// exactly one <runId>.json per apply. The .mjs
 	// child enforces the same policy at write time.
 	if _, err := os.Lstat(finalPath); err == nil {
 		return "", fmt.Errorf(
@@ -574,7 +567,7 @@ func readReceipt(hubHome, runId string) (Receipt, bool, error) {
 		}
 	}
 	// Secrets sweep across every STRING field of the parsed
-	// receipt (top level only; per amendment the bounded schema
+	// receipt (top level only; the bounded schema
 	// has NO nested object, so this is a flat sweep). The
 	// canonical schema declares every key as a string EXCEPT
 	// schemaVersion (int). We probe the raw JSON type so an

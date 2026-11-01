@@ -1,6 +1,4 @@
-// tests/go/shell/doctor.test.ts
-//
-// T1 real-subprocess contract for `hub doctor` and `hub doctor --json`.
+// Real-subprocess contract for `hub doctor` and `hub doctor --json`.
 // The tests build a temp hub binary with `go build -trimpath` (via
 // _hub-harness) and assert on the LIVE subprocess output against a
 // fresh per-test HUB_HOME. The contract surface locked in here:
@@ -32,7 +30,7 @@
 //   * `openapi_accessible` is `ok`             → as long as the env
 //                                              wires HUB_OPENAPI to
 //                                              the repo's real spec.
-//   * `rest_handshake` is `pending`            → wired in T2, never
+//   * `rest_handshake` is `pending`            → wired later, never
 //                                              blocks the verdict.
 //   * no bearer-shaped string in stdout/
 //     stderr                                  → the redactor is the
@@ -236,34 +234,32 @@ describe('hub doctor --json — structured contract', () => {
     cleanups.push(res.cleanup);
     expect(res.status).toBe(0);
     const parsed = JSON.parse(res.stdout.trim()) as DoctorReport;
-    // T9 T1-compatibility carve-out (see docs/roadmap/slices.json T9
-    // entry, scope+allowed_paths annotated carve-out): the strict
-    // full-array equality is relaxed into a subsequence-presence
-    // assertion. The six T1-owned check ids MUST remain present in
+    // The strict full-array equality is relaxed into a subsequence-presence
+    // assertion. The six base check ids MUST remain present in
     // their original order as a prefix/subsequence of the report.
-    // Only the three governed additive trailing T9-owned ids
+    // Only the three additive trailing posture ids
     // (`backup_posture`, `update_posture`, `distribution_checks`)
     // are permitted; arbitrary reordering, removal, status
-    // demotion, or substitution of T1-owned ids is forbidden.
-    // The byte-stable JSON contract on the six T1-owned ids (and
-    // every other T1-owned status/behavior expectation) is
+    // demotion, or substitution of base ids is forbidden.
+    // The byte-stable JSON contract on the six base ids (and
+    // every other base status/behavior expectation) is
     // preserved untouched — this is the minimal, governed relaxation
-    // required to keep T9 additive.
+    // required to keep additive.
     const actual = parsed.checks.map((c) => c.id);
     expect(actual.length).toBeGreaterThanOrEqual(KNOWN_CHECK_IDS.length);
-    // The six T1-owned ids MUST appear as a contiguous prefix in
+    // The six base ids MUST appear as a contiguous prefix in
     // their original order; nothing may be reordered, removed, or
-    // substituted at the T1 layer.
+    // substituted at the layer.
     for (let i = 0; i < KNOWN_CHECK_IDS.length; i += 1) {
-      expect(actual[i], `T1-owned id at position ${i} must be ${KNOWN_CHECK_IDS[i]} (got ${actual[i]}); arbitrary reordering/substitution is forbidden by the T9 T1-compatibility carve-out`).toBe(KNOWN_CHECK_IDS[i]);
+      expect(actual[i], `base id at position ${i} must be ${KNOWN_CHECK_IDS[i]} (got ${actual[i]}); arbitrary reordering/substitution is forbidden`).toBe(KNOWN_CHECK_IDS[i]);
     }
-    // The trailing ids (if any) MUST be drawn from the T9-owned set;
-    // no other id may have been appended, and no T1-owned id may
+    // The trailing ids (if any) MUST be drawn from the posture set;
+    // no other id may have been appended, and no base id may
     // have been duplicated.
     const tail = actual.slice(KNOWN_CHECK_IDS.length);
     const allowedTrailing = new Set(['backup_posture', 'update_posture', 'distribution_checks']);
     for (const id of tail) {
-      expect(allowedTrailing.has(id), `appended id ${id} is not a governed additive trailing T9-owned id (must be one of: ${[...allowedTrailing].join(', ')})`).toBe(true);
+      expect(allowedTrailing.has(id), `appended id ${id} is not a additive trailing posture id (must be one of: ${[...allowedTrailing].join(', ')})`).toBe(true);
     }
     expect(new Set(actual).size, `duplicate check ids: ${JSON.stringify(actual)}`).toBe(actual.length);
   }, 30_000);
@@ -381,8 +377,7 @@ describe('hub doctor — nonzero handling on bad input', () => {
   it('parent_traversal_in_HUB_HOME_is_rejected_with_exit_two', async () => {
     // The shell is fail-closed: a `..` segment in HUB_HOME triggers
     // config_load_failed, which is surfaced as exit 2 (contract
-    // violation). The doctor never even runs in that case — the
-    // contract is "doctor on a valid input".
+    // violation). The doctor never even runs in that case.
     const res = await runHub(
       ['doctor'],
       {

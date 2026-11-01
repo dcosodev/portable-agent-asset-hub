@@ -1,5 +1,3 @@
-// tests/rest/launcher-port-collision.test.ts
-//
 // The REST tests spawn `agent-memory-rest` on a port discovered by binding
 // port 0 and reading it back. That port has to be released before the child
 // can take it, and under parallel vitest workers another test can win the

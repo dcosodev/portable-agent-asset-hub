@@ -1,13 +1,10 @@
-// packages/migration/src/replay.ts
-//
-// Slice 10 replay service. Replay re-applies the migration bundle to a
+// Replay service. Replay re-applies the migration bundle to a
 // hermetic, throwaway SQLite database and diffs the result against the
 // shadow observations. A successful replay is the precondition for
 // transitioning the migration run to `cutover_ready`.
 //
-// For S10 GREEN core the surface is pinned but the implementation is
-// deferred. The full replay path (open throwaway db, apply bundle,
-// compare) is delivered alongside the S11 lifecycle.
+// Not fully implemented: the surface is stable, but opening a throwaway
+// database, applying the bundle, and comparing are still to be built.
 
 import type { ExportResult } from './exporter.js';
 import type { MigrationStorage } from './storage.js';
@@ -26,12 +23,12 @@ export function createReplayService(config: ReplayServiceConfig): ReplayService 
   void adaptMigrationStorage(config.storage);
   return {
     async run({ bundle }) {
-      // Slice 10 GREEN core: replay is a structural verification. It reads
+      // Replay is currently a structural verification. It reads
       // the bundle's `memories` row count (recorded by the exporter in
       // both `manifest.counts` and the `memories.ndjson` ExportFileEntry)
       // and reports it back. The full replay path (open throwaway db,
-      // apply bundle, compare to shadow) is delivered alongside the S11
-      // lifecycle. For S10, the contract is that replay reports a
+      // apply bundle, compare to shadow) is not implemented yet. For now,
+      // replay reports a
       // non-zero import count when the bundle carries memory rows, so
       // callers can assert that the bundle is replayable.
       const memoriesFile = bundle.files.find((f) => f.path === 'memories.ndjson');

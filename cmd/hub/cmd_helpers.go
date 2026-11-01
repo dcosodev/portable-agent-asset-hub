@@ -1,5 +1,3 @@
-// cmd/hub/cmd_helpers.go
-//
 // Shared helpers for the cmd/hub subcommand handlers. Today main.go
 // and cmd_runtime.go both need to emit diagnostic stderr messages
 // and probe small env keys; this file centralises the wiring so

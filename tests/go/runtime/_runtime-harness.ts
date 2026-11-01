@@ -1,6 +1,4 @@
-// tests/go/runtime/_runtime-harness.ts
-//
-// Shared subprocess harness for the T2 runtime subprocess tests
+// Shared subprocess harness for the runtime subprocess tests
 // (up/down/status/logs/ps). The harness builds the hub binary ONCE
 // per process with `go build -trimpath`, then exercises the runtime
 // subcommands against a fake `docker` executable injected via PATH.
@@ -28,8 +26,8 @@
 // `exec.LookPath("docker")` resolves to our shim instead of the
 // real /opt/homebrew/bin/docker.
 //
-// The harness mirrors tests/go/shell/_hub-harness.ts so the T1 and
-// T2 harnesses read alike.
+// The harness mirrors tests/go/shell/_hub-harness.ts so the two
+// harnesses read alike.
 
 import {
   chmodSync,
@@ -73,7 +71,7 @@ export interface RuntimeBuildResult {
 /**
  * Build the hub binary with `go build -trimpath` into a per-call temp
  * directory. Caches the result; call resetRuntimeHubBinary() to force
- * a rebuild. Matches the T1 harness API.
+ * a rebuild. Matches the harness API.
  */
 export function buildRuntimeHubBinary(): RuntimeBuildResult {
   if (cachedBinary && cachedBuildTmp && existsSync(cachedBinary)) {
@@ -443,11 +441,10 @@ export async function runRuntimeHub(
     // here so each run could expose only the docker calls
     // produced since `before`. The cumulative
     // `options.fakeDocker.readCalls()` path used in `close` below
-    // is deterministic per rig and matches the phase2 gate's own
-    // transcript-walking behaviour, so the snapshot would only
+    // is deterministic per rig, so the snapshot would only
     // duplicate state. It was removed to satisfy
-    // `@typescript-eslint/no-unused-vars` without weakening the
-    // contract — the close path still re-reads the cumulative
+    // `@typescript-eslint/no-unused-vars` — the close path still
+    // re-reads the cumulative
     // transcript on every run.
   }
 

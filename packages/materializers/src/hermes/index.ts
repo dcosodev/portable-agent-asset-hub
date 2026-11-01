@@ -1,5 +1,3 @@
-// packages/materializers/src/hermes/index.ts
-//
 // Public subpath `@portable-agent-asset-hub/materializers/hermes` —
 // the entry point for the Hermes adapter and dispatcher. Keeps the
 // renderer-agnostic surface (`packages/materializers/src/index.ts`)

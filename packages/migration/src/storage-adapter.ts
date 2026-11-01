@@ -1,11 +1,7 @@
-// packages/migration/src/storage-adapter.ts
-//
-// Slice 10 storage adapter / port bridge.
-//
 // `createMigrationService` (and the rest of the migration factories
 // — shadow/replay/cutover/rollback/retirement/import) consume the
-// narrow `MigrationStorage` port defined in `./storage.ts`. Tests in
-// the Slice 10 contract suite satisfy it with an in-memory stub; the
+// narrow `MigrationStorage` port defined in `./storage.ts`.
+// `tests/migration-contracts.test.ts` satisfies it with an in-memory stub; the
 // end-to-end lifecycle test, however, passes the canonical
 // `@portable-agent-asset-hub/storage-sqlite` `SqliteStore`, which
 // implements the broader `Storage` transaction contract from core —
@@ -17,7 +13,7 @@
 //
 //   * If the input already exposes the six port methods, it is
 //     returned as-is (this is what the unit tests expect — see
-//     `tests/s10-migration.test.ts`).
+//     `tests/migration-contracts.test.ts`).
 //   * Otherwise, the input is treated as opaque (it typically is a
 //     `SqliteStore` carrying the canonical hub database) and is
 //     wrapped in an in-memory `MigrationStorage` sidecar that owns
@@ -28,12 +24,9 @@
 // SQLite database, it does NOT touch the canonical hub's
 // harness-state database, it does NOT write migration runs into the
 // canonical hub tables. That keeps the canonical storage contract
-// untouched (S0–S9) and keeps the
-// migration package usable in a hermetic test environment where
-// writing migration-run rows into the hub would be a layering
-// violation. The sidecar's purpose is to carry the migration
-// lifecycle state for the duration of a single run, which is exactly
-// the boundary the Slice 10 spec carves out for it.
+// untouched and keeps the migration package usable in a hermetic test
+// environment where writing migration-run rows into the hub would be a
+// layering violation.
 
 import type {
   MigrationDigestPatch,
@@ -186,12 +179,10 @@ const createInMemorySidecar = (options: SidecarOptions = {}): MigrationStorage =
  * it. This keeps run records visible across the full lifecycle
  * (begin → transition → shadow → replay → cutover → rollback →
  * retirement → get) when callers construct one service per phase
- * from the same underlying storage, which is the natural usage
- * pattern (and the pattern used by the Slice 10 E2E).
+ * from the same underlying storage.
  *
  * The returned object satisfies `MigrationStorage`; it is safe to
- * pass to `createMigrationService` and the rest of the Slice 10
- * factories.
+ * pass to `createMigrationService` and the other migration factories.
  */
 const sidecars = new WeakMap<object, MigrationStorage>();
 

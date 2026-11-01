@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/hermes/implementation.ts
-//
 // Hermes MCP descriptor is a logical CLI fragment shaped like:
 //   hermes mcp add --command node \
 //     --env AGENT_MEMORY_REST_URL=<restUrl> \

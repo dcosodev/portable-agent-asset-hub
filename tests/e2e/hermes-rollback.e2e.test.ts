@@ -1,6 +1,4 @@
-// tests/e2e/hermes-rollback.e2e.test.ts
-//
-// E2E for the S8 rollback path: every byte the materializer replaced or
+// E2E for the Hermes rollback path: every byte the materializer replaced or
 // deleted during apply is restored from the staging backup on rollback.
 // The forbidden Hermes state paths must remain untouched through both
 // phases.
@@ -38,7 +36,7 @@ afterEach(() => {
 });
 
 const tempHome = (label: string): string => {
-  const dir = mkdtempSync(join(tmpdir(), `s8-rb-${label}-`));
+  const dir = mkdtempSync(join(tmpdir(), `hermes-rb-${label}-`));
   cleanup.push(dir);
   return dir;
 };
@@ -70,7 +68,7 @@ const seed = (store: Storage): void => {
   });
 };
 
-describe('E2E hermes-rollback (S8)', () => {
+describe('E2E hermes-rollback', () => {
   it('restores the original bytes of every replaced file', () => {
     const home = tempHome('restore');
     const target = join(home, 'hermes', 'state');

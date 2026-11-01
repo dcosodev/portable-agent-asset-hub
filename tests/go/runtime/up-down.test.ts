@@ -1,6 +1,4 @@
-// tests/go/runtime/up-down.test.ts
-//
-// T2 real-subprocess contract for `hub runtime up` and `hub runtime
+// Real-subprocess contract for `hub runtime up` and `hub runtime
 // down`. The tests build the hub binary with `go build -trimpath`
 // (via _runtime-harness), then exercise the live binary against a
 // fake `docker` shim injected through PATH. No real Docker is ever
@@ -53,11 +51,8 @@
 //                                     a fake shim directory ahead
 //                                     of the real PATH.
 //
-// The tests intentionally avoid redesigning the implementation: the
-// contract is asserted against the existing Service shape, the
-// existing fake-docker shim, and the existing harness. New contracts
-// (if any) belong in a future slice; this file only locks the
-// existing surface so a regression in up/down is impossible.
+// The tests assert against the existing Service shape, the existing
+// fake-docker shim, and the existing harness.
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -256,7 +251,7 @@ describe('hub runtime up — fake compose argv contract', () => {
   }, 60_000);
 
   it('up_json_payload_services_is_empty_array_not_null', async () => {
-    // T2 regression lock. The independent audit found that
+    // Regression lock . The independent audit found that
     // cmd/hub/cmd_runtime.go's upToResult left RuntimeResult.Services
     // nil, so `hub runtime up --json` emitted `"services":null`. The
     // locked schema declares Services as an array; statusToResult
@@ -507,8 +502,8 @@ describe('hub runtime — bearer-shaped env is not forwarded to compose', () => 
     // HUB_BEARER_TOKEN_FILE from the parent env even when the
     // operator points it at a real file path — the file-path
     // itself is forwarded only when the operator passes
-    // `--bearer-file` (T3 surface; today the binary does not
-    // accept that flag). For T2 the invariant is: a stray
+    // `--bearer-file` (surface; today the binary does not
+    // accept that flag). The invariant is: a stray
     // HUB_BEARER_TOKEN_FILE on the parent env is NEVER forwarded.
     const rig = setupUpDownRig('bearer-file-down');
     cleanups.push(rig.cleanup);
@@ -554,7 +549,7 @@ describe('hub runtime — up then down lifecycle on a fake docker', () => {
     // fake shim must produce a `compose up` call followed by a
     // `compose down` call in that order, neither carrying -v, and
     // both exiting 0. This is the canonical "stack comes up, hub
-    // responds, then down cleanly" path the slice promises.
+    // responds, then down cleanly" path.
     const rig = setupUpDownRig('cycle');
     cleanups.push(rig.cleanup);
     const up = await runRuntimeHub(

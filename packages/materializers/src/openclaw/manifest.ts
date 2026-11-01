@@ -1,8 +1,5 @@
-// packages/materializers/src/openclaw/manifest.ts
-//
-// OpenClaw adapter: the canonical renderer for Slice 9. Reuses the
-// S8 renderer-agnostic contracts (ManifestV1, RendererAdapter) and
-// pins the OpenClaw-specific layout under
+// OpenClaw adapter. Uses the renderer-agnostic contracts (ManifestV1,
+// RendererAdapter) and pins the OpenClaw-specific layout under
 // `<stateDir>/agents/<agentId>/...`. The rendererVersion stays at
 // `0.1.0` so a Hermes and OpenClaw manifest compiled from the same
 // snapshot share the same `rendererVersion` — only the layout

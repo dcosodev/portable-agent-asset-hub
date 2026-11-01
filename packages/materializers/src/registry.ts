@@ -1,5 +1,3 @@
-// packages/materializers/src/registry.ts
-//
 // In-memory registry mapping a successful `applyPlan` runId to the
 // filesystem coordinates the apply recorded. Rollback reads this
 // registry to resolve the targetRoot / lockDir / harness / profileId

@@ -32,8 +32,8 @@ facade and both generated SDKs.
 Route existence, methods, `If-Match` CAS requirements (`x-cas-required`),
 and idempotency (`x-idempotent`) all trace back to
 [`../../openapi/openapi.yaml`](../../openapi/openapi.yaml) — see the "API
-surface at a glance" table in the root
-[`README.md`](../../README.md#api-surface-at-a-glance). `pnpm s6:drift`
+surface" table in
+[`docs/api-surface.md`](../../docs/api-surface.md). `pnpm openapi:drift`
 fails if this package's behavior and the OpenAPI contract disagree.
 
 ## Build & run

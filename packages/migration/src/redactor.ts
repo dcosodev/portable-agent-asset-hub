@@ -1,6 +1,4 @@
-// packages/migration/src/redactor.ts
-//
-// Slice 10 redactor. Walks a record and replaces every SECRET-classified
+// Redactor. Walks a record and replaces every SECRET-classified
 // leaf with the literal string '__REDACTED__'. The shape of the input
 // is preserved: nested objects stay nested objects, arrays stay arrays,
 // and non-secret values pass through unchanged.

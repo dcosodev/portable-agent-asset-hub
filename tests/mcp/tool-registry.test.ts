@@ -1,9 +1,5 @@
-// tests/mcp/tool-registry.test.ts
-//
-// Normative test: the tool registry is generated from the OpenAPI contract
-// and never hand-curated. S7 plan mandates:
-//
-//   mcp_schema_matches_openapi
+// The tool registry is generated from the OpenAPI contract
+// and never hand-curated.
 //
 // We pin the registry to a static, hand-written manifest (the same one the
 // generator emits) and assert the operationId ↔ REST mapping covers every
@@ -16,7 +12,7 @@ import {
   type ToolCatalogEntry,
 } from '@portable-agent-asset-hub/mcp';
 
-describe('MCP tool registry (S7)', () => {
+describe('MCP tool registry', () => {
   it('registry_covers_every_canonical_openapi_operation', () => {
     const catalog: ToolCatalogEntry[] = [];
     const registry = buildToolRegistry(catalog);

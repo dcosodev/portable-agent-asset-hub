@@ -6,21 +6,20 @@
 ## Context
 
 The upstream project `TencentCloud/TencentDB-Agent-Memory` (MIT licensed)
-was reviewed as prior art during the S1 spike. Copying runtime modules
+was reviewed as prior art during the skills spike. Copying runtime modules
 from it wholesale would have created two problems:
 
 1. **Provenance ambiguity.** Mixed-origin source files make it hard to
    state, per file, what is original work and what is derived, which the
-   public-surface policy (gate S0) requires.
+   public-surface policy (the baseline gate) requires.
 2. **Architecture drag.** The upstream design is coupled to Tencent cloud
    services (vector database, object storage), which
    [ADR 0002](0002-portable-v1-exclusions.md) excludes from portable v1.
 
-The S1 go/no-go review (see
+The spike's go/no-go review (see
 [`slices/1-spike-skills/go-no-go.md`](../../slices/1-spike-skills/go-no-go.md))
-concluded **GO_WITH_PIVOT**: direct code extraction was rejected
-(**NO-GO**), while proceeding to a clean-room, contract-informed
-implementation was approved (**GO**).
+rejected direct code extraction and approved a clean-room, contract-informed
+implementation instead.
 
 ## Decision
 

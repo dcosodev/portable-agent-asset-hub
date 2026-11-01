@@ -11,7 +11,7 @@ The portable v1 contract has a different goal: a **local-first,
 reproducible, auditable** hub that anyone can build and validate on a
 single machine with no external accounts, credentials, or hosted
 dependencies. Carrying cloud-coupled features into v1 would break that
-property and force the fail-closed gates to depend on services they cannot
+property and force the validation scripts to depend on services they cannot
 control.
 
 ## Decision
@@ -35,15 +35,15 @@ Portable v1 explicitly excludes:
   changes go through versioned materializations with `preview`, `apply`,
   and `rollback`, guarded by CAS locks.
 
-The S1 exploration that tested these boundaries lives as an isolated spike
+The exploration that tested these boundaries lives as an isolated spike
 under [`slices/1-spike-skills/`](../../slices/README.md); it is not part of
 the pnpm workspace and is not compiled or shipped with the packages.
 
 ## Consequences
 
-- The entire validation story (gates S0–S10) runs locally and fail-closed,
-  with no network or account prerequisites beyond package installation and
-  the pinned SDK generator toolchain.
+- Validation is designed to run locally, with no account prerequisites and no
+  hosted dependency beyond package installation and the pinned SDK generator
+  toolchain. See [`docs/validation.md`](../validation.md) for its current state.
 - Features that inherently require a hosted component are out of contract
   for v1 and would need a new ADR (and likely a major contract revision)
   to enter.

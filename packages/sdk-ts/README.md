@@ -1,13 +1,13 @@
 # `@portable-agent-asset-hub/sdk-ts`
 
-Hand-maintained TypeScript client (`Client`, `SdkError`) plus a
-**generated** low-level client underneath it, both produced from the same
-contract: [`../../openapi/openapi.yaml`](../../openapi/openapi.yaml).
+A small hand-written TypeScript client (`Client`, `SdkError`), plus a separate
+**generated** client produced from the OpenAPI document:
+[`../../openapi/openapi.yaml`](../../openapi/openapi.yaml).
 
 ## What lives here
 
-- **`src/client.ts`** — the ergonomic `Client` class most consumers should
-  use: typed methods per operation, structured errors, request/response
+- **`src/client.ts`** — the `Client` class: a generic `request` method,
+  `health` and `status` helpers, structured errors, and request and response
   handling.
 - **`src/errors.ts`** — `SdkError`, the typed exception `Client` throws on
   a non-2xx response or transport failure.
@@ -22,11 +22,11 @@ contract: [`../../openapi/openapi.yaml`](../../openapi/openapi.yaml).
 Regenerate it with the pinned toolchain instead:
 
 ```sh
-pnpm s6:generate   # requires Java 17 + OpenAPI Generator 7.10.0
-pnpm s6:drift      # confirms the contract and the generated output agree
+pnpm sdk:generate   # requires Java 17 + OpenAPI Generator 7.10.0
+pnpm openapi:drift      # confirms openapi/openapi.yaml and the generated output agree
 ```
 
-`pnpm s6:drift` runs in CI on every change; a manual edit to `generated/`
+`pnpm openapi:drift` runs in CI on every change; a manual edit to `generated/`
 will be silently overwritten and is not the source of truth for anything.
 
 ## Build

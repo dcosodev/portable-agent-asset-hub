@@ -1,8 +1,6 @@
-// cmd/hub/cmd_update.go
+// Dispatcher for `hub update …`.
 //
-// T9 dispatcher for `hub update …`.
-//
-// Per docs/roadmap/slices.json slice `T9` the update verb is
+// The update verb is
 // exactly:
 //
 //	hub update                   (plan-only dry-run by default)
@@ -32,8 +30,7 @@
 //
 // The dispatcher NEVER reaches into a forbidden path:
 //   * no internal/update/apply.go (the install-mutating
-//     applier is explicitly forbidden by the T9 amendment;
-//     only the planner exists today)
+//     applier does not exist; only the planner exists today)
 //   * no network transport (the dispatcher's plan summary
 //     contains no download URL, no remote release data, no
 //     transport)
@@ -67,8 +64,7 @@ import (
 //  3. Apply-path refusal: when --apply is set, the
 //     dispatcher prints the refused diagnostic on stderr
 //     and exits 2 — no write, no network, no install
-//     mutation. The amendment pins exit 2 for the apply
-//     refuse.
+//     mutation.
 //  4. Dry-run rendering: when --apply is NOT set, the
 //     dispatcher asks the planner for a Plan, renders the
 //     Plan summary on stdout via the renderer, and exits 0.
@@ -82,7 +78,7 @@ import (
 func runUpdate(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, rest []string) (int, error) {
 	// cfg is accepted for symmetry with the other
 	// dispatchers (runBackup / runRuntime / etc.) and to
-	// make a future T10..Tn wiring (e.g. an
+	// make a future wiring (e.g. an
 	// HUB_UPDATE_ENDPOINT knob read through cfg) a
 	// localized change. Today the dispatcher never reads
 	// from cfg.
@@ -100,10 +96,7 @@ func runUpdate(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, r
 	if err := flags.ValidateAfterParse(); err != nil {
 		// Channel refusal: non-stable literal. The
 		// dispatcher emits the diagnostic on stderr and
-		// exits with a non-zero code; the amendment's
-		// audit requirement is "rejected with a clear
-		// error before any network call" without
-		// pinning 1 vs 2. We use 2 because the failure
+		// exits before any network call. We use 2 because the failure
 		// is a contract violation (the operator asked
 		// for an out-of-spec channel), not a transient
 		// runtime failure.
@@ -114,8 +107,7 @@ func runUpdate(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, r
 	plan := update.BuildPlan(flags, version.Current())
 
 	if plan.ApplyRequested {
-		// Apply-refused path. The amendment pins exit
-		// code 2 with a message declaring the apply
+		// Apply-refused path: exit code 2 with a message declaring the apply
 		// transport out of scope; no install mutation
 		// occurs on refuse. The renderer writes the
 		// refusal message to stderr (the diagnostic
@@ -139,8 +131,7 @@ func runUpdate(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, r
 
 // printUpdateHelp writes the help block to stdout. The text
 // comes from internal/update.Help so the contract surface
-// lives in exactly one place and a future caller (e.g. a
-// s11-style gate) can assert on the help shape without
+// lives in exactly one place and a future caller can assert on the help shape without
 // duplicating the strings.
 func printUpdateHelp(sink *output.Sink) {
 	for _, line := range update.Help() {

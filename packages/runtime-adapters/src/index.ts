@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/index.ts
-//
 // Public surface for the `@portable-agent-asset-hub/runtime-adapters`
 // package. External callers — `scripts/attach-agent-hub.mjs`,
 // `tests/runtime-adapters/*`, future REST/MCP wrappers — import

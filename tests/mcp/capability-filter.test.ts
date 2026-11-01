@@ -1,10 +1,6 @@
-// tests/mcp/capability-filter.test.ts
-//
-// Normative test: the MCP capability filter must hide write and admin tools
+// The MCP capability filter must hide write and admin tools
 // when the actor does not hold the corresponding capability. This is one of
-// the two S7 fail-closed gates — see plan Slice 7 §"Tests/gate":
-//
-//   mcp_hides_write_and_admin_without_capability
+// the two MCP fail-closed gates.
 //
 // The filter consumes a tool catalog (operationId + capability + safety)
 // and the set of capabilities the actor was granted by the operator. The
@@ -26,7 +22,7 @@ const ALL_OPS: ToolCatalogEntry[] = [
   { operationId: 'getDoctor', capability: 'admin.doctor', safety: 'diagnostic' },
 ];
 
-describe('MCP capability filter (S7)', () => {
+describe('MCP capability filter', () => {
   it('hides_write_and_admin_without_capability', () => {
     const visible = filterToolsByCapability(ALL_OPS, ['read']);
     const visibleIds = visible.map((t) => t.operationId);

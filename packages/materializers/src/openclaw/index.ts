@@ -1,5 +1,3 @@
-// packages/materializers/src/openclaw/index.ts
-//
 // Public subpath `@portable-agent-asset-hub/materializers/openclaw` —
 // the entry point for the OpenClaw adapter, dispatcher, plugin
 // manifest, layout helpers, and config helpers. Keeps the

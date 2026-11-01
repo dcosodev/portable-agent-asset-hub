@@ -1,10 +1,5 @@
-// tests/mcp/stdio-smoke.test.ts
-//
-// Normative test: an MCP stdio client can complete the handshake against
+// An MCP stdio client can complete the handshake against
 // a real REST server (in-process) and a real MCP server (in-process).
-// S7 plan mandates:
-//
-//   mcp_stdio_smoke_against_real_rest
 //
 // We launch the MCP server as a child process bound to stdio, point it at
 // an in-process REST server, and verify the tool list, tool call, and
@@ -97,9 +92,9 @@ beforeAll(async () => {
   // the bare import happens inside `dist/packages/mcp/server.js` and
   // resolves via the links the build mirrored into the dist tree. The temp
   // directory is tracked so `afterAll` can wipe both the entry file and
-  // the directory it lives in — leaving the parent `.tmp-s7-mcp-*`
+  // the directory it lives in — leaving the parent `.tmp-mcp-*`
   // directory behind would litter the repo root and trip `pnpm lint`.
-  const dir = mkdtempSync(join(repoRoot, '.tmp-s7-mcp-'));
+  const dir = mkdtempSync(join(repoRoot, '.tmp-mcp-'));
   mcpEntryDir = dir;
   mcpEntry = join(dir, 'server.mjs');
   writeFileSync(mcpEntry, [
@@ -112,7 +107,7 @@ afterAll(async () => {
   if (child && !child.killed) child.kill('SIGKILL');
   if (server) await new Promise<void>((res) => server.close(() => res()));
   // Wipe the per-run shim directory created by `mkdtempSync` (which
-  // would otherwise linger in the repo root as `.tmp-s7-mcp-*`).
+  // would otherwise linger in the repo root as `.tmp-mcp-*`).
   if (mcpEntryDir) rmSync(mcpEntryDir, { force: true, recursive: true });
 });
 
@@ -129,13 +124,13 @@ async function sendRpc(child: ChildProcessWithoutNullStreams, request: object): 
   return JSON.parse(line.toString('utf8').trim()) as JsonRpcResponse;
 }
 
-describe('MCP stdio smoke against real REST (S7)', () => {
+describe('MCP stdio smoke against real REST', () => {
   it('mcp_stdio_smoke_against_real_rest', async () => {
     child = spawn(process.execPath, [mcpEntry], { stdio: ['pipe', 'pipe', 'pipe'] });
     const stderrChunks: Buffer[] = [];
     child.stderr.on('data', (chunk: Buffer) => stderrChunks.push(chunk));
 
-    const initialize = await sendRpc(child, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 's7-stdio-smoke', version: '0.0.1' } } });
+    const initialize = await sendRpc(child, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'mcp-stdio-smoke', version: '0.0.1' } } });
     expect(initialize.error).toBeUndefined();
     expect((initialize.result as { serverInfo?: { name?: string } }).serverInfo?.name).toBe('portable-agent-asset-hub-mcp');
 

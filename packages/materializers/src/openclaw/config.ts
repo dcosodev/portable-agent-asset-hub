@@ -1,6 +1,4 @@
-// packages/materializers/src/openclaw/config.ts
-//
-// OpenClaw plugin configuration. The S9 plan mandates:
+// OpenClaw plugin configuration:
 //
 //   * Capture is disabled by default.
 //   * Context injection is disabled by default.
@@ -10,13 +8,12 @@
 //
 // The config file lives at `<stateDir>/openclaw.config.json` by
 // convention. The plugin reads it at every adapter call so a host
-// can rotate the capability between apply runs (the S9 cutover
-// passes `openclaw.capture` only for the migration run, never
-// afterwards).
+// can rotate the capability between apply runs (for example, granting
+// `openclaw.capture` only for a migration run).
 //
 // Env vars (`PAH_OPENCLAW_CAPTURE`, `PAH_OPENCLAW_CONTEXT_INJECT`)
 // are accepted ONLY when the matching capability is present. Without
-// the capability the env var is rejected — the S9 surface must
+// the capability the env var is rejected — the plugin must
 // never silently activate capture because the host happened to
 // export the env var.
 
@@ -170,8 +167,8 @@ export function readOpenclawConfig(path: string, options: OpenclawConfigReadOpti
   }
 
   // Final capability check: if the on-disk config has either option
-  // enabled, the caller must hold the matching capability. This is
-  // the S9 invariant that prevents a tampered config from silently
+  // enabled, the caller must hold the matching capability. This
+  // prevents a tampered config from silently
   // activating capture.
   if (config.capture.enabled && !capabilities.has(CAPABILITY_CAPTURE)) {
     throw new HubError(

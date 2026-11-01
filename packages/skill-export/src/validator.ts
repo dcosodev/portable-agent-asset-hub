@@ -1,5 +1,3 @@
-// packages/skill-export/src/validator.ts
-//
 // Centralised validation surface for the export plan and apply
 // step. Every check that touches the filesystem or reads the
 // target directory is performed here so the coordinator can stay

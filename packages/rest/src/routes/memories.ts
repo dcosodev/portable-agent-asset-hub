@@ -1,5 +1,3 @@
-// packages/rest/src/routes/memories.ts
-//
 // Memory REST routes. Order matters: the literal `/memories/search`
 // route must appear BEFORE the path-parameter `/memories/{id}` route
 // in the registry, otherwise the router would capture `search` as the

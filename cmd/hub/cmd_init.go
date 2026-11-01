@@ -1,8 +1,4 @@
-// cmd/hub/cmd_init.go
-//
-// Init subcommand handler for the hub product shell. Per
-// docs/roadmap/slices.json (T3 — First-run init, bearer token,
-// runtime config) the init surface is:
+// Init subcommand handler for the hub product shell. The init surface is:
 //
 //	hub init [--json]
 //
@@ -52,8 +48,8 @@ import (
 )
 
 // initResult is the structured --json payload. The schema is
-// locked at T3 (do not change keys without updating the phase3
-// gate and the s11 gate). Field order matches the encoding/json
+// locked (do not change keys without updating the tests under
+// tests/go/init). Field order matches the encoding/json
 // output (sorted by key for the top-level object) and is the
 // contract surface for orchestrators.
 type initResult struct {

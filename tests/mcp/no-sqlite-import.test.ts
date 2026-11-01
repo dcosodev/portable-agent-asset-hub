@@ -1,12 +1,5 @@
-// tests/mcp/no-sqlite-import.test.ts
-//
-// Normative test: the MCP package must never depend on a SQLite engine,
+// The MCP package must never depend on a SQLite engine,
 // open a database file, or import any module from the storage layer.
-//
-// S7 plan mandates:
-//
-//   mcp_does_not_import_or_open_sqlite
-//   rest_unavailable_has_no_local_db_fallback
 //
 // This is enforced statically (grep the source for forbidden imports) AND
 // dynamically (the resolved dependency graph of the package must contain
@@ -32,7 +25,7 @@ function walk(dir: string): string[] {
   return out;
 }
 
-describe('MCP isolation from SQLite / storage (S7)', () => {
+describe('MCP isolation from SQLite / storage', () => {
   it('mcp_does_not_import_or_open_sqlite', () => {
     const files = walk(mcpSrc);
     expect(files.length).toBeGreaterThan(0);

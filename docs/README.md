@@ -2,14 +2,19 @@
 
 This index separates the documents that describe how the shipped system
 behaves from the historical record and from generated client documentation.
-`pnpm docs:check` enforces that every document listed under **Current
-contracts** exists and that its relative links resolve.
+`pnpm docs:check` checks that these documents exist and that their relative
+links resolve.
 
 ## Current contracts
 
 | Document | Scope |
 |---|---|
-| [`architecture.md`](architecture.md) | logical and deployment architecture, boundaries, known defects |
+| [`architecture.md`](architecture.md) | system map, what ships, subsystems, boundaries |
+| [`api-surface.md`](api-surface.md) | every REST operation, its safety class and whether it is an MCP tool |
+| [`packages.md`](packages.md) | workspace packages and repository layout |
+| [`validation.md`](validation.md) | what CI enforces, other local commands, and the state of the local gates |
+| [`storage-contract.md`](storage-contract.md) | public surface of core and SQLite storage, packaging, and the storage gate |
+| [`architecture/go-product-shell.md`](architecture/go-product-shell.md) | the Go `hub` CLI |
 | [`canonical-storage.md`](canonical-storage.md) | storage modes, path resolution, backup and doctor |
 | [`skill-relations.md`](skill-relations.md) | canonical relation authority and proposal lifecycle |
 | [`skill-graph-retrieval.md`](skill-graph-retrieval.md) | bounded graph retrieval contract |
@@ -26,10 +31,7 @@ contracts** exists and that its relative links resolve.
 ## Package READMEs
 
 Each workspace package under `packages/` has its own README with a
-file-by-file breakdown of what it contains and how it fits with the rest
-of the system. They are linked from the root
-[`README.md`](../README.md#package-responsibilities) "Package
-responsibilities" table rather than duplicated here.
+file-by-file breakdown. They are linked from [`packages.md`](packages.md).
 
 ## Architecture decisions
 
@@ -44,9 +46,10 @@ contract documents above take precedence for operational behavior.
 
 ## Historical record
 
-[`engineering-log.md`](engineering-log.md) preserves the bounded evidence from
-the slices that built this repository — counts, paths and caveats as they were
-at the time. Read it as history, not as current runtime state.
+[`archive/`](archive/README.md) holds records of how the repository was built,
+with counts, paths and caveats as they were at the time. Read them as history,
+not as current behaviour. [`../slices/README.md`](../slices/README.md) records the
+spike that came before the main workspace.
 
 ## Generated documentation
 
@@ -61,6 +64,6 @@ When behavior changes:
 1. update the OpenAPI or source contract first;
 2. update the root [`README.md`](../README.md) and the affected document above;
 3. update the Mermaid diagram if a boundary moved;
-4. run `pnpm docs:check` along with the affected gates;
+4. run `pnpm docs:check`, along with any gate for the surface you changed;
 5. keep run-specific evidence under the ignored `artifacts/` directory rather
    than embedding volatile ids or timestamps in a current document.

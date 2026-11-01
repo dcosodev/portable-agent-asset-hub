@@ -37,10 +37,10 @@ the REST surface through `rest-transport.ts`.
 The rule is enforced mechanically, not by convention:
 
 - `scripts/scan-sqlite-owner.mjs` scans the workspace for out-of-owner
-  SQLite imports and fails the staged gates on any violation.
+  SQLite imports and fails the local gates on any violation.
 - `tests/mcp/no-sqlite-import.test.ts` asserts the MCP package has no
   SQLite dependency, direct or transitive.
-- Migrations `0001`–`0013` are checksummed by the runner in the owning
+- Migrations are checksummed by the runner in the owning
   package and fail closed on drift; `SqliteStore.doctor()` compares stored
   names and checksums against the packaged canonical SQL.
 

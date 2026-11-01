@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/claude-code/implementation.ts
-//
 // Claude Code `.mcp.json` descriptor. The file is a JSON object with
 // a single `mcpServers` key. We declare one server named
 // `agent-memory`; the operator may register more if desired. The

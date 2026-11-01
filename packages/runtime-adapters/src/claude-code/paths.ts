@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/claude-code/paths.ts
-//
 // Claude Code layout:
 //
 //     CLAUDE.md                 — wrapper (pointer to the hub)

@@ -2,7 +2,7 @@
 // Scan the working tree and telemetry code for forbidden payloads that
 // must never appear in attributes, labels, span names, OTLP headers or
 // audit rows. The scanner is intentionally small: a few regexes
-// against the source files added or modified by the telemetry slice.
+// against the telemetry source files.
 //
 // This is a static gate. It does NOT execute the kernel; it only
 // ensures the operator can trust that nothing accidentally stores
@@ -39,9 +39,9 @@ const SECRET_PATTERNS = [
   { re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/g, label: 'pem-block' },
   // apikey/password/api_key secret values in code (best-effort heuristic)
   { re: /(api[_-]?key|password|secret[_-]?token|authorization)\s*[:=]\s*['"][^'"]/gi, label: 'secret-literal' },
-  // ngrok / LAN tunnels (the plan forbids reusing the Graph Explorer ngrok)
+  // ngrok / LAN tunnels: telemetry must not leave through a public tunnel
   { re: /(ngrok|serveo|localtunnel)\./g, label: 'public-tunnel' },
-  // Grafana Cloud / OTLP off-box endpoints (the plan defers this decision)
+  // Grafana Cloud / OTLP off-box endpoints: telemetry stays local
   { re: /otlp\.grafana\.net|grafana\.net\/api\/otlp/g, label: 'grafana-cloud' },
 ];
 
@@ -58,7 +58,7 @@ const ALLOWLIST_TOKEN_IN_TESTS = new Set([
 
 const FORBIDDEN_TRACKED = [
   'tests/skills/explicit-auto-approval.test.ts',
-  'tests/s2/integrity-and-boundaries.test.ts',
+  'tests/storage-contract/integrity-and-boundaries.test.ts',
   'tests/storage-sqlite/skill-storage.test.ts',
   // The above are pre-existing failing tests NOT modified by telemetry;
   // we don't re-check them — the global test suite is the source of

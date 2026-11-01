@@ -1,18 +1,16 @@
 # docker-compose.observability.yml
 #
-# T5 — Optional observability profile for the hub product shell.
+# Optional observability profile for the hub product shell.
 #
-# This file is the T5-owned compose manifest for `hub telemetry
+# This file is the compose manifest for `hub telemetry
 # {up,down,status}`. It is loopback-first by construction (I-10):
 # every published port binds to 127.0.0.1, container-to-container
 # URLs use Compose DNS names, and the operator never reaches the
 # stack from the LAN.
 #
-# T5 is the only slice that owns this file. observability/compose.yaml
-# (the legacy Collector + Tempo + Prometheus + Grafana stack) is
-# read-only under ADR-0004; this file is the slim profile that
-# phase5-gate.mjs and the local loopback telemetry workflow
-# exercise. Adding a service here is a T5 contract-visible change.
+# observability/compose.yaml is the full Collector + Tempo + Prometheus
+# + Grafana stack; this file is the slim profile that the telemetry
+# tests and the local loopback telemetry workflow exercise.
 #
 # Security boundaries
 # ───────────────────
@@ -38,8 +36,7 @@
 #                                               # is set (test-only)
 #
 # The default down never removes volumes; hub-data MUST survive
-# every down by construction (the same I-07 invariant the runtime
-# slice enforces).
+# every down by construction, as with `hub runtime down`.
 
 services:
   hub-rest:

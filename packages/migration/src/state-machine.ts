@@ -1,6 +1,4 @@
-// packages/migration/src/state-machine.ts
-//
-// Slice 10 normative state machine for migration runs.
+// State machine for migration runs.
 //
 // States are exported in canonical order so that callers can iterate
 // them deterministically (e.g. to render status timelines). LEGAL_TRANSITIONS

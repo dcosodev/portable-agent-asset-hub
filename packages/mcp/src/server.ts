@@ -1,5 +1,3 @@
-// packages/mcp/src/server.ts
-//
 // The MCP stdio server. The transport is JSON-RPC 2.0 over stdin/stdout,
 // exactly as the MCP TypeScript SDK expects. We deliberately do not use
 // the high-level SDK wrappers because we want to keep the surface

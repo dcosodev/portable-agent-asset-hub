@@ -1,6 +1,4 @@
-// tests/go/runtime/status.test.ts
-//
-// T2 real-subprocess contract for `hub runtime status`, `hub runtime
+// Real-subprocess contract for `hub runtime status`, `hub runtime
 // ps`, and `hub runtime logs`. The tests build the hub binary with
 // `go build -trimpath` (via _runtime-harness), then exercise the
 // live binary against a fake `docker` shim injected through PATH.
@@ -225,7 +223,7 @@ describe('hub runtime status — fake compose ps argv contract', () => {
     expect(res.status).toBe(0);
     // Locked human form keys (see cmd_runtime.go's emitRuntime).
     expect(res.stdout).toMatch(/^command=status$/m);
-    // T2 polish: HUB_RUNTIME now points at the compose-file
+    // HUB_RUNTIME now points at the compose-file
     // path, so the project name must NOT be the literal
     // "hub-runtime" — the harness sets HUB_RUNTIME=<yaml>, which
     // Detect classifies as a compose-file override and falls back

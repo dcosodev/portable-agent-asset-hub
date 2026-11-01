@@ -1,9 +1,7 @@
-// cmd/hub/cmd_open.go
-//
 // `hub open` — serve the embedded Graph Explorer bundle on the
-// loopback interface only. The slice contract (docs/roadmap/
-// slices.json T4) and security invariants (I-10 loopback-first,
-// I-07 bearer hygiene) define the surface:
+// loopback interface only. The security rules (I-10 loopback-first,
+// I-07 bearer hygiene; see docs/architecture/go-product-shell.md)
+// define the surface:
 //
 //   hub open [--bind <addr>] [--port <n>] [--help]
 //
@@ -44,7 +42,7 @@
 //     exit codes as the rest of the shell (0 = clean shutdown,
 //     1 = operator error, 2 = contract violation).
 //
-// The handler is exported (RunOpen) so cmd_open_test.go (TDD) and
+// The handler is exported (RunOpen) so cmd_open_test.go and
 // the subprocess tests can drive it directly. The dispatch wiring
 // in main.go is intentionally one line — fail-closed means the
 // dispatcher MUST NOT silently widen the surface, but it does not
@@ -106,8 +104,8 @@ var ErrOpenUsage = errors.New("hub open usage error")
 // 0.0.0.0, ::, "0", and any public IP — produces a fail-closed
 // error before net.Listen is called.
 //
-// The list is intentionally narrow. The T4 contract pins the
-// binary to IPv4 loopback (127.0.0.1) by default; IPv6 loopback
+// The list is intentionally narrow. The binary binds to IPv4
+// loopback (127.0.0.1) by default; IPv6 loopback
 // (::1) is added because the loopback invariant is about the
 // interface, not the IP family, and refusing ::1 would silently
 // break a v6-only host that runs `hub open --bind ::1`. We do NOT
@@ -148,7 +146,7 @@ func ValidateBindAddress(addr string) error {
 		return fmt.Errorf("hub open: refusing bind %q (loopback only — 127.0.0.1 or ::1)", trimmed)
 	}
 	// Reject anything that is not loopback. The check is
-	// independent of the map: even if a future slice adds a new
+	// independent of the map: even if a future change adds a new
 	// accepted literal to the map, the loopback check ensures the
 	// invariant holds by construction.
 	if !ip.IsLoopback() {
@@ -394,8 +392,7 @@ func emitOpenSummary(sink *output.Sink, flags OpenFlags, res OpenResult) error {
 	return nil
 }
 
-// printOpenHelp is the help text for `hub open --help`. It is the
-// contract surface the s11-gate-style fixtures grep against; the
+// printOpenHelp is the help text for `hub open --help`. The
 // loopback-only anchor must appear here so an operator can verify
 // the rule by reading the help text.
 func printOpenHelp(sink *output.Sink) {
@@ -417,8 +414,8 @@ func printOpenHelp(sink *output.Sink) {
 		"  HUB_OPEN_PORT    override --port (1..65535)",
 		"",
 		"Security:",
-		"  The dispatcher refuses any non-loopback bind attempt (I-10 loopback-first",
-		"  publication). 0.0.0.0, ::, and any public IP produce a fail-closed diagnostic",
+		"  The dispatcher refuses any non-loopback bind attempt.",
+		"  0.0.0.0, ::, and any public IP produce a fail-closed diagnostic",
 		"  on stderr and exit 2 (contract violation). The bound socket is NEVER opened",
 		"  against a non-loopback address.",
 		"",
@@ -529,7 +526,7 @@ func openStaticHandler(fsys goembed.FS) http.Handler {
 // mimeByExt is a small wrapper around mime.TypeByExtension with a
 // conservative fallback. We deliberately avoid the upstream
 // `mime` package's dependency on /etc/apache2/mime.types — that
-// file may not be available in the T0.5 sandbox. The fallback
+// file may not be available in the sandbox. The fallback
 // table covers the four extensions the Graph Explorer bundle
 // actually ships: .html, .css, .js, .map.
 func mimeByExt(ext string) string {

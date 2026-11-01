@@ -1,5 +1,3 @@
-// packages/storage-sqlite/src/repositories/skill.ts
-//
 // SQLite implementation of the `SkillRepository` contract.
 //
 //   * Bodies and resource bytes are persisted inline (BLOB); SQLite

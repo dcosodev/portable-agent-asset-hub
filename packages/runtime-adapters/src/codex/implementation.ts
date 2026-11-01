@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/codex/implementation.ts
-//
 // Codex-specific implementation: the TOML descriptor and the
 // command fragments the operator can paste into the Codex CLI.
 //

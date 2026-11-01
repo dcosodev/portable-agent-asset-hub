@@ -1,9 +1,5 @@
-// tests/mcp/error-mapper.test.ts
-//
-// Normative test: errors surfaced by the MCP tool layer must be
-// byte-identical to the REST envelope. S7 plan mandates:
-//
-//   mcp_and_rest_errors_match
+// Errors surfaced by the MCP tool layer must be
+// byte-identical to the REST envelope.
 //
 // The mapping is intentionally narrow: it must not invent new error
 // codes, must preserve the original status, code, and message, and must
@@ -13,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { mapRestErrorToMcp, type RestErrorBody } from '@portable-agent-asset-hub/mcp';
 
-describe('MCP error mapper (S7)', () => {
+describe('MCP error mapper', () => {
   it('maps_huberror_shape_to_mcp_tool_error', () => {
     const rest: RestErrorBody = {
       error: { code: 'NOT_FOUND', message: 'resource missing', status: 404 },

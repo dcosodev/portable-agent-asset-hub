@@ -1,6 +1,6 @@
-// Package update is the T9 planner surface for `hub update`.
+// Package update is the planner surface for `hub update`.
 //
-// Per docs/roadmap/slices.json slice `T9` the update verb is
+// The update verb is
 // exactly:
 //
 //	hub update              (plan-only dry-run; the default)
@@ -8,7 +8,7 @@
 //	                        (literal `stable` channel only; compiled-only)
 //	hub update --apply      (refuses with exit 2 — apply transport is
 //	                         out of scope and MUST be added by a
-//	                         future separately governed slice)
+//	                         future change)
 //	hub update --help       (self-documenting help block)
 //
 // Non-stable channels (`beta`, `dev`, `nightly`, `source`, `script`,
@@ -27,9 +27,8 @@
 //     triple from internal/version. Its only output is a small
 //     key/value Plan that the dispatcher renders to stdout.
 //
-//   - the apply surface is NOT implemented in this slice. The
-//     internal/update/apply.go path is explicitly forbidden by the
-//     T9 amendment (see forbidden_paths). The package's only
+//   - the apply surface is NOT implemented in this version. There is
+//     deliberately no internal/update/apply.go. The package's only
 //     refuse-with-exit-2 entry point is Plan's ApplyRequested flag
 //     combined with the dispatcher's exit-code contract.
 //
@@ -77,10 +76,9 @@ import (
 // stdout and exits 0.
 //
 // PlanApplyRefused is the only outcome for `hub update --apply`:
-// the apply transport is out of scope for this slice and the
+// the apply transport is out of scope in this version and the
 // planner refuses BEFORE any write or network call. The
-// dispatcher emits the refused message on stderr and exits 2 —
-// the exit code the T9 amendment pins numerically.
+// dispatcher emits the refused message on stderr and exits 2.
 type PlanMode string
 
 const (
@@ -96,9 +94,8 @@ const (
 type UpdateFlags struct {
 	// Channel is the operator-supplied channel literal. Empty
 	// means "no --channel was passed" — the planner treats
-	// that as the literal `stable` because the T9 amendment
-	// pins `stable` as the only authorised channel and the
-	// default MUST be the plan-only dry-run surface.
+	// that as the literal `stable` because `stable` is the only
+	// accepted channel and the default is the plan-only dry-run.
 	Channel string
 	// ChannelSet is true when the operator explicitly passed
 	// --channel. The planner uses this flag to distinguish a
@@ -107,8 +104,8 @@ type UpdateFlags struct {
 	ChannelSet bool
 	// ApplyRequested is true when the operator passed
 	// --apply. The planner surfaces this as the apply-refused
-	// outcome (exit 2) regardless of channel: the amendment
-	// explicitly states stable does not unlock apply.
+	// outcome (exit 2) regardless of channel: `stable` does not
+	// unlock apply.
 	ApplyRequested bool
 	// Help is true when --help / -h was set. The dispatcher
 	// short-circuits to print the help block before any other
@@ -149,8 +146,8 @@ type UpdateFlags struct {
 //
 // The bare-command default is well-formed: a `hub update` with no
 // flags is the plan-only dry-run entry point the operator reaches
-// from shell muscle-memory. The amendment pins the dry-run as
-// the DEFAULT; the parser therefore does not require any flag.
+// from shell muscle-memory. The dry-run is the default, so the
+// parser does not require any flag.
 func ParseUpdateFlags(argv []string) (UpdateFlags, error) {
 	flags := UpdateFlags{}
 	for i := 0; i < len(argv); i++ {
@@ -174,8 +171,7 @@ func ParseUpdateFlags(argv []string) (UpdateFlags, error) {
 			// Anything else is outside the pinned surface.
 			// Positionals (e.g. `hub update install`) and
 			// unknown flags (e.g. `--force`, `--download`)
-			// both surface here. The amendment rejects
-			// every entry on this branch.
+			// both surface here and are rejected.
 			return UpdateFlags{}, fmt.Errorf("hub update: unknown argument %q (expected --channel stable or --apply or --help)", arg)
 		}
 	}
@@ -190,10 +186,9 @@ func ParseUpdateFlags(argv []string) (UpdateFlags, error) {
 //
 // The check is intentionally narrow: case-sensitive equality
 // against the literal `stable`. The dispatcher never has to
-// second-guess the input. The amendment's audit requirement is
-// verbatim: "non-stable channels (e.g. `beta`, `dev`, `nightly`,
-// source/script/dev-channel variants) are rejected with a clear
-// error before any network call".
+// second-guess the input. Non-stable channels (e.g. `beta`, `dev`,
+// `nightly`, source/script/dev-channel variants) are rejected with
+// a clear error before any network call.
 //
 // A missing --channel value (Channel set but empty string) is
 // treated the same as the bare command: the planner defaults to

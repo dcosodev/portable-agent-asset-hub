@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// scripts/export-agent-skills.mjs
-//
-// FASE 5 — Skill export CLI.
+// Skill export CLI.
 //
 // Contract:
 //
@@ -95,7 +93,7 @@ function parseCli(argvList) {
     targetDir: resolve(targetDir),
     ownerUserId,
     agentId,
-    previewOutput: resolve(previewOutput ?? `${REPO_ROOT}artifacts/s5-export-preview-${Date.now()}.json`),
+    previewOutput: resolve(previewOutput ?? `${REPO_ROOT}artifacts/skills-export-preview-${Date.now()}.json`),
     apply,
     rollback,
     ...(runId !== undefined ? { runId } : {}),

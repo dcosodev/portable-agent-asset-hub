@@ -65,7 +65,7 @@ async function buildPackage(name, outputRoot) {
   return JSON.parse(stdout)[0].filename;
 }
 
-const temp = await mkdtemp(join(tmpdir(), 's2-repro-'));
+const temp = await mkdtemp(join(tmpdir(), 'package-repro-'));
 try {
   const firstRoot = join(temp, 'a');
   const secondRoot = join(temp, 'b');

@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// internal/connect/connect_runner.mjs
-//
-// T8 child Node process for `hub hub connect preview|apply|rollback`.
+// Child Node process for `hub hub connect preview|apply|rollback`.
 //
 // Contract (mirrored in internal/connect/runner.go):
 //
@@ -125,7 +123,7 @@ const coreApi = await import(coreDist);
 // The loader refuses to silently fall back to a fake/in-memory
 // stub: a failure to load `SqliteStore` surfaces as a typed
 // operator error so the operator sees the real reason the
-// connect verb cannot run, instead of a misleading GREEN that a
+// connect verb cannot run, instead of a misleading success that a
 // fake Storage produced.
 const storageLoader = await loadProductiveStorage();
 
@@ -266,9 +264,7 @@ function buildActor() {
 // File-existence contract: an `lstat` precedes every store open. A
 // missing file is a typed operator error (`HUB_DATABASE_MISSING`)
 // so the operator never sees a silently-created empty hub.sqlite
-// masquerading as a populated database (which is what the
-// pre-revision child produced and is exactly the failure mode the
-// RED suite pinned: "resource not found").
+// masquerading as a populated database.
 //
 // hubHome (`HUB_HOME`) does NOT participate in storage binding;
 // it is reserved for the receipts / runtime layout and is forwarded
