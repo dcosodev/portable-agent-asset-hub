@@ -64,7 +64,10 @@ Related single steps are `pnpm package:repro`, `pnpm storage:external-install`,
 covers telemetry and `pnpm docker:gate` runs `docker:contract` and `docker:smoke`.
 
 Most gates re-run earlier gates as regressions, so one early failure fails the later
-gates as well.
+gates as well. Within one top-level command, each gate runs once:
+[`scripts/run-gate.mjs`](../scripts/run-gate.mjs) replays a repeat's recorded result,
+including a failure, if the tree and the gate's evidence are unchanged. Nothing is kept
+between commands, and `GATE_NO_REUSE=1` runs every repeat for real.
 
 A gate stops with a failure when a required tool is missing, rather than continuing
 with less coverage. `pnpm openapi:gate` fails without Java 17 and OpenAPI Generator
