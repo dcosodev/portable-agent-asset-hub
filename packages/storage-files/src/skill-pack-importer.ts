@@ -1,6 +1,4 @@
-// packages/storage-files/src/skill-pack-importer.ts
-//
-// Phase 2 — Skill pack importer implementation.
+// Skill pack importer implementation.
 //
 // All filesystem reads for the skill pack importer live in this
 // module. `core` exposes only the contract types, the name

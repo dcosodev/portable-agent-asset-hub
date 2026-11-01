@@ -1,12 +1,9 @@
-// packages/core/src/skills/types.ts
-//
-// Phase 1 contract surface for the versioned skill storage layer.
+// Contract surface for the versioned skill storage layer.
 // Skills are immutable per write: a `writeSkill()` call always produces
 // a new row in `skill_versions` keyed by `(id, version)` plus the
 // monotonically increasing `skill_active_head.current_version` for
 // that `(logical_key)` pair. Bodies and resource bytes are stored
-// inline (SQLite is the authority) — there is no separate blob store
-// in Phase 1.
+// inline (SQLite is the authority) — there is no separate blob store.
 //
 // Lifecycle / scope are inherited from the catalog schema:
 //   * `lifecycle` ∈ { 'candidate', 'active', 'stale', 'rejected' }

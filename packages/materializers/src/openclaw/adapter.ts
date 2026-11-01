@@ -1,5 +1,3 @@
-// packages/materializers/src/openclaw/adapter.ts
-//
 // OpenClaw adapter entrypoint. Owns the (renderer + apply + rollback)
 // trio for OpenClaw. Reuses the renderer-agnostic pipeline from
 // `packages/materializers/src/apply.ts` and `rollback.ts` — the only
@@ -133,7 +131,7 @@ export function openclawPreview(
   // Pin `runId` to the same (snapshotId, profileId, stateDir) tuple so
   // two previews of the same triple hash to the same `observedDigest`.
   // `buildMaterializationPlan` assigns a fresh `randomUUID()` per
-  // call by default — fine for apply, but breaks the S9 determinism
+  // call by default — fine for apply, but breaks the determinism
   // contract that `preview.observedDigest` is stable across calls.
   plan.runId = deterministicRunId(
     request.snapshotId,
@@ -160,7 +158,7 @@ function deterministicRunId(
   const hex = createHash('sha256')
     .update(`openclaw-run:${snapshotId}:${profileId}:${stateDir}`)
     .digest('hex');
-  // run_${32-hex} keeps the S8/S9 runId shape while staying
+  // run_${32-hex} keeps the shared runId shape while staying
   // byte-stable across calls.
   return `run_${hex.slice(0, 32)}`;
 }
@@ -172,7 +170,7 @@ function deterministicRunId(
  * the 2026-2030 window for any reasonable tuple and matches the
  * format `JSON.stringify(iso)` expects.
  *
- * The S9 contract pins determinism on the tuple, not the wall clock:
+ * Determinism is pinned on the tuple, not the wall clock:
  * the renderer must not produce different bytes for two previews of
  * the same snapshot, profile, and target.
  */
@@ -186,7 +184,7 @@ function deterministicGeneratedAt(
     .digest('hex');
   // Take the first 12 hex digits as a Unix-ms timestamp in the
   // 2026-2030 window. The bit width (48 bits) is enough to be unique
-  // across the S9 test suite and small enough that the digest still
+  // across the test suite and small enough that the digest still
   // fits in a JS number.
   const millis = Number.parseInt(hex.slice(0, 12), 16);
   return new Date(millis).toISOString();
@@ -195,7 +193,7 @@ function deterministicGeneratedAt(
 /**
  * Apply the OpenClaw preview to disk. Re-runs the preview internally
  * so the input is a frozen `(preview, stateDir, observedDigest?)`
- * tuple; this matches the S8 Hermes contract where the apply takes
+ * tuple; this matches the Hermes contract where the apply takes
  * the same shape.
  *
  * `stateDir` is required; the OpenClaw plugin must never invent one.
@@ -246,8 +244,8 @@ export function openclawRollback(
 }
 
 /**
- * Dispatcher factory that adapts the S9 OpenClaw materializer to the
- * S6/S7 REST `dispatch(operationId, {body, params, query, actor,
+ * Dispatcher factory that adapts the OpenClaw materializer to the
+ * REST `dispatch(operationId, {body, params, query, actor,
  * requestId})` signature.
  *
  * Operations:

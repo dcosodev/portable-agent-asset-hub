@@ -1,12 +1,7 @@
-// tests/go/distribution/backup-roundtrip.test.ts
+// Real-subprocess contract for `hub backup --out` / `hub backup
+// --restore`.  
+// Contract:
 //
-// T9 RED real-subprocess contract for `hub backup --out` / `hub backup
-// --restore`. This is one of the three test files the T9 amendment names
-// explicitly in `tests[]`.
-//
-// Contract source of truth — docs/roadmap/slices.json slice `T9`:
-//
-//   objective
 //     "exact `hub backup --out <archive>` snapshot and `hub backup
 //      --restore <archive>` restore, default archive path
 //      `$HUB_HOME/state/backups/<timestamp>.tar.gz`, archive file mode
@@ -16,7 +11,7 @@
 //      HUB_HOME/state/backups/** is the only backup target directory;
 //      no invented transport or DB fallback."
 //
-//   audit_requirements[1..3]
+//   Also:
 //     default archive path + mode 0600
 //     snapshot set is resolver-canonical SQLite (via
 //       resolveHubDatabasePath()) plus config files only; no HUB_HOME
@@ -25,8 +20,8 @@
 //     `$HUB_HOME/tokens/**` and any secret-shaped file is excluded
 //
 //   security_invariants
-//     I-15 (product software / runtime separated from user canonical
-//     data), I-07 (bearer hygiene)
+//     product software / runtime separated from user canonical
+//     data; I-07 (bearer hygiene)
 //
 // Fixture design — why the assertions can distinguish right from wrong:
 //   * the resolver-canonical DB is provisioned OUTSIDE `$HUB_HOME`
@@ -40,9 +35,6 @@
 //     *token*, *secret*) each carry their own marker — an exclusion
 //     regression captures one and the marker scan catches it.
 //
-// RED STATE at authoring time: `backup` is not registered in
-// cmd/hub/main.go, so every invocation exits 2 with
-// `hub: unknown command "backup"`.
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -83,17 +75,16 @@ function fixture(label: string): FreshInstallFixture {
 const CASE_TIMEOUT_MS = 180_000;
 
 // The pinned default archive filename shape: `<timestamp>.tar.gz`.
-// The amendment does not pin the timestamp FORMAT, so the assertion
-// only requires (a) the `.tar.gz` suffix and (b) a digit-bearing stem —
-// enough to reject `latest.tar.gz` / `backup.tar.gz` without inventing
-// a format the contract never specified.
+// The timestamp FORMAT is not fixed, so the assertion only requires
+// (a) the `.tar.gz` suffix and (b) a digit-bearing stem — enough to
+// reject `latest.tar.gz` / `backup.tar.gz`.
 const DEFAULT_ARCHIVE_NAME = /^(?=.*\d)[A-Za-z0-9._:+-]+\.tar\.gz$/u;
 
 // ---------------------------------------------------------------------------
 // 1. `hub backup --out <archive>` writes a real archive at mode 0600.
 // ---------------------------------------------------------------------------
 
-describe('hub backup --out — explicit archive path (T9)', () => {
+describe('hub backup --out — explicit archive path', () => {
   it('writes the archive at the requested path with mode 0600 and exits 0', async () => {
     const fx = fixture('out-explicit');
     await hubInit(fx);
@@ -105,7 +96,7 @@ describe('hub backup --out — explicit archive path (T9)', () => {
       `stdout=${JSON.stringify(res.stdout)}\nstderr=${JSON.stringify(res.stderr)}`,
     ).toBe(0);
     expect(existsSync(archive), `archive missing at ${archive}`).toBe(true);
-    // I-15: the archive holds user canonical data; mode 0600 is pinned.
+    // The archive holds user canonical data, so its mode is 0600.
     expect(fileMode(archive)).toBe(0o600);
     // It must be a real gzip tar, not a placeholder file.
     const listing = listArchiveEntries(archive);
@@ -127,7 +118,7 @@ describe('hub backup --out — explicit archive path (T9)', () => {
 // 2. Default archive location: `$HUB_HOME/state/backups/<timestamp>.tar.gz`.
 // ---------------------------------------------------------------------------
 
-describe('hub backup — default archive location and mode (T9)', () => {
+describe('hub backup — default archive location and mode', () => {
   it('with no --out, writes exactly one <timestamp>.tar.gz under $HUB_HOME/state/backups at mode 0600', async () => {
     const fx = fixture('default-location');
     await hubInit(fx);
@@ -170,7 +161,7 @@ describe('hub backup — default archive location and mode (T9)', () => {
 //    No HUB_HOME DB, no alternate/parallel DB.
 // ---------------------------------------------------------------------------
 
-describe('hub backup — snapshot set is the resolver-canonical DB, not a HUB_HOME DB (T9)', () => {
+describe('hub backup — snapshot set is the resolver-canonical DB, not a HUB_HOME DB', () => {
   it('captures the resolver-canonical database content', async () => {
     const fx = fixture('resolver-db');
     await hubInit(fx);
@@ -204,10 +195,10 @@ describe('hub backup — snapshot set is the resolver-canonical DB, not a HUB_HO
 });
 
 // ---------------------------------------------------------------------------
-// 4. Token / secret exclusion (I-15, I-07).
+// 4. Token / secret exclusion (I-07).
 // ---------------------------------------------------------------------------
 
-describe('hub backup — tokens and secret-shaped files are excluded (T9)', () => {
+describe('hub backup — tokens and secret-shaped files are excluded', () => {
   it('excludes every seeded secret-shaped file by content marker', async () => {
     const fx = fixture('secret-exclusion');
     await hubInit(fx);
@@ -279,7 +270,7 @@ describe('hub backup — tokens and secret-shaped files are excluded (T9)', () =
 // 5. Restore round-trip.
 // ---------------------------------------------------------------------------
 
-describe('hub backup --restore — round-trip (T9)', () => {
+describe('hub backup --restore — round-trip', () => {
   it('restores the resolver-canonical database content after it is clobbered', async () => {
     const fx = fixture('roundtrip');
     await hubInit(fx);

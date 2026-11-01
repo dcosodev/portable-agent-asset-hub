@@ -1,8 +1,4 @@
-// cmd/hub/cmd_runtime.go
-//
-// Runtime subcommand handler for the hub product shell. Per
-// docs/roadmap/slices.json (T2 — Docker / Compose runtime control
-// from Go) the runtime surface is:
+// Runtime subcommand handler for the hub product shell. The runtime surface is:
 //
 //	hub runtime up       [--timeout <dur>]
 //	hub runtime down     [--volumes]   [--timeout <dur>]
@@ -214,7 +210,7 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 }
 
 // RuntimeResult is the structured payload emitted by every
-// runtime subcommand. The shape is locked: the phase2 gate asserts
+// runtime subcommand. The shape is locked: the runtime tests assert
 // on these keys. Adding a new field is a contract-visible change.
 type RuntimeResult struct {
 	// Command is the subcommand the operator ran (up, down, …).
@@ -228,7 +224,7 @@ type RuntimeResult struct {
 	// Healthy is the list of services reported "healthy" after
 	// up/status. Always serialised (no omitempty) so the contract
 	// surface shows `"healthy": []` rather than omitting the key —
-	// the phase2 gate asserts on the key's presence and its
+	// the runtime tests assert on the key's presence and its
 	// array-ness across every RuntimeResult.
 	Healthy []string `json:"healthy"`
 	// Services is the parsed ps payload (status / ps only).
@@ -470,7 +466,7 @@ func runtimePs(sink *output.Sink, cfg RuntimeConfig, flags RuntimeFlags, svc *co
 
 // emitRuntime writes the result to the sink in either human or
 // JSON form. The human form is a fixed key/value block so the
-// phase2 gate can assert on the shape without snapshot drift. The
+// runtime tests can assert on the shape without snapshot drift. The
 // JSON form is sorted alphabetically by encoding/json so two
 // invocations produce byte-identical output.
 //
@@ -486,7 +482,7 @@ func emitRuntime(sink *output.Sink, flags RuntimeFlags, res RuntimeResult) (int,
 		_ = sink.Printf("%s", output.Redact(string(data)))
 		return 0, nil
 	}
-	// Human form. Sorted keys keep the phase2 gate assertions
+	// Human form. Sorted keys keep the runtime test assertions
 	// stable across Go versions.
 	keys := []string{"command", "project", "engine", "compose_file"}
 	values := map[string]string{
@@ -648,7 +644,7 @@ func psToResult(svc *compose.Service, r compose.PsResult, timeout time.Duration)
 }
 
 // printRuntimeHelp writes the `hub runtime --help` block. The
-// text is a fixed string so the phase2 gate can assert on its
+// text is a fixed string so the runtime tests can assert on its
 // shape without snapshot drift.
 func printRuntimeHelp(sink *output.Sink) {
 	lines := []string{
@@ -676,8 +672,8 @@ func printRuntimeHelp(sink *output.Sink) {
 		"  HUB_OPENAPI        (unused; runtime does not consult openapi.yaml).",
 		"",
 		"Security invariants:",
-		"  - --health-url targets loopback only (I-10).",
-		"  - bearer-shaped tokens are redacted from every payload (I-07).",
+		"  - --health-url targets loopback only.",
+		"  - bearer-shaped tokens are redacted from every payload.",
 		"  - `down` preserves hub-data by default; --volumes is reserved for tests.",
 		"",
 		"Exit codes:",

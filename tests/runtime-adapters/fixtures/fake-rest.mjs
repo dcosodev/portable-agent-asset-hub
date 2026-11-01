@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// tests/runtime-adapters/fixtures/fake-rest.mjs
-//
-// A no-op HTTP fixture the FASE 4 tests can spawn to validate
+// A no-op HTTP fixture the tests can spawn to validate
 // `--rest-url` plumbing without depending on the real REST server.
 // Replies 200 OK with a fixed JSON body on every path.
 

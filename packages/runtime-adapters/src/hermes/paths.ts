@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/hermes/paths.ts
-//
 // Hermes layout:
 //
 //     AGENTS.md                  — wrapper (pointer to the hub)

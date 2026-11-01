@@ -1,6 +1,4 @@
-// tests/go/rest/token-reader.test.ts
-//
-// T6 real-subprocess contract for rest.ReadTokenFile. Same
+// Real-subprocess contract for rest.ReadTokenFile. Same
 // harness pattern as auth.test.ts: the Go test file at
 // tests/go/rest/auth_test.go (token_reader_test.go section) owns
 // the assertions; this TS file owns the subprocess boundary.

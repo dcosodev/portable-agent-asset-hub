@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/hermes/index.ts
-//
 // Hermes harness implementation. The wrapper is `AGENTS.md`; the
 // MCP descriptor is a logical `hermes mcp add ...` command fragment
 // the operator pastes into the Hermes CLI. The apply never executes

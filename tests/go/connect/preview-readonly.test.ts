@@ -1,12 +1,7 @@
-// tests/go/connect/preview-readonly.test.ts
+// `hub hub connect preview` is read-only. Raw JSON is not asserted
+// to be byte-stable across processes.
 //
-// T8 RED contract (digest/recompute/CAS, AMENDMENT-aligned).
-//
-// This file pins the read-only contract for `hub hub connect
-// preview` against the authorized amendment, NOT the legacy
-// "byte-stable raw JSON across processes" assertion set.
-//
-// The contract has four load-bearing pieces:
+// Four key rules:
 //
 //   1. NO WRITE: the target root must be byte-identical before
 //      and after the preview runs. Any delta — even a 0-byte
@@ -29,11 +24,6 @@
 //      fields the apply step needs (harness, profileId,
 //      snapshotId, targetRoot, files[]). The fixture does NOT
 //      pin runId byte values or generatedAt strings.
-//
-// Today (pre-T8) every test in this file is RED: the dispatcher
-// rejects `hub hub connect` with exit 2 / "unknown command".
-// Once T8 lands production, the SAME assertions flip GREEN with
-// zero changes — that is the point of writing them first.
 //
 // Fixtures are hermetic:
 //   * HUB_HOME → per-call mkdtemp
@@ -155,7 +145,7 @@ function diffSnapshots(before: DirSnapshot, after: DirSnapshot): string[] {
   return deltas;
 }
 
-describe('hub hub connect preview — read-only contract (T8, amendment)', () => {
+describe('hub hub connect preview — read-only contract', () => {
   // Each test allocates its own HUB_HOME + targetRoot and cleans up
   // after itself so the suite is parallelisable.
   let homeCleanup: (() => void) | undefined;
@@ -201,9 +191,6 @@ describe('hub hub connect preview — read-only contract (T8, amendment)', () =>
     const afterTarget = snapshotDir(target.targetRoot);
     const afterDatabase = snapshotDir(database.dataDir);
 
-    // RED today: status=2, stderr='hub: unknown command "hub"', JSON absent.
-    // GREEN once production lands: status=0, stdout is valid JSON with
-    // planDigest + plan keys; target HOME unchanged.
     expect(res.status, `status=${res.status}\nstdout=${JSON.stringify(res.stdout)}\nstderr=${JSON.stringify(res.stderr)}`).toBe(0);
 
     // 1. Read-only: the target root must be byte-identical.
@@ -227,7 +214,7 @@ describe('hub hub connect preview — read-only contract (T8, amendment)', () =>
     // 4. Plan shape: the payload must include the plan with the
     //    four fields the apply step needs to re-use the preview.
     //    We do NOT assert byte-stability of runId / generatedAt;
-    //    the amendment explicitly allows those to vary.
+    //    those are allowed to vary.
     const plan = payload.plan as Record<string, unknown>;
     expect(plan).toBeTruthy();
     expect(plan.harness).toBe('hermes');
@@ -269,8 +256,8 @@ describe('hub hub connect preview — read-only contract (T8, amendment)', () =>
     expect(res.status, `stderr=${JSON.stringify(res.stderr)}`).toBe(0);
     expect(diffSnapshots(beforeTarget, afterTarget), 'preview mutated the seeded target').toEqual([]);
     // Belt-and-braces: the directory itself must not contain a
-    // `.pah/` directory. The slice contract is explicit — preview
-    // is read-only all the way down. If production accidentally
+    // `.pah/` directory: preview is read-only all the way down.
+    // If production accidentally
     // touches the target, this assertion surfaces it.
     expect(existsSync(join(target.targetRoot, '.pah'))).toBe(false);
   }, 60_000);

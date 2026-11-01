@@ -1,21 +1,19 @@
-// packages/materializers/src/openclaw/paths.ts
-//
-// OpenClaw layout helpers. The frozen layout for S9 places every
+// OpenClaw layout helpers. The layout places every
 // profile-derived file under `<stateDir>/agents/<agentId>/...` and the
 // manifest at `<stateDir>/.pah/manifest.v1.json`. The renderer cannot
-// choose a different layout — the S9 contract gates the
-// `(stateDir, agentId)` pair so two agents cannot cross assets.
+// choose a different layout: the `(stateDir, agentId)` pair is
+// gated so two agents cannot cross assets.
 //
 // resolveStateDir() is the OpenClaw-side counterpart of the runtime
-// hook. The S9 plan mandates the precedence chain:
+// hook. Precedence:
 //
 //   1. Explicit `stateDir` option (highest priority).
-//   2. `OPENCLAW_STATE_DIR` env var (set by the OpenClaw daemon, the
-//      CI runner, or the S10 cutover).
+//   2. `OPENCLAW_STATE_DIR` env var (set by the OpenClaw daemon or the
+//      CI runner).
 //   3. The runtime accessor `resolveStateDir()` from
 //      `@portable-agent-asset-hub/core` (injected by the host process).
-//   4. FAIL — never default to `~/.openclaw`. The S9 plan explicitly
-//      forbids assuming the home directory.
+//   4. FAIL — never default to `~/.openclaw`; the home directory must not
+//      be assumed.
 
 import { existsSync, lstatSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
@@ -25,8 +23,7 @@ import type { Profile } from '@portable-agent-asset-hub/core';
 
 /**
  * Runtime accessor that resolves the OpenClaw state dir from the host
- * process. The S9 plan names this `resolveStateDir()` and pins it as
- * the highest-priority fallback (above `OPENCLAW_STATE_DIR`). The
+ * process. This is the highest-priority fallback (above `OPENCLAW_STATE_DIR`). The
  * function is intentionally injected: the OpenClaw plugin is a thin
  * SDK consumer that must never reach into the host environment on
  * its own.
@@ -35,7 +32,7 @@ export type StateDirAccessor = () => string | undefined;
 
 /**
  * Default runtime accessor. The OpenClaw plugin does not ship a
- * hard-coded fallback; this default honours the S9 rule that the
+ * hard-coded fallback; this default honours the rule that the
  * plugin must NEVER default to `~/.openclaw`. The host injects a
  * real accessor; tests pass a per-test tempdir-bound accessor.
  */
@@ -95,14 +92,14 @@ function assertSafeStateDir(stateDir: string): string {
 }
 
 /**
- * Frozen OpenClaw filename set. The S9 contract accepts EXACTLY these
- * names — adding a new file requires a renderer-version bump so the
+ * OpenClaw filename set. EXACTLY these names are accepted — adding a
+ * new file requires a renderer-version bump so the
  * drift detector rolls existing targets.
  *
- * The entries are emitted in agentId-resolved form so the S9 contract
- * test (`tests/s9-contracts.test.ts`) can assert against a literal
+ * The entries are emitted in agentId-resolved form so
+ * `tests/openclaw-contracts.test.ts` can assert against a literal
  * `agents/<agentId>/<file>` string. The default `agentId` is the
- * S9 reference value `agt_s9`; the dynamic renderer in
+ * reference value `agt_s9`; the dynamic renderer in
  * `renderOpenclawFiles` substitutes the profile's actual `agentId` at
  * materialisation time.
  */
@@ -155,18 +152,16 @@ export function renderOpenclawMemory(profile: Profile): Buffer {
 }
 
 export function renderOpenclawSkills(profile: Profile): Buffer {
-  // S9 has no skill store yet — the file is a stable header so the
-  // S10 cutover can fill it from the SDK output. The S9 contract
-  // pins the byte shape so the digest is deterministic across
-  // processes.
+  // A stable header only. The byte shape is pinned so the digest is
+  // deterministic across processes.
   const text = `kind: SKILLS\nagent: ${profile.scope.agentId}\nprofile: ${profile.id}\nversion: ${profile.version}\n---\n`;
   return Buffer.from(text, 'utf8');
 }
 
 export function renderOpenclawBindings(profile: Profile): Buffer {
   // bindings.json names the upstream scope and the harness bindings
-  // the renderer will register at apply time. S9 ships a minimal,
-  // frozen JSON shape so two agents never cross assets: the agent
+  // the renderer will register at apply time. The JSON shape is minimal
+  // so two agents never cross assets: the agent
   // path is derived from the actor's scope, not from the profile's
   // id.
   const bindings = {

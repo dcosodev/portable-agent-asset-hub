@@ -1,6 +1,4 @@
-// cmd/hub/cmd_backup.go
-//
-// T9 dispatcher for `hub backup --out <archive>` and
+// Dispatcher for `hub backup --out <archive>` and
 // `hub backup --restore <archive>`.
 //
 // The backup verb is a thin orchestrator: parse argv in the Go
@@ -32,7 +30,7 @@
 // SqliteStore import, no `packages/storage-sqlite/**` import,
 // no domain materializer implementation, no direct SQLite
 // handle). It only consumes the `internal/backup.BackupFlags`
-// and `Runner` surface that the amendment authorises.
+// and `Runner` surface.
 
 package main
 
@@ -145,8 +143,8 @@ func runBackup(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, r
 	}
 	if err != nil {
 		// Transport-level failure: Node missing, runner
-		// missing, IO failure. The slice classifies these as
-		// operator / runtime errors (exit 1) so a CI pipeline
+		// missing, IO failure. These are operator / runtime
+		// errors (exit 1) so a CI pipeline
 		// can distinguish "the adapter refused" (exit 1 +
 		// payload) from "the harness is broken" (exit 1 +
 		// no payload).
@@ -259,9 +257,7 @@ func emitBackupSummary(stdout io.Writer, action backup.BackupAction, payload []b
 // The timestamp format is `YYYYMMDDTHHMMSSZ` (UTC, lexically
 // sortable, no colons so the path is portable across POSIX
 // filesystems that may reject colons). The test suite accepts
-// any digit-bearing stem ending in `.tar.gz`; the chosen
-// format guarantees compliance without inventing a format the
-// contract never specified.
+// any digit-bearing stem ending in `.tar.gz`.
 func defaultBackupArchivePath(stateDir string) (string, error) {
 	if strings.TrimSpace(stateDir) == "" {
 		return "", fmt.Errorf("default archive location unavailable: state directory is empty")
@@ -275,7 +271,7 @@ func defaultBackupArchivePath(stateDir string) (string, error) {
 }
 
 // backupRunContext is the dispatcher-side ctx factory for the
-// backup runner. The slice keeps ctx threading explicit so a
+// backup runner. ctx threading stays explicit so a
 // future signal-handling enhancement can cancel a runaway
 // adapter without changing every call site. Today it returns
 // context.Background() — there is no operator signal surface
@@ -283,8 +279,8 @@ func defaultBackupArchivePath(stateDir string) (string, error) {
 func backupRunContext() context.Context { return context.Background() }
 
 // printBackupHelp writes the help block to stdout. The text is
-// a fixed string so the T9 test suite can assert on its shape
-// without snapshot drift. The amendment pins exactly two flags
+// a fixed string so the test suite can assert on its shape
+// without snapshot drift. The verb has exactly two flags
 // (--out, --restore); the help block enumerates both so an
 // operator can reconstruct the surface from `hub backup --help`
 // alone.

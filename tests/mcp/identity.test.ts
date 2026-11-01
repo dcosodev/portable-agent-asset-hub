@@ -1,9 +1,4 @@
-// tests/mcp/identity.test.ts
-//
-// Normative tests for the MCP process-bound identity. S7 plan mandates:
-//
-//   mcp_identity_is_process_bound
-//   mcp_rejects_model_identity_override
+// Tests for the MCP process-bound identity.
 //
 // The identity is derived from the host process (PID + argv hash) at server
 // boot and is exposed through the tool's identity descriptor. The model
@@ -19,7 +14,7 @@ import {
   type ProcessIdentity,
 } from '@portable-agent-asset-hub/mcp';
 
-describe('MCP process-bound identity (S7)', () => {
+describe('MCP process-bound identity', () => {
   it('mcp_identity_is_process_bound', () => {
     const id = computeProcessIdentity(process.pid, process.argv);
     expect(id.pid).toBe(process.pid);

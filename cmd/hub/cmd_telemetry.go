@@ -1,8 +1,4 @@
-// cmd/hub/cmd_telemetry.go
-//
-// Telemetry subcommand handler for the hub product shell. Per
-// docs/roadmap/slices.json (T5 — Optional observability profile
-// control) the telemetry surface is:
+// Telemetry subcommand handler for the hub product shell. The telemetry surface is:
 //
 //	hub telemetry up       [--timeout <dur>]
 //	hub telemetry down     [--volumes]   [--timeout <dur>]
@@ -32,7 +28,7 @@
 //   - Isolated project defaults. The compose Service derives the
 //     project name from HUB_RUNTIME (when set) or `hub-<pid>-<epoch>`
 //     so concurrent smoke runs do not collide.
-//   - compose-file ownership. Detect is pointed at the T5-owned
+//   - compose-file ownership. Detect is pointed at the telemetry
 //     top-level `docker-compose.observability.yml` via HUB_RUNTIME
 //     — never at `observability/compose.yaml` (ADR-0004 read-only).
 //
@@ -190,7 +186,7 @@ func ParseTelemetryFlags(argv []string) (TelemetryFlags, error) {
 // local mirror of compose.HTTPHealth that drops the
 // `omitempty` markers on Error and Body so the contract surface
 // ALWAYS carries a populated block — even on the no-error path
-// where Error is the empty string. The T5 loopback acceptance
+// where Error is the empty string. The loopback acceptance
 // test (`http_health.error === ”`) and the collector-down test
 // (`http_health.error !== ”`) both rely on this invariant. A
 // regression that falls back to `*compose.HTTPHealth` would
@@ -204,7 +200,7 @@ type TelemetryHTTPHealth struct {
 }
 
 // TelemetryResult is the structured payload emitted by every
-// telemetry subcommand. The shape is locked: the phase5 gate asserts
+// telemetry subcommand. The shape is locked: the telemetry tests assert
 // on these keys. Adding a new field is a contract-visible change.
 type TelemetryResult struct {
 	// Command is the subcommand the operator ran (up, down, …).
@@ -227,7 +223,7 @@ type TelemetryResult struct {
 	// ALWAYS serialised (no omitempty) so downstream parsers can
 	// rely on `volumes_removed: []` being a present-but-empty
 	// array. A regression that re-introduces `omitempty` would
-	// break the T5 contract surface (and the up-down.test.ts
+	// break those parsers (and the up-down.test.ts
 	// `down_json_payload_volumes_removed_is_empty_array` lock).
 	VolumesRemoved []string `json:"volumes_removed"`
 	// HTTPHealth is the captured loopback probe (status
@@ -254,7 +250,7 @@ var ErrTelemetryUsage = errors.New("hub telemetry usage error")
 //     isolated `hub-<pid>-<epoch>` name from os.Getpid.
 //   - composeFile: the absolute path to the compose YAML. When
 //     empty, defaults to
-//     <repoRoot>/docker-compose.observability.yml (the T5-owned
+//     <repoRoot>/docker-compose.observability.yml (the telemetry
 //     file; never observability/compose.yaml).
 //   - runner: the injected Runner. When nil, OSExec() is used so
 //     production callers can write `RunTelemetry(cfg, …)`.
@@ -302,7 +298,7 @@ type TelemetryConfig struct {
 	RepoRoot string
 	// ComposeFile is the absolute path to the compose YAML. When
 	// empty, defaults to <RepoRoot>/docker-compose.observability.yml
-	// (the T5-owned file; the runtime slice owns
+	// (the telemetry file; the runtime stack owns
 	// observability/compose.yaml).
 	ComposeFile string
 	// ProjectName overrides the isolated project name. When empty,
@@ -418,7 +414,7 @@ func telemetryStatus(sink *output.Sink, cfg TelemetryConfig, flags TelemetryFlag
 
 // emitTelemetry writes the result to the sink in either human or
 // JSON form. The human form is a fixed key/value block so the
-// phase5 gate can assert on the shape without snapshot drift. The
+// telemetry tests can assert on the shape without snapshot drift. The
 // JSON form is sorted alphabetically by encoding/json so two
 // invocations produce byte-identical output.
 //
@@ -543,7 +539,7 @@ func telemetryStatusToResult(r compose.StatusResult, composeFile string, timeout
 }
 
 // printTelemetryHelp writes the `hub telemetry --help` block. The
-// text is a fixed string so the phase5 gate can assert on its
+// text is a fixed string so the telemetry tests can assert on its
 // shape without snapshot drift.
 func printTelemetryHelp(sink *output.Sink) {
 	lines := []string{
@@ -569,10 +565,10 @@ func printTelemetryHelp(sink *output.Sink) {
 		"                    opt-in env knob for hub-data removal (test-only).",
 		"",
 		"Security invariants:",
-		"  - --health-url targets loopback only (I-10).",
-		"  - bearer-shaped tokens are redacted from every payload (I-07).",
+		"  - --health-url targets loopback only.",
+		"  - bearer-shaped tokens are redacted from every payload.",
 		"  - `down` preserves hub-data by default; --volumes is reserved for tests.",
-		"  - the compose file is the T5-owned docker-compose.observability.yml",
+		"  - the compose file is the top-level docker-compose.observability.yml",
 		"    (loopback-first); observability/compose.yaml stays read-only.",
 		"",
 		"Exit codes:",

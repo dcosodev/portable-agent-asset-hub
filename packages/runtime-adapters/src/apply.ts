@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/apply.ts
-//
 // The apply pipeline. Re-scans every input (USER/SOUL/MCP entry),
 // re-validates the target root and every ancestor for symlinks,
 // validates the reviewed digest against the preview, writes

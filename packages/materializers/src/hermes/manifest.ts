@@ -1,9 +1,5 @@
-// packages/materializers/src/hermes/manifest.ts
-//
-// Hermes adapter: the canonical renderer for Slice 8. Slice 9 ships an
-// `openclawAdapter` with the same shape but a different layout (see
-// the S9 plan). The adapter is what the apply pipeline hands a
-// Profile; it returns the file list the manifest will contain.
+// Hermes adapter. The apply pipeline hands it a Profile; it returns the
+// file list the manifest will contain.
 
 import type { ManifestV1, RendererAdapter } from '../contracts.js';
 import { buildMaterializationPlan, canonicalizeManifest } from '../manifest.js';

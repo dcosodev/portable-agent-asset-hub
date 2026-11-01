@@ -1,5 +1,3 @@
-// packages/core/src/skills/graph-service.ts
-//
 // Pure transformation layer that turns persisted skill/relation rows
 // into the wire-stable graph DTOs. The storage layer provides:
 //

@@ -1,5 +1,3 @@
-// packages/mcp/src/capabilities.ts
-//
 // Capability filter. The MCP server must NEVER expose a write or admin
 // tool to an actor that does not hold the corresponding capability. The
 // `read` capability is implicit and always present (the actor's identity

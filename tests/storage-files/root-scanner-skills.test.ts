@@ -1,8 +1,6 @@
-// tests/storage-files/root-scanner-skills.test.ts
+// SKILL.md classification in RootScanner.
 //
-// TDD slice for SKILL.md classification in RootScanner.
-//
-// Normative contracts exercised:
+// Contracts exercised:
 //
 //   Scanner-level (RootScanner.scan)
 //   ────────────────────────────────
@@ -52,7 +50,7 @@ const actor = createActorContext({
   role: 'user',
   capabilities: [],
 });
-const meta = { reason: 'root-scanner skills TDD slice', requestId: 'req_root_scanner_skills' };
+const meta = { reason: 'root-scanner skills test', requestId: 'req_root_scanner_skills' };
 
 const tempRoots: string[] = [];
 afterEach(() => {
@@ -76,7 +74,7 @@ function findCandidate(
 
 describe('RootScanner SKILL.md classification', () => {
   it('emits_kind_skill_and_sourceKind_skill_file_for_exact_basename', () => {
-    const root = tempRoot('s5-skill-classify-');
+    const root = tempRoot('scanner-skill-classify-');
     writeFileSync(join(root, 'SKILL.md'), '---\nname: hello\ndescription: a friendly skill\n---\nbody bytes\n');
 
     const candidates = new RootScanner().scan({ roots: [{ id: 'docs', path: root }] });
@@ -88,7 +86,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('classifies_root_README_as_repository_not_skill', () => {
-    const root = tempRoot('s5-skill-readme-');
+    const root = tempRoot('scanner-skill-readme-');
     writeFileSync(join(root, 'README.md'), '# top\n');
 
     const candidates = new RootScanner().scan({ roots: [{ id: 'docs', path: root }] });
@@ -96,7 +94,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('does_not_classify_lowercase_skill_md_as_skill', () => {
-    const root = tempRoot('s5-skill-case-');
+    const root = tempRoot('scanner-skill-case-');
     writeFileSync(join(root, 'skill.md'), '---\nname: lowercase\ndescription: nope\n---\n');
 
     const candidates = new RootScanner().scan({ roots: [{ id: 'docs', path: root }] });
@@ -105,7 +103,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('does_not_classify_SKILL_md_bak_as_skill', () => {
-    const root = tempRoot('s5-skill-bak-');
+    const root = tempRoot('scanner-skill-bak-');
     writeFileSync(join(root, 'SKILL.md.bak'), '---\nname: backup\ndescription: nope\n---\n');
 
     const candidates = new RootScanner().scan({ roots: [{ id: 'docs', path: root }] });
@@ -114,7 +112,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('extracts_frontmatter_name_and_description_into_metadata_and_summary', () => {
-    const root = tempRoot('s5-skill-frontmatter-');
+    const root = tempRoot('scanner-skill-frontmatter-');
     writeFileSync(
       join(root, 'SKILL.md'),
       ['---', 'name:  spaced-name  ', "description: 'quoted desc'", '---', 'body bytes'].join('\n'),
@@ -127,7 +125,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('supports_plain_single_quoted_and_double_quoted_scalar_values', () => {
-    const root = tempRoot('s5-skill-quotes-');
+    const root = tempRoot('scanner-skill-quotes-');
     mkdirSync(join(root, 'docs'), { recursive: true });
     writeFileSync(
       join(root, 'SKILL.md'),
@@ -160,7 +158,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('ignores_unknown_frontmatter_keys_and_interpolation_markers', () => {
-    const root = tempRoot('s5-skill-unknown-');
+    const root = tempRoot('scanner-skill-unknown-');
     writeFileSync(
       join(root, 'SKILL.md'),
       [
@@ -189,7 +187,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('falls_back_to_parent_directory_basename_when_frontmatter_missing', () => {
-    const root = tempRoot('s5-skill-missing-fm-');
+    const root = tempRoot('scanner-skill-missing-fm-');
     mkdirSync(join(root, 'category', 'name'), { recursive: true });
     writeFileSync(join(root, 'category', 'name', 'SKILL.md'), 'no frontmatter at all\n');
 
@@ -202,7 +200,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('falls_back_to_parent_directory_basename_when_frontmatter_invalid', () => {
-    const root = tempRoot('s5-skill-bad-fm-');
+    const root = tempRoot('scanner-skill-bad-fm-');
     mkdirSync(join(root, 'alpha'), { recursive: true });
     writeFileSync(
       join(root, 'alpha', 'SKILL.md'),
@@ -218,7 +216,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('caps_frontmatter_bytes_and_lines_so_pathological_files_do_not_crash_scan', () => {
-    const root = tempRoot('s5-skill-bounded-');
+    const root = tempRoot('scanner-skill-bounded-');
     // 200 garbage lines inside a single leading `---` block. The scanner
     // must bound the parser so this never blows the call stack, hangs,
     // or allocates huge buffers.
@@ -241,7 +239,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('strips_body_bytes_from_metadata_and_summary', () => {
-    const root = tempRoot('s5-skill-no-body-leak-');
+    const root = tempRoot('scanner-skill-no-body-leak-');
     const body = 'SECRET-BODY-MARKER-DO-NOT-LEAK-9c7c';
     writeFileSync(
       join(root, 'SKILL.md'),
@@ -260,7 +258,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('classifies_nested_category_name_SKILL_md', () => {
-    const root = tempRoot('s5-skill-nested-');
+    const root = tempRoot('scanner-skill-nested-');
     mkdirSync(join(root, 'a', 'b'), { recursive: true });
     writeFileSync(
       join(root, 'a', 'b', 'SKILL.md'),
@@ -276,7 +274,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('honours_exact_selector_list_for_skills', () => {
-    const root = tempRoot('s5-skill-selectors-');
+    const root = tempRoot('scanner-skill-selectors-');
     writeFileSync(join(root, 'top.md'), 'doc');
     writeFileSync(join(root, 'SKILL.md'), ['---', 'name: top-skill', 'description: top', '---', ''].join('\n'));
     mkdirSync(join(root, 'included'), { recursive: true });
@@ -310,8 +308,8 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('preserves_symlink_root_rejection_for_skills', () => {
-    const base = tempRoot('s5-skill-symlink-root-');
-    const outside = realpathSync(mkdtempSync(join(tmpdir(), 's5-skill-outside-')));
+    const base = tempRoot('scanner-skill-symlink-root-');
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), 'scanner-skill-outside-')));
     tempRoots.push(outside);
     writeFileSync(join(outside, 'SKILL.md'), '---\nname: outside\ndescription: outside\n---\n');
     symlinkSync(outside, join(base, 'link'));
@@ -320,8 +318,8 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('preserves_symlink_entry_rejection_for_skills', () => {
-    const root = tempRoot('s5-skill-symlink-entry-');
-    const outside = realpathSync(mkdtempSync(join(tmpdir(), 's5-skill-entry-outside-')));
+    const root = tempRoot('scanner-skill-symlink-entry-');
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), 'scanner-skill-entry-outside-')));
     tempRoots.push(outside);
     writeFileSync(join(outside, 'SKILL.md'), '---\nname: outside\ndescription: outside\n---\n');
     symlinkSync(outside, join(root, 'SKILL.md'));
@@ -330,7 +328,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('preserves_denied_path_skips_secret_skill_files', () => {
-    const root = tempRoot('s5-skill-denied-');
+    const root = tempRoot('scanner-skill-denied-');
     writeFileSync(join(root, '.env'), 'SECRET=token');
     writeFileSync(
       join(root, 'SKILL.md'),
@@ -346,7 +344,7 @@ describe('RootScanner SKILL.md classification', () => {
   });
 
   it('preserves_root_identity_drift_rejection_for_skills', () => {
-    const base = tempRoot('s5-skill-root-race-');
+    const base = tempRoot('scanner-skill-root-race-');
     const root = join(base, 'root');
     const outside = join(base, 'outside');
     mkdirSync(root);
@@ -368,10 +366,10 @@ describe('RootScanner SKILL.md classification', () => {
 
 describe('RootScanner SKILL.md bytes do not persist (SyncService + temp SQLite)', () => {
   it('apply_persists_only_sha_path_metadata_not_body', () => {
-    const dir = tempRoot('s5-skill-sqlite-');
+    const dir = tempRoot('scanner-skill-sqlite-');
     const dbPath = join(dir, 'hub.sqlite');
     const store = new SqliteStore(dbPath);
-    const root = tempRoot('s5-skill-sqlite-root-');
+    const root = tempRoot('scanner-skill-sqlite-root-');
     writeFileSync(
       join(root, 'SKILL.md'),
       ['---', 'name: persistable', 'description: persists only the digest', '---', 'body'].join('\n'),

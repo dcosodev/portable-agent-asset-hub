@@ -1,42 +1,11 @@
 #!/usr/bin/env node
-// scripts/gate-evidence.mjs
+// Per-invocation evidence helpers for the gate scripts.
 //
-// Reusable per-invocation evidence helpers for S5/S8/S9/S10 gate scripts.
-//
-// Background — the orchestration audit confirmed that S10 calls
-// `pnpm s8:gate` (step 13) and then `pnpm s9:gate` (step 14); S9
-// internally also calls `pnpm s8:gate` (step 12). Both S8 invocations
-// write `artifacts/s8-gate.json`, so the on-disk artifact at the end
-// of the S10 run only reflects the LAST s8 invocation. If the FIRST
-// S8 invocation observed a real FAIL (e.g. because S5 failed upstream),
-// the FAIL evidence is overwritten by S9's nested S8 re-run before
-// anyone can inspect it.
-//
-// These helpers preserve traceability without changing gate semantics:
-//
-//   * snapshotBeforeOverwrite({ repoRoot, artifactPath, runId }) — if
-//     `artifactPath` exists, COPY it to
-//     `artifacts/.evidence/<runId>/<basename>.snapshot.json`
-//     and return the snapshot's digest/bytes. Never destroys an
-//     existing snapshot — if one already exists for the same runId,
-//     rename the older copy with a `.previous-<sha>.json` suffix first.
-//
-//   * recordStepLog({ repoRoot, runId, stepName, stdout, stderr,
-//     status, exitCode, command }) — when a step FAILS (or always in
-//     debug mode), writes stdout/stderr to
-//     `artifacts/.evidence/<runId>/<stepName>.{stdout,stderr}.log`
-//     and a small JSON sibling `<stepName>.meta.json` (runId,
-//     command, exitCode, status, evidence relationships, byte sizes).
-//     Returns digests + paths. Gate artifacts store ONLY the
-//     `log_digest`, `log_path`, `log_bytes` triple — bodies live on
-//     disk and are not stuffed into the artifact JSON.
-//
-//   * buildRunId(scope) — `s10-s8-regression-<ISO>` style; safe in
-//     file paths across OSes; sortable.
-//
-// All helpers are synchronous (copyFileSync/writeFileSync) so they
-// drop into existing runStep / persistArtifact contexts without
-// requiring the surrounding code to await.
+// A parent gate can run the same child gate more than once, and every run writes
+// to the same artifact path, so a later PASS would otherwise overwrite an earlier
+// FAIL. These helpers keep each run's evidence under a runId-scoped directory
+// without changing gate semantics. They are synchronous so they fit inside
+// existing step-runner code.
 
 import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -65,11 +34,9 @@ export function sha256FromFile(filePath) {
 }
 
 /**
- * Make a stable, sortable, parent-scoped runId. Two S8 invocations
- * from the same S10 gate will get distinct IDs because each call
- * receives a fresh `scope` and `startedAt`.
+ * Make a stable, sortable, parent-scoped runId.
  *
- *   buildRunId('s10-s8-regression') => 's10-s8-regression-2026-08-21T10-12-13-597Z'
+ *   buildRunId('migration-hermes-regression') => 'migration-hermes-regression-2026-08-21T10-12-13-597Z'
  *
  * The `:`, `.` in the ISO timestamp are replaced with `-` so the ID
  * is safe in file paths on macOS, Linux, and Windows.
@@ -241,20 +208,17 @@ export function readJsonSafe(filePath) {
 }
 
 /**
- * S10-specific evidence helper. Records ONE invocation of a child gate
- * (s8 or s9) called from a parent gate (S10). Captures:
+ * Records ONE invocation of a child gate called from a parent gate. Captures:
  *
- *   1. A snapshot of the OBSERVED artifact (e.g. `artifacts/s8-gate.json`)
+ *   1. A snapshot of the OBSERVED artifact (e.g. `artifacts/hermes-gate.json`)
  *      BEFORE the caller inspects it — so the prior state survives
  *      even when a subsequent invocation overwrites the file.
  *
  *   2. Per-invocation stdout/stderr log + meta.json under
  *      `artifacts/.evidence/<invocationRunId>/` — keyed by the
- *      S10-chosen runId so two distinct invocations (S10→S8 direct,
- *      S9→S8 nested) never collide.
+ *      parent-chosen runId so two invocations never collide.
  *
- * The returned entry is the structured shape the S10 gate must include
- * on its `s8_invocations` (or `s9_invocation`) array. Bodies are never
+ * The returned entry is what the parent gate records on its artifact. Bodies are never
  * inlined — only paths/digests/bytes references so the gate JSON stays
  * small even when the invocation prints megabytes.
  *
@@ -269,8 +233,8 @@ export function readJsonSafe(filePath) {
  * it but never inlines the body.
  *
  * The `scope` is opaque to the helper but is propagated onto both
- * the entry and the meta.json so the S10 aggregator can distinguish
- * `s10-direct` from `s10-via-s9` without consulting the runId.
+ * the entry and the meta.json so an aggregator can tell direct from nested
+ * invocations without consulting the runId.
  */
 export function recordInvocationEvidence({
   repoRoot,
@@ -329,9 +293,8 @@ export function recordInvocationEvidence({
     evidenceRoot,
   });
 
-  // Amend the meta.json file with parent/scope so a future grep over
-  // `artifacts/.evidence` can disambiguate by parent gate and scope
-  // without reopening the S10 artifact.
+  // Amend the meta.json file with parent/scope so a grep over
+  // `artifacts/.evidence` can disambiguate by parent gate and scope.
   if (logResult.ok && logResult.metadataPath) {
     let parsed;
     try {
@@ -345,7 +308,7 @@ export function recordInvocationEvidence({
       try {
         writeFileSync(logResult.metadataPath, JSON.stringify(parsed, null, 2) + '\n');
       } catch {
-        // Best-effort amendment; the log+digest contract is already
+        // Best-effort metadata update; the log+digest contract is already
         // upheld by recordStepLog above.
       }
     }

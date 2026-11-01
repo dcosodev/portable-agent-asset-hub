@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/openclaw/index.ts
-//
 // OpenClaw harness implementation. The wrapper is `MEMORY.md`
 // (OpenClaw's native memory pointer file); the MCP descriptor is a
 // logical `openclaw mcp set` JSON fragment the operator pastes into

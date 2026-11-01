@@ -20,7 +20,7 @@ pnpm typecheck
 pnpm test
 ```
 
-For staged changes, include the relevant gate and fresh artifact summary.
+If you ran a local gate, include its exit code and a short summary of its evidence.
 
 ## Public-surface checklist
 

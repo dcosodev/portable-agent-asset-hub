@@ -1,5 +1,3 @@
-// packages/mcp/src/tool-invoker.ts
-//
 // The MCP tool invoker. For every tool call:
 //   1. Look up the operation in the registry.
 //   2. Verify the actor holds the required capability.

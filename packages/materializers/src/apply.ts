@@ -1,5 +1,3 @@
-// packages/materializers/src/apply.ts
-//
 // The renderer-agnostic apply pipeline. Given a `PreviewResult`
 // (already containing a manifest plan + observedDigest) plus the lock
 // directory, the run reason, and an optional caller-provided
@@ -262,7 +260,7 @@ export function applyPlan(
     }
 
     // 10. Audit. We use the storage audit repository so every apply
-    //     is observable through the S6 audit query surface.
+    //     is observable through the audit query surface.
     try {
       store.transaction(actor, (tx) => {
         tx.audit.append({

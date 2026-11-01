@@ -1,6 +1,4 @@
-// tests/go/telemetry/_telemetry-harness.ts
-//
-// Shared subprocess harness for the T5 telemetry subprocess tests
+// Shared subprocess harness for the telemetry subprocess tests
 // (up / down / status). The harness builds the hub binary ONCE per
 // process with `go build -trimpath`, then exercises the telemetry
 // subcommands against a fake `docker` executable injected via PATH.
@@ -22,13 +20,13 @@
 //   * HUB_HOME / HUB_RUNTIME / HUB_OPENAPI are pointed at per-test
 //     temp paths so the binary sees a hermetic layout.
 //
-// T5 must NOT modify observability/**, so the harness always points
+// must NOT modify observability/**, so the harness always points
 // HUB_RUNTIME at the same `<repoRoot>/observability/compose.yaml` the
 // runtime harness uses — Detect's compose-file stat must succeed
 // without the gate having to rewrite any ADR-0004-protected file.
 //
-// The harness mirrors tests/go/runtime/_runtime-harness.ts so the T2
-// and T5 harnesses read alike; the only differences are:
+// The harness mirrors tests/go/runtime/_runtime-harness.ts so the
+// and harnesses read alike; the only differences are:
 //   * the tmp dir prefix (hub-telemetry-…);
 //   * the exported build-helper name (buildTelemetryHubBinary);
 //   * the lookup for the hub-telemetry helpers sibling.
@@ -53,10 +51,10 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 // `here` is tests/go/telemetry — three `..` hops land at the repo root.
 const repoRoot = resolve(here, '..', '..', '..');
-// T5 owns docker-compose.observability.yml (top-level) — NOT
+// This suite owns docker-compose.observability.yml (top-level) — NOT
 // observability/compose.yaml. The harness therefore defaults
-// HUB_RUNTIME to the top-level docker-compose.observability.yml that
-// the slice adds; tests that want to override the compose-file
+// HUB_RUNTIME to the top-level docker-compose.observability.yml;
+// tests that want to override the compose-file
 // target can still pass envOverride.HUB_RUNTIME (same escape hatch
 // the runtime harness documents).
 const repoComposeFile = join(repoRoot, 'docker-compose.observability.yml');
@@ -73,7 +71,7 @@ export interface TelemetryBuildResult {
 /**
  * Build the hub binary with `go build -trimpath` into a per-call temp
  * directory. Caches the result; call resetTelemetryHubBinary() to
- * force a rebuild. Matches the T2 harness API.
+ * force a rebuild. Matches the harness API.
  */
 export function buildTelemetryHubBinary(): TelemetryBuildResult {
   if (cachedBinary && cachedBuildTmp && existsSync(cachedBinary)) {
@@ -191,7 +189,7 @@ export async function runTelemetryHub(
   cleanedEnv.HOME = homeTmp;
   cleanedEnv.XDG_DATA_HOME = homeTmp;
 
-  // Default HUB_RUNTIME → the T5 top-level compose file. The Go
+  // Default HUB_RUNTIME → the top-level compose file. The Go
   // binary lives under os.tmpdir()/hub-telemetry-…/hub, so its own
   // repoRoot resolver walks 3 levels UP into a non-existent tmp
   // prefix. We MUST point Detect at the real compose file via
@@ -265,10 +263,10 @@ export async function runTelemetryHub(
 }
 
 // -----------------------------------------------------------------------------
-// Fake docker rig — same surface as the T2 harness but trimmed to
-// what T5 actually exercises (up / down / ps with `--all` and
-// without). The T2 harness owns the comprehensive fake; we mirror
-// the parts we use so a T5 regression that depends on a missing
+// Fake docker rig — same surface as the harness but trimmed to
+// what telemetry actually exercises (up / down / ps with `--all` and
+// without). The harness owns the comprehensive fake; we mirror
+// the parts we use so a regression that depends on a missing
 // fake feature is impossible to land unnoticed. Adding a new
 // canned payload here MUST also land in fake-docker.mjs's
 // FAKE_DOCKER_* env contract.
@@ -300,7 +298,7 @@ export interface FakeDockerRig {
 
 /**
  * Install a fake docker shim in a fresh temp dir and return the rig
- * handle. The shim body is sourced from the T2 fake-docker.mjs file
+ * handle. The shim body is sourced from the fake-docker.mjs file
  * (single source of truth) so the test/shim envelope never drifts.
  * Tests typically create one per `it()` block.
  */
@@ -310,16 +308,16 @@ export function installFakeDocker(): FakeDockerRig {
   const shimPath = join(binDir, 'docker');
   const logPath = join(scratchDir, 'fake-docker.log');
 
-  // The shim body is read from the T2 fake-docker.mjs sibling. We
+  // The shim body is read from the fake-docker.mjs sibling. We
   // deliberately reuse that script so any future flag-skip bug fix
   // (e.g. a new value-bearing short flag in
-  // locateComposeVerb) lands in BOTH test surfaces. The T5
+  // locateComposeVerb) lands in BOTH test surfaces. The telemetry
   // subcommands (`up` / `down` / `ps` / `logs`) are all in the
-  // T2 KNOWN_COMPOSE_VERBS set, so the shim answers T5 verbs
+  // KNOWN_COMPOSE_VERBS set, so the shim answers verbs
   // identically.
   const t2Script = join(repoRoot, 'tests', 'go', 'runtime', 'fake-docker.mjs');
   if (!existsSync(t2Script)) {
-    throw new Error(`_telemetry-harness: T2 fake-docker.mjs missing at ${t2Script}`);
+    throw new Error(`_telemetry-harness: fake-docker.mjs missing at ${t2Script}`);
   }
   const scriptPath = join(binDir, 'docker.mjs');
   writeFileSync(scriptPath, readFileSync(t2Script, 'utf8'), 'utf8');

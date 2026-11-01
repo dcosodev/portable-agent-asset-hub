@@ -1,5 +1,3 @@
-// tests/fixtures/fake-otlp-receiver.ts
-//
 // Lightweight OTLP/HTTP receiver for tests. It binds to a loopback port,
 // accepts POST /v1/traces and POST /v1/metrics, captures the JSON-encoded
 // payload (or Protobuf-as-bytes), and exposes the captured records to the

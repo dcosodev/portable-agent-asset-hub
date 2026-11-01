@@ -1,5 +1,3 @@
-// packages/mcp/src/types.ts
-//
 // Shared types for the MCP package. The shapes here mirror the contract
 // declared by `schemas/mcp-capabilities.v1.json` and the OpenAPI
 // `x-mcp.*` extensions.

@@ -1,5 +1,3 @@
-// packages/core/src/skills/graph-dto.ts
-//
 // Wire-stable DTO types for the Web Graph Explorer backend.
 //
 // The DTO layer is intentionally separated from the SQLite storage

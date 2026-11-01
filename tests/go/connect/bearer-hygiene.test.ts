@@ -1,8 +1,6 @@
-// tests/go/connect/bearer-hygiene.test.ts
-//
-// T8 RED contract: `hub hub connect` MUST NOT emit bearer-shaped
-// strings on stdout or stderr under any input shape. The slice is
-// invariant I-07 (bearer hygiene) in action: a single
+// `hub hub connect` MUST NOT emit bearer-shaped strings on stdout
+// or stderr under any input shape. This is I-07 (bearer hygiene;
+// see docs/architecture/go-product-shell.md): a single
 // accidentally-leaked token in an error path is a security
 // regression the gate must catch.
 //
@@ -17,13 +15,7 @@
 // duplicated here from tests/go/connect/_connect-harness.ts so the
 // suite is hermetic and self-checking.
 //
-// Today (pre-T8) every test in this file is RED: the dispatcher
-// rejects `hub hub connect` with exit 2 / "unknown command" —
-// which IS a diagnostic, so the bearer-hygiene surface for that
-// specific diagnostic is GREEN-by-accident. Once T8 lands, the
-// SAME assertions flip GREEN and the suite then latches a real
-// regression: any future help-text or error-message change that
-// accidentally embeds a bearer-shaped string surfaces here.
+
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -67,7 +59,7 @@ const FAKE_BEARER_OPAQUE = 'A'.repeat(32);
 // JWT does not regress silently.
 const FAKE_JWT = 'Z'.repeat(12) + '.' + '1'.repeat(12) + '.' + 'a'.repeat(12);
 
-describe('hub hub connect — bearer hygiene (T8, I-07)', () => {
+describe('hub hub connect — bearer hygiene (I-07)', () => {
   // -----------------------------------------------------------------
   // 1. Sanity: the test's own predicates must classify the seeded
   //    fake bearers correctly. A regression in the regex set would
@@ -180,10 +172,6 @@ describe('hub hub connect — bearer hygiene (T8, I-07)', () => {
   //    does not echo the inherited env back onto stdout/stderr
   //    when asked to render a help block or a usage diagnostic.
   //
-  //    Today (pre-T8) the inherited env is empty in the harness,
-  //    so this test is a baseline; once T8 lands, it latches the
-  //    redactor's behaviour against an explicit injected value.
-  // -----------------------------------------------------------------
   describe('inherited-env bearer hygiene', () => {
     it('hub hub connect --help with HUB_BEARER_TOKEN injected does NOT echo the value on stdout or stderr', async () => {
       const res = await runConnect(
@@ -214,11 +202,8 @@ describe('hub hub connect — bearer hygiene (T8, I-07)', () => {
   });
 
   // -----------------------------------------------------------------
-  // 5. Bearer never appears in JSON output channels. The slice
-  //    mandates that --json payloads NEVER embed a bearer. This
-  //    test fires on the diagnostic channel today (the "unknown
-  //    command" stderr is non-JSON, so JSON.parse throws); once
-  //    T8 lands it fires on the structured preview payload.
+  // 5. Bearer never appears in JSON output channels: --json
+  //    payloads NEVER embed a bearer.
   // -----------------------------------------------------------------
   describe('json payload bearer hygiene', () => {
     it('hub hub connect preview --json never emits a bearer-shaped string on stdout', async () => {
@@ -262,8 +247,8 @@ describe('hub hub connect — bearer hygiene (T8, I-07)', () => {
   });
 
   // -----------------------------------------------------------------
-  // 6. Malicious --reason. The amendment authorises an
-  //    operator-supplied reason for every mutating verb. A
+  // 6. Malicious --reason. Every mutating verb takes an
+  //    operator-supplied reason. A
   //    diagnostic echo of that reason would let an attacker
   //    inject a bearer-shaped string through the CLI and see
   //    it surface in the operator-visible channel.
@@ -315,8 +300,8 @@ describe('hub hub connect — bearer hygiene (T8, I-07)', () => {
   });
 
   // -----------------------------------------------------------------
-  // 7. Receipt-corruption bearer hygiene. The amendment pins
-  //    the receipt as a small, bounded JSON object. If the Go
+  // 7. Receipt-corruption bearer hygiene. The receipt is a
+  //    small, bounded JSON object. If the Go
   //    shell or the .mjs child echoes a malicious bearer-shaped
   //    substring from a CORRUPTED receipt back to the operator,
   //    that's a regression. The test seeds a receipt with a

@@ -1,145 +1,120 @@
-# Go product shell — signature and boundaries
+# The `hub` CLI
 
-The Go shell (`hub`) is the operator-facing control plane. It does not
-own domain state, never opens SQLite, and never re-implements the
-domain. This document states the **signature** of the shell (its
-allowed subcommands, its environment contract, its artifacts) and the
-**boundaries** it MUST respect.
+`hub` is a Go CLI for operating a local hub. It has no external Go dependencies, holds
+no domain state and does not reimplement domain logic. Go code never opens SQLite.
+`hub backup` and `hub hub connect` delegate to Node child processes shipped under
+`internal/`, which use the TypeScript packages.
 
-## Surface
+## Building
 
-`hub` exposes the following subcommands. Each subcommand has a fixed
-shape; subcommands not in this list are out of scope for v1.
-
-```text
-hub init        — create ~/.hub/ with state/, runtime/, logs/, tokens/
-hub runtime     — up, down, status, logs, ps (Docker / Compose)
-hub token       — show (redacted), rotate
-hub open        — open Graph Explorer at 127.0.0.1:<loopback>
-hub mcp         — launch --stdio (forwards to packages/mcp)
-hub hub         — connect, preview, apply, rollback (over REST)
-hub version     — print hub version, REST version, OpenAPI version
-hub update      — pinned-channel upgrade (dry-run by default)
-hub backup      — snapshot SQLite + config to a portable archive
-hub doctor      — health + contract + secrets + policy check
+```sh
+go build -o cmd/hub/hub ./cmd/hub
 ```
 
-Every subcommand has:
+`hub` derives its default `HUB_OPENAPI` path from the binary's location, so build to
+this path or set `HUB_OPENAPI`. The binary is not Git-ignored; do not commit it.
 
-- A `--help` text that prints the contract, not the implementation.
-- A `--json` flag for structured output.
-- A deterministic exit code: `0` for success, `1` for operator error,
-  `2` for fail-closed contract violation, `>=3` for unexpected
-  failures.
-- A redaction policy that strips `HUB_BEARER_TOKEN` and any bearer-shaped
-  string from stdout, stderr, logs, and `--json` payloads.
+## Commands
 
-## Environment contract
+```text
+hub version       print the version; --json for the structured form
+hub path <key>    print a resolved path (home, runtime, openapi, log, token)
+hub config <key>  print a config value; --json for all
+hub init          create the HUB_HOME layout and a bearer token (idempotent)
+hub token         show (redacted), rotate
+hub runtime       Docker Compose stack: up, down, status, logs, ps
+hub telemetry     optional observability profile: up, down, status
+hub open          serve the embedded Graph Explorer on loopback only
+hub mcp           launch --stdio: supervise the TypeScript MCP process
+hub hub connect   preview, apply, rollback against a runtime target
+hub backup        --out <archive> snapshots, --restore <archive> restores
+hub update        plan only; --apply is refused with exit 2
+hub doctor        read-only health, contract and policy check; --json
+```
 
-`hub` reads (only):
+`hub --help` and each command's `--help` print the full surface. An unknown command
+or key exits with 2.
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Success. |
+| `1` | Operator or runtime error, such as Node missing or an adapter failure. |
+| `2` | Contract violation, such as a bad flag or an unknown key. |
+
+## Output
+
+Output goes through `internal/output`:
+
+- stdout carries the human-readable result, the `--json` payload and `--help` text;
+- stderr carries diagnostics, warnings and errors;
+- when `$CI` is set, there are no interactive prompts or ANSI colours;
+- bearer-shaped strings are replaced with `<<REDACTED>>`.
+
+## Files
+
+`hub init` creates this layout under `HUB_HOME`, which has an XDG-style default:
+
+```text
+state/
+runtime/
+logs/      hub.log
+tokens/    hub.token (mode 0600)
+```
+
+Token writes are atomic and use mode `0600`.
+
+## Environment
 
 | Variable | Purpose |
 |---|---|
-| `HUB_HOME` | override `~/.hub/` location |
-| `HUB_RUNTIME` | override the Compose project root |
-| `HUB_OPENAPI` | override the path to `openapi/openapi.yaml` |
-| `HUB_BEARER_TOKEN` | bearer used for REST calls (preferred over the file) |
-| `HUB_BEARER_TOKEN_FILE` | path to the bearer file (`0600` required) |
-| `HUB_BEARER_TOKEN_SOURCE` | `env` (default), `file`, or `cmd` (one-shot stdin) |
-| `AGENT_MEMORY_TELEMETRY_LEVEL` | forwarded to the launcher |
-| `TELEMETRY_ENABLED`, `TELEMETRY_LEVEL`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `TELEMETRY_SAMPLE_RATIO`, `TELEMETRY_EXPORT_INTERVAL_MS` | forwarded to the launcher |
+| `HUB_HOME` | Override the home directory. |
+| `HUB_RUNTIME` | Override the Compose project root. |
+| `HUB_OPENAPI` | Override the path to `openapi/openapi.yaml`. |
+| `HUB_OPEN_BIND`, `HUB_OPEN_PORT` | Bind address and port for `hub open`. Non-loopback addresses are refused. |
+| `HUB_MCP_COMMAND` | Override the command `hub mcp` launches. |
+| `HUB_NODE_BIN` | Override the Node binary used for child processes. Must be absolute. |
+| `HUB_ALLOW_HUB_DATA_REMOVAL` | Set to `1` to let the Compose service remove the `hub-data` volume. Intended for tests. |
 
-`hub` MUST NOT write any of these variables. It MUST NOT inherit
-secrets from a parent shell unless the operator passed them explicitly.
+`HUB_BEARER_TOKEN`, `HUB_BEARER_TOKEN_FILE` and `HUB_BEARER_TOKEN_SOURCE` are stripped
+from the environment of the Compose, connect and backup child processes. The Compose
+layer can forward a token file through `HUB_BEARER_TOKEN_FILE` when asked to.
 
-## Boundaries — what `hub` MUST NOT do
+## Rules
 
-These are imported from `docs/product/product-boundaries.md` and
-`docs/architecture/invariants.md`; restated here as Go-specific
-constraints:
+Code comments use these labels for two rules:
 
-- **MUST NOT** open SQLite. `database/sql` against `hub.sqlite` is
-  forbidden. The Go shell reads and writes the canonical state only
-  through REST.
-- **MUST NOT** import `HubDatabase`, `HubStorage`, `StorageRepository`,
-  or any symbol that wraps a SQLite handle owned by `packages/storage-sqlite/`.
-- **MUST NOT** reimplement MCP. The `hub mcp` command launches the
-  TypeScript MCP process; it does not speak MCP itself.
-- **MUST NOT** generate or copy the full OpenAPI SDK. The Go shell uses
-  a thin, curated REST client under `internal/rest/` covering only the
-  endpoints listed in the v1 command matrix (T0 contract).
-- **MUST NOT** fork a long-running stateful process beyond the Graph
-  UI static server. Every other long-running process is owned by
-  Compose.
-- **MUST NOT** read or write the bearer from anywhere except
-  `HUB_BEARER_TOKEN`, `HUB_BEARER_TOKEN_FILE`, or a one-shot stdin
-  prompt. The token file MUST be `0600`; the shell refuses to start
-  otherwise.
-- **MUST NOT** accept `--host 0.0.0.0` or `--public` flags. The shell
-  refuses to start if those flags are present.
-- **MUST NOT** route MCP through Go for v1. The Go shell launches the
-  TypeScript MCP process; MCP does not call back into Go.
+- **I-07, bearer hygiene.** Output is redacted, and child processes do not inherit a
+  bearer.
+- **I-10, loopback first.** `hub open` and `--health-url` refuse non-loopback targets.
 
-## Boundaries — what `hub` MUST do
+`hub` also does not reimplement MCP: `hub mcp launch --stdio` supervises the TypeScript
+process and restarts it with bounded backoff, up to five attempts.
 
-- **MUST** call REST as a thin, versioned client. Every request carries
-  the bearer and the W3C `traceparent` if present in the operator's
-  session.
-- **MUST** verify the version handshake before any stateful operation:
-  `GET /api/v1/status` and `GET /api/v1/capabilities` agree with the
-  Go shell's pinned matrix.
-- **MUST** write its own logs to `HUB_HOME/logs/hub.log` with
-  `0600`. Bearer-shaped strings MUST be redacted at write time.
-- **MUST** produce deterministic `--json` output that does not include
-  runtime secrets. The output is the contract surface for orchestrators.
-- **MUST** heal transient subprocess failures with bounded backoff and
-  surface a clear error to the operator when the bound is exceeded.
-- **MUST** propagate the immutable runtime binding to REST calls; it
-  MUST NOT silently change identity across calls.
+## Version output
 
-## Version handshake
+`hub version --json` prints keys in alphabetical order:
 
-Before any stateful operation, `hub` MUST perform the version
-handshake:
-
-```text
-hub version --json
-{
-  "hub":         "0.1.0",
-  "rest":        "<version from GET /api/v1/status>",
-  "openapi":     "<version from openapi.yaml info.version>",
-  "go_version":  "<runtime build>",
-  "node_version":"<runtime build>"
-}
+```json
+{"go":"go1.24.3","hub":"0.1.0","openapi":"unknown","rest":"unknown","service":"hub"}
 ```
 
-The matrix of accepted REST ↔ hub pairs is published in
-`docs/phase0/handshake.md` (slice T0) and MUST be updated whenever the
-Go shell's pinned matrix changes.
+`rest` and `openapi` are `unknown` until they are wired in. Orchestrators should parse
+this object, not the human-readable line.
 
-## Subprocess supervision
+## Designed but not implemented
 
-`hub runtime`, `hub open` and `hub mcp` are subprocess supervisors.
-Supervision rules:
+The original design for the shell included the following, which the code does not do:
 
-- **MUST** capture and forward subprocess exit codes without swallowing
-  them.
-- **MUST** apply a bounded restart budget (default: 3 restarts in 60 s
-  before refusing to restart).
-- **MUST** never buffer stderr silently. If stderr is large, it is
-  truncated with a `(truncated)` marker and the full text is mirrored
-  to the log file.
-- **MUST** never log the bearer even when the subprocess does. A
-  redaction filter is applied to the inherited environment of every
-  subprocess.
+- a version handshake against `GET /api/v1/status` and `GET /api/v1/capabilities`
+  before stateful operations, with a matrix of accepted versions;
+- REST calls from the commands: `internal/rest` is a thin client that the commands do
+  not use, so W3C `traceparent` and runtime-binding propagation do not exist either;
+- writing shell logs to `HUB_HOME/logs/hub.log`: the path is reserved;
+- forwarding telemetry variables to the launcher from `hub` itself;
+- an applying `hub update`;
+- a `--lan-readonly` network mode.
 
-## What the shell defers
-
-- A built-in TUI. v1 uses plain `--help`, `--json`, and exit codes; a
-  TUI is a separate slice.
-- Hot reload. Configuration changes require a fresh `hub` process; the
-  shell refuses `--reload`.
-- Plugin loading. The shell has a fixed subcommand list; dynamic plugin
-  discovery is not in v1.
-- Network mode switching beyond `--lan-readonly`. Public exposure
-  requires an ADR.
+Deliberately left out: a TUI, hot reload, and plugin loading. Public exposure would
+need an ADR.

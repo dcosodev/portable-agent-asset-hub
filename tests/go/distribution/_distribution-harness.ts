@@ -1,11 +1,8 @@
-// tests/go/distribution/_distribution-harness.ts
-//
-// Reusable hermetic subprocess harness for the T9 distribution suite
+// Reusable hermetic subprocess harness for the distribution suite
 // (`hub backup`, `hub update`, `hub doctor` final shape).
 //
-// Architecture mirrors the already-governed sibling harnesses
-// (tests/go/shell/_hub-harness.ts — T1, tests/go/connect/_connect-harness.ts
-// — T8):
+// Architecture mirrors the sibling harnesses (tests/go/shell/_hub-harness.ts,
+// tests/go/connect/_connect-harness.ts):
 //
 //   * Build the hub binary ONCE per vitest worker with
 //     `go build -trimpath` into a per-worker temp directory.
@@ -25,8 +22,7 @@
 //     stripped from the inherited env so a leaked operator value can
 //     never make a test pass.
 //
-// T9 CONTRACT SOURCE OF TRUTH — docs/roadmap/slices.json slice `T9`.
-// Only what the amendment pins is asserted:
+// Only these are asserted:
 //
 //   backup   `hub backup --out <archive>` (snapshot)
 //            `hub backup --restore <archive>` (restore)
@@ -38,20 +34,12 @@
 //   update   literal channel `stable` only (compiled-only)
 //            plan-only dry-run by default
 //            `hub update --apply` refuses with exit 2, no install mutation
-//   doctor   final shape = T1 checks + backup/update posture +
+//   doctor   final shape = base checks + backup/update posture +
 //            distribution checks; `ok` on a fresh install fixture
 //
-// RED STATE (recorded at authoring time): cmd/hub/main.go has no
-// `backup` and no `update` case, so the dispatcher falls through to
-// `default:` and prints `hub: unknown command "backup"` /
-// `hub: unknown command "update"` on stderr with exit 2.
-//
-// Because that fallthrough ALSO exits 2, every test in this suite that
-// expects a T9 exit-2 refusal would go accidentally GREEN against the
-// unknown-command path. `assertDispatched()` below is the guard: it
-// fails whenever stderr still carries the dispatcher's
-// `unknown command` diagnostic, so an exit-2 expectation can only be
-// satisfied by a real T9 refusal.
+// `assertDispatched()` below guards exit-2 expectations: it fails whenever
+// stderr carries the dispatcher's `unknown command` diagnostic, so an exit-2
+// expectation can only be satisfied by a real refusal.
 
 import {
   chmodSync,
@@ -159,7 +147,7 @@ const STRIPPED_ENV_KEYS = [
   'HUB_BEARER_TOKEN',
   'HUB_BEARER_TOKEN_FILE',
   'HUB_BEARER_TOKEN_SOURCE',
-  // T9 owns `hub backup` / `hub update`. Any future env knob the
+  // This suite owns `hub backup` / `hub update`. Any future env knob the
   // production author introduces must be opted into per test, never
   // inherited from the operator shell.
   'HUB_BACKUP_OUT',
@@ -219,14 +207,11 @@ export async function runHub(
 }
 
 // ---------------------------------------------------------------------------
-// Accidental-GREEN guard.
+// Unknown-command guard.
 //
-// The pre-T9 dispatcher answers `hub backup …` / `hub update …` with
-// exit 2 + `hub: unknown command "backup"`. Any T9 test that expects
-// exit 2 (unknown verb, --apply refusal, non-stable channel refusal)
-// would therefore pass for the WRONG reason. Every such test calls
-// assertDispatched() first, which fails while the dispatcher still
-// falls through.
+// An unregistered verb exits 2 + `hub: unknown command "backup"`, so a test
+// that expects exit 2 could pass for the WRONG reason. Every such test calls
+// assertDispatched() first.
 // ---------------------------------------------------------------------------
 
 const UNKNOWN_COMMAND_DIAGNOSTIC = /unknown command/i;
@@ -246,7 +231,7 @@ export function assertDispatched(
 
 // ---------------------------------------------------------------------------
 // Bearer-shape predicates (mirrored from internal/output/output.go and
-// the T1/T8 harnesses).
+// the sibling harnesses).
 // ---------------------------------------------------------------------------
 
 const BEARER_PREFIXED_OPAQUE = /bearer\s+[A-Za-z0-9._~+/=-]{20,}/i;
@@ -262,7 +247,7 @@ export function looksLikeBearer(s: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Secret-shape predicate — the exact glob set the T9 amendment pins:
+// Secret-shape predicate — the exact glob set:
 //   `*.pem`, `*token*`, `*secret*`, `*.env`, `*.key`
 // plus anything under `$HUB_HOME/tokens/**`.
 // ---------------------------------------------------------------------------
@@ -395,8 +380,8 @@ export function freshInstallFixture(label: string): FreshInstallFixture {
   seedSecret(join(dataDir, 'db.key'), 'DATADIR_KEY');
   seedSecret(join(dataDir, 'session.token'), 'DATADIR_TOKEN');
 
-  // Decoy databases a DB-fallback regression would pick up. The
-  // amendment forbids any HUB_HOME DB / alternate DB / parallel DB.
+  // Decoy databases a DB-fallback regression would pick up. A
+  // HUB_HOME DB / alternate DB / parallel DB must never be used.
   const decoyDatabases = [
     join(hubHome, 'hub.sqlite'),
     join(hubHome, 'state', 'hub.sqlite'),
@@ -462,10 +447,9 @@ export async function runHubInFixture(
 }
 
 /**
- * Materialise the "fresh install" layout via the real `hub init`
- * (T3-owned, already GREEN). Used by the doctor-final tests: the
- * amendment's exit criterion is "doctor reports OK on a fresh install
- * fixture", which means an initialised HUB_HOME, not an empty dir.
+ * Materialise the "fresh install" layout via the real `hub init`.
+ * Used by the doctor-final tests: doctor must report OK on a fresh
+ * install fixture, which means an initialised HUB_HOME, not an empty dir.
  */
 export async function hubInit(fx: FreshInstallFixture): Promise<DistributionRunResult> {
   const res = await runHubInFixture(fx, ['init']);

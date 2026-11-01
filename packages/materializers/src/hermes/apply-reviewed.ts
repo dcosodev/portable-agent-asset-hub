@@ -1,6 +1,4 @@
-// packages/materializers/src/hermes/apply-reviewed.ts
-//
-// T8 owner-TS companion: stateless reviewedDigest + recompute-before-apply
+// Owner-TS companion: stateless reviewedDigest + recompute-before-apply
 // + real CAS. Reads volatile runId / generatedAt OUT of the digest so two
 // previews of the same logical plan yield identical planDigest across
 // processes; recomputes the plan in TS authority on apply; refuses to
@@ -127,8 +125,7 @@ export async function applyReviewed(
 
   // (a) Use the live store + actor + targetRoot from the caller's
   //     context — these are real dependencies supplied by the
-  //     production caller (the Go runner in T8 or the test in this
-  //     file). No fake storage.
+  //     production caller (the Go runner or a test). No fake storage.
   const liveStore: Storage = ctx.store;
   const liveActor: ActorContext = ctx.actor;
 
@@ -143,7 +140,7 @@ export async function applyReviewed(
   //     PREVIEW_STALE error — the canonical signal that the operator
   //     reviewed a plan whose source has since disappeared. Translating
   //     NOT_FOUND into a typed drift error keeps the audit trail
-  //     unambiguous (matches the amendment's "drift" language) and
+  //     unambiguous and
   //     preserves the load-bearing safety that the apply refuses
   //     BEFORE any target mutation or audit receipt.
   let currentPreview: PreviewResult;
@@ -241,8 +238,7 @@ export async function applyReviewed(
  * Re-export alias. The owner-TS contract surface the test pins is the
  * symbol `applyReviewed` (see tests/materializers/connect/apply-reviewed.test.ts
  * line 385: `export async function applyReviewed(...)`). We also export
- * the lowercase symbol for parity with the slice JSON's
- * `recomputeBeforeApply` naming, but the production surface is
+ * the `recomputeBeforeApply` name, but the production surface is
  * `applyReviewed`.
  */
 export const recomputeBeforeApply = applyReviewed;

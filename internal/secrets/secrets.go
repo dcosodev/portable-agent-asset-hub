@@ -1,6 +1,6 @@
 // Package secrets is the single source of truth for the hub
-// bearer token lifecycle. Per docs/roadmap/slices.json (T3) the
-// shell's first-run init creates tokens/hub.token with mode 0600,
+// bearer token lifecycle. The shell's first-run init creates
+// tokens/hub.token with mode 0600,
 // `hub token show` redacts the bearer on every output surface, and
 // `hub token rotate` regenerates a fresh bearer on demand.
 //

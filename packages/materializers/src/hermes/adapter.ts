@@ -1,8 +1,6 @@
-// packages/materializers/src/hermes/adapter.ts
-//
 // Hermes adapter entrypoint. Owns the (renderer + apply + rollback)
 // trio for Hermes. The REST surface (`hermesMaterializerDispatcher`)
-// binds this adapter to the S7 dispatcher signature.
+// binds this adapter to the REST dispatcher signature.
 
 import type { ActorContext, Storage } from '@portable-agent-asset-hub/core';
 import {
@@ -88,8 +86,8 @@ export function hermesRollback(
 }
 
 /**
- * Dispatcher factory that adapts the S8 Hermes materializer to the
- * S6/S7 REST `dispatch(operationId, {body, params, query, actor, requestId})`
+ * Dispatcher factory that adapts the Hermes materializer to the
+ * REST `dispatch(operationId, {body, params, query, actor, requestId})`
  * signature. The three operations:
  *
  *   * previewMaterialization — no CAS, returns the preview.

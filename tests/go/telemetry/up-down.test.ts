@@ -1,6 +1,4 @@
-// tests/go/telemetry/up-down.test.ts
-//
-// T5 real-subprocess contract for `hub telemetry up` and `hub
+// Real-subprocess contract for `hub telemetry up` and `hub
 // telemetry down`. The tests build the hub binary with `go build
 // -trimpath` (via _telemetry-harness), then exercise the live
 // binary against a fake `docker` shim injected through PATH.
@@ -45,20 +43,14 @@
 //                                     canonical bearer env keys.
 //
 //   * the default compose file is the
-//     T5-owned top-level
+//     telemetry top-level
 //     docker-compose.observability.yml
-//                                   → the contract pins the slice's
-//                                     ownership of that file. A
-//                                     regression that points Detect
+//                                   → a regression that points Detect
 //                                     at observability/compose.yaml
 //                                     is fail-closed.
 //
-// The tests intentionally avoid redesigning the implementation: the
-// contract is asserted against the existing Service shape, the
-// existing fake-docker shim, and the existing harness. New
-// contracts (if any) belong in a future slice; this file only locks
-// the existing surface so a regression in up/down/status is
-// impossible.
+// The tests assert against the existing Service shape, the existing
+// fake-docker shim, and the existing harness.
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -167,7 +159,7 @@ describe('hub telemetry up — fake compose argv contract', () => {
     expect(res.stdout).toMatch(/^command=up$/m);
     expect(res.stdout).toMatch(/^project=hub-\d+-\d+$/m);
     expect(res.stdout).toMatch(/^engine=docker-compose$/m);
-    // The compose file MUST be the T5-owned top-level
+    // The compose file MUST be the telemetry top-level
     // docker-compose.observability.yml — NOT observability/compose.yaml.
     expect(res.stdout).toMatch(/^compose_file=.*\/docker-compose\.observability\.yml$/m);
     // Stderr stays empty on the success path.
@@ -201,7 +193,7 @@ describe('hub telemetry up — fake compose argv contract', () => {
     expect(argv[pIdx + 1]).toMatch(/^hub-\d+-\d+$/);
     const fIdx = argv.indexOf('-f');
     expect(fIdx).toBeGreaterThanOrEqual(0);
-    // The compose-file flag MUST point at the T5 top-level
+    // The compose-file flag MUST point at the top-level
     // observability compose file — never at the ADR-0004-protected
     // observability/compose.yaml. A regression that leaks through the
     // legacy path trips the gate before the operator can mutate the
@@ -231,10 +223,8 @@ describe('hub telemetry up — fake compose argv contract', () => {
     expect(parsed.engine).toBe('docker-compose');
     expect(typeof parsed.project).toBe('string');
     expect(typeof parsed.compose_file).toBe('string');
-    // The compose_file key MUST point at the T5 top-level
-    // observability compose file. The compose-yaml allowlist is a
-    // T5 contract surface (slices.json implementation_tasks) and
-    // a regression is fail-closed.
+    // The compose_file key MUST point at the top-level
+    // observability compose file; a regression is fail-closed.
     expect(parsed.compose_file).toMatch(/\/docker-compose\.observability\.yml$/);
     expect(Array.isArray(parsed.healthy)).toBe(true);
     expect(typeof parsed.started_at).toBe('string');

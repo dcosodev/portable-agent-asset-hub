@@ -1,12 +1,6 @@
-// packages/migration/src/index.ts
-//
-// Slice 10 migration package public surface.
-//
-// Every export listed here is part of the normative contract. Adding
-// or renaming exports requires a Slice 11 spec bump. The surface is
-// intentionally flat: callers reach the state-machine, the classifier,
-// the redactor, the storage port, and one factory per service
-// (export/import/shadow/replay/cutover/rollback/retirement).
+// Public surface of the migration package. Intentionally flat: callers
+// reach the state machine, the classifier, the redactor, the storage
+// port, and one factory per service.
 
 export {
   MIGRATION_STATES,

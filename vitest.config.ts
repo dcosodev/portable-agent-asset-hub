@@ -26,5 +26,10 @@ export default defineConfig({
   // lower-core runners several concurrent `go build`s can transiently
   // exceed 30s even though the same suite finishes in a few seconds
   // locally.
-  test: { include: ['tests/**/*.test.ts'], testTimeout: 20_000, hookTimeout: 60_000 },
+  test: {
+    include: ['tests/**/*.test.ts'],
+    globalSetup: ['tests/go-build-cache.global-setup.ts'],
+    testTimeout: 20_000,
+    hookTimeout: 60_000,
+  },
 });

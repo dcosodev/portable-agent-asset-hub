@@ -1,5 +1,3 @@
-// scripts/generate-sdks.mjs
-//
 // Real OpenAPI Generator 7.10.0 wrapper for the portable-agent-asset-hub SDKs.
 //
 // Behavior:
@@ -16,7 +14,7 @@
 //
 // This script never inlines or fabricates generated source. When the
 // generator is unavailable, the tree keeps the pinned contract wrapper and
-// fixtures, matching what s6-sdk-drift.test.ts expects.
+// fixtures, matching what sdk-drift.test.ts expects.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

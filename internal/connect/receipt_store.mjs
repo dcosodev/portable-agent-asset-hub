@@ -1,6 +1,4 @@
-// internal/connect/receipt_store.mjs
-//
-// T8 — durable rollback receipt store.
+// durable rollback receipt store.
 //
 // The receipt store is the cross-process rollback bridge for
 // `hub hub connect apply|rollback`. It lives entirely as flat
@@ -8,7 +6,7 @@
 //
 //   $HUB_HOME/state/connect/receipts/<runId>.json
 //
-// Per the T8 amendment (docs/roadmap/slices.json §T8) the
+// The
 // surface is:
 //
 //   * canonical bounded JSON schema (8 keys; deterministic
@@ -47,7 +45,7 @@
 //   * Cross-platform where feasible. macOS APFS and Linux
 //     ext4 honour POSIX `rename(2)` atomically when both
 //     endpoints share a filesystem. On Windows the surface
-//     is reduced (T8 is macOS / Linux only per the broader
+//     is reduced (macOS / Linux only per the broader
 //     product shell contract); we never rely on Windows-
 //     specific fallbacks.
 //
@@ -84,9 +82,8 @@ import { dirname, isAbsolute, join } from 'node:path';
 
 /**
  * Canonical bounded-schema version. Older or future versions are
- * refused (the amendment pins versioning as a hard requirement).
- * A v2 surface lands via a future slice amendment, not via silent
- * widening of the existing reader.
+ * refused. A v2 schema has to be added explicitly, not by silently
+ * widening the existing reader.
  */
 export const RECEIPT_SCHEMA_VERSION = 1;
 
@@ -108,9 +105,9 @@ export const RECEIPTS_DIR_MODE = 0o700;
 export const RECEIPT_FILE_MODE = 0o600;
 
 /**
- * Canonical sub-path under HUB_HOME. The amendment pins this
- * exact location (I-15: receipt under $HUB_HOME/state/connect/
- * receipts/, NEVER inside the user canonical data directory).
+ * Canonical sub-path under HUB_HOME: receipts live under
+ * $HUB_HOME/state/connect/receipts/, NEVER inside the user
+ * canonical data directory.
  */
 const RECEIPTS_SUBDIR = 'state/connect/receipts';
 
@@ -122,8 +119,8 @@ const RECEIPTS_SUBDIR = 'state/connect/receipts';
 export const RECEIPT_SUFFIX = '.json';
 
 /**
- * Closed set of accepted top-level keys. The amendment pins
- * exactly these eight keys; the reader fails closed on any
+ * Closed set of exactly eight accepted top-level keys; the
+ * reader fails closed on any
  * unknown top-level key and on any missing required key.
  */
 const CANONICAL_KEYS = Object.freeze([
@@ -203,7 +200,7 @@ const HUB_BEARER_ENV_ASSIGNMENT = /\bHUB_BEARER_TOKEN\b\s*=\s*[^\s,'"]+/i;
 /**
  * Receipt store error class. Callers map `code` to HTTP / exit
  * semantics. The `code` set is closed; new codes are introduced
- * only by an amendment.
+ * only by a contract change.
  */
 export class ReceiptStoreError extends Error {
   /**
@@ -285,10 +282,8 @@ export function receiptPath(hubHome, runId) {
  *      shape gates).
  *   2. mkdir -p the receipts directory AT mode 0700.
  *   3. lstat the canonical path → refuse to overwrite an
- *      existing receipt (the amendment pins "exactly one
- *      <runId>.json per apply"; a re-write would be a
- *      duplicate-state regression and a future shadow
- *      receipt).
+ *      existing receipt (there is exactly one
+ *      <runId>.json per apply).
  *   4. refuse when ANY path segment of the receipts directory
  *      chain (under hubHome) is a symlink (defensive against
  *      an attacker who symlinked the receipts directory to
@@ -345,9 +340,8 @@ export function write(hubHome, receipt) {
   // security concern).
   refuseIfAnySymlinkInChain(dir, hubHome);
 
-  // Do not silently overwrite an existing receipt. The
-  // amendment pins "one runId.json per apply" — a re-write
-  // would be a duplicate-state regression.
+  // Do not silently overwrite an existing receipt: there is one
+  // runId.json per apply.
   if (existsSync(finalPath)) {
     throw new ReceiptStoreError(
       ERROR_CODES.DUPLICATE,
@@ -560,8 +554,8 @@ export function list(hubHome) {
 /**
  * Consume a receipt: read it once, then delete the canonical
  * file. Used by the rollback verb to mark "this runId has been
- * rolled back" without keeping an in-memory map. The amendment
- * pins that we never delete the receipt inside a happy-path
+ * rolled back" without keeping an in-memory map. The receipt is
+ * never deleted inside a happy-path
  * apply; this entry point exists for future consume-scenarios
  * (e.g. an explicit `hub connect consume` operator verb). It
  * is fail-closed: refuses any receipt that fails the same
@@ -599,9 +593,8 @@ export function consume(hubHome, runId) {
  * operator-verb consume paths. Production apply never calls
  * this; apply writes, rollback reads but does NOT delete. The
  * entry point is exposed so the receipt store has a closed
- * "remove" surface per the amendment's "
- * receiptStore exposes explicit write/read/delete/consume
- * primitives but does not decide apply timing" mandate.
+ * "remove" surface: it exposes write/read/delete/consume primitives
+ * but does not decide apply timing.
  *
  * @param {string} hubHome
  * @param {string} runId
@@ -692,8 +685,8 @@ function validateReceipt(receipt) {
   if (!isAbsolute(receipt.lockDir)) {
     throw new ReceiptStoreError(ERROR_CODES.ABSOLUTE_REQUIRED, `receipt.lockDir "${receipt.lockDir}" is not absolute`);
   }
-  // Harness: closed enumeration. The amendment authorises
-  // "hermes" today; "openclaw" is parser-accepted but
+  // Harness: closed enumeration. Only "hermes" is accepted
+  // today; "openclaw" is parser-accepted but
   // apply+rollback close on "openclaw" at this layer.
   if (typeof receipt.harness !== 'string') {
     throw new ReceiptStoreError(ERROR_CODES.WRONG_TYPE, 'receipt.harness must be a string');

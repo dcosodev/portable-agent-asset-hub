@@ -2,8 +2,8 @@
 // the hub shell reads or writes. Per docs/architecture/go-product-shell.md
 // the canonical layout under HUB_HOME is:
 //
-//	state/    — TypeScript hub-rest runtime state (deferred; T1..T9)
-//	runtime/  — Compose project root (docker-stack orchestration; deferred)
+//	state/    — TypeScript hub-rest runtime state
+//	runtime/  — Compose project root (docker-stack orchestration)
 //	logs/     — hub.log (0600)
 //	tokens/   — hub.token (0600; bearer)
 //
@@ -39,17 +39,15 @@ import (
 type Subdirectory string
 
 const (
-	// SubState is the TypeScript hub-rest state root. T1..T9 wire the
-	// real REST process here; today the directory is reserved.
+	// SubState is the TypeScript hub-rest state root. Today the
+	// directory is reserved.
 	SubState Subdirectory = "state"
-	// SubRuntime is the Compose project root. Deferred to T2 (or
-	// whichever slice lands Docker); today the directory is reserved.
+	// SubRuntime is the Compose project root. Today the directory is reserved.
 	SubRuntime Subdirectory = "runtime"
-	// SubLogs is the hub.log directory. The shell writes here in
-	// later slices.
+	// SubLogs is the hub.log directory.
 	SubLogs Subdirectory = "logs"
 	// SubTokens is the bearer token directory. hub.token lives here
-	// with mode 0600 (deferred — T1 at the earliest).
+	// with mode 0600.
 	SubTokens Subdirectory = "tokens"
 )
 
@@ -147,7 +145,7 @@ func cleanAbs(p string) (string, error) {
 }
 
 // EnsureDir creates the directory at `path` with mode 0750 if it does
-// not exist. The function is exported because the s11 gate's hermetic
+// not exist. The function is exported because the shell tests' hermetic
 // fixture scaffolding uses it to create a fake HUB_HOME under
 // $TMPDIR; the production shell calls it from main.go when initialising
 // a fresh home. Idempotent.

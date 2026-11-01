@@ -1,16 +1,10 @@
-// tests/go/distribution/_harness-selfcheck.test.ts
+// Harness self-check for the distribution suite.
 //
-// Harness self-check for the T9 distribution suite.
-//
-// This file does NOT assert anything about T9 production behaviour. Its
+// This file does NOT assert anything about production behaviour. Its
 // only job is to prove the hermetic harness itself is sound, so that
-// when the T9 contract tests fail they fail for a PRODUCT reason and not
+// when the distribution tests fail they fail for a PRODUCT reason and not
 // because the fixture, the go build, the tar helpers, or the SQLite
 // provisioning is broken.
-//
-// The distinction matters: a RED suite whose failures come from harness
-// breakage is worthless as TDD evidence. These checks are expected to be
-// GREEN both before and after T9 lands.
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { existsSync, writeFileSync } from 'node:fs';
@@ -49,7 +43,7 @@ function fixture(label: string): FreshInstallFixture {
   return fx;
 }
 
-describe('T9 harness self-check — build + dispatch', () => {
+describe('distribution harness self-check — build + dispatch', () => {
   it('go build -trimpath produces a runnable hub binary', () => {
     const { binary } = buildDistributionBinary();
     expect(existsSync(binary)).toBe(true);
@@ -64,7 +58,7 @@ describe('T9 harness self-check — build + dispatch', () => {
   }, 120_000);
 });
 
-describe('T9 harness self-check — fresh install fixture', () => {
+describe('distribution harness self-check — fresh install fixture', () => {
   it('provisions a real migrated canonical database carrying the fixture marker', () => {
     const fx = fixture('selfcheck-db');
     expect(existsSync(fx.databasePath)).toBe(true);
@@ -101,7 +95,7 @@ describe('T9 harness self-check — fresh install fixture', () => {
   }, 120_000);
 });
 
-describe('T9 harness self-check — archive + filesystem helpers', () => {
+describe('distribution harness self-check — archive + filesystem helpers', () => {
   it('listArchiveEntries / extractArchive / archiveContainsMarker work on a real tar.gz', () => {
     const fx = fixture('selfcheck-tar');
     const payloadDir = join(fx.home, 'payload');
@@ -133,7 +127,7 @@ describe('T9 harness self-check — archive + filesystem helpers', () => {
   }, 120_000);
 
   it('secret-shape and bearer-shape predicates classify the pinned patterns', () => {
-    // The exact glob set the T9 amendment pins.
+    // The exact glob set.
     for (const secret of [
       'tokens/hub.token',
       'state/tokens/anything.txt',

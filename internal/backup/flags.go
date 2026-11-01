@@ -1,5 +1,5 @@
-// Package backup is the T9 dispatcher surface for `hub backup`.
-// Per docs/roadmap/slices.json slice `T9` the backup verb is
+// Package backup is the dispatcher surface for `hub backup`.
+// The backup verb is
 // exactly:
 //
 //	hub backup --out <archive>      (snapshot)
@@ -15,9 +15,8 @@
 // path from HUB_HOME, or carry a parallel DB fallback. The single
 // source of truth for the database path is
 // `@portable-agent-asset-hub/core`'s `resolveHubDatabasePath`,
-// reached through the .mjs child — never re-implemented here. This
-// is the T9 slice's "no fallback / no parallel DB" invariant
-// enforced by construction.
+// reached through the .mjs child — never re-implemented here, so
+// there is no fallback and no parallel DB by construction.
 //
 // Security invariants this package enforces by construction:
 //
@@ -34,7 +33,7 @@
 //     stderr line goes through output.Redact so a captured token
 //     in a config file never reaches the operator.
 //
-//   - Token / secret exclusion (I-15). The snapshot set is the
+//   - Token / secret exclusion. The snapshot set is the
 //     resolver-canonical SQLite DB only — never a HUB_HOME DB,
 //     never a parallel DB, never the tokens directory, never a
 //     secret-shaped file. The child also carries a defensive
@@ -91,8 +90,7 @@ type BackupFlags struct {
 	// Action is the parsed direction (snapshot | restore). Empty
 	// means the operator did not select a direction — the
 	// dispatcher treats this as a contract violation because
-	// the amendment pins exactly two mutually-exclusive
-	// operations.
+	// there are exactly two mutually-exclusive operations.
 	Action BackupAction
 	// Out is the explicit --out value (absolute path).
 	// Required when Action == ActionSnapshot; ignored when
@@ -117,8 +115,7 @@ type BackupFlags struct {
 // ActionSnapshot so the dispatcher can derive the canonical
 // default archive location ($HUB_HOME/state/backups/<ts>.tar.gz)
 // — this matches the round-trip suite's "default archive
-// location" case. The amendment pins the two flag forms and the
-// default-location behaviour; the bare command is the
+// location" case. The bare command is the
 // no-argument entry point the operator reaches from a shell
 // muscle-memory `hub backup` invocation.
 //
@@ -172,8 +169,7 @@ func ParseBackupFlags(argv []string) (BackupFlags, error) {
 			// Anything else is outside the pinned surface.
 			// Positionals (e.g. `hub backup snapshot`) and
 			// unknown flags (e.g. `--archive`, `--upload`)
-			// both surface here. The amendment rejects
-			// every entry on this branch.
+			// both surface here and are rejected.
 			return BackupFlags{}, fmt.Errorf("hub backup: unknown argument %q (expected --out <archive> or --restore <archive>)", arg)
 		}
 	}

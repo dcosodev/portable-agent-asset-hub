@@ -96,7 +96,7 @@ x-request-id
 ```
 
 These headers must not be writable from model-controlled input. Integration
-seams for REST and MCP enforce this in their respective slices; the kernel
+seams for REST and MCP enforce this; the kernel
 exposes the helpers, not the enforcement.
 
 ## Environment variables
@@ -130,7 +130,7 @@ and metrics on `:9464`; Grafana uses `http://tempo:3200` and
 `http://prometheus:9090`. Only authenticated REST on host loopback `39421`
 and Grafana on host loopback `3000` are published by default.
 
-The verified gate is `pnpm docker:gate`. Its runtime smoke uses dynamic host
+The end-to-end check is `pnpm docker:gate`. Its runtime smoke uses dynamic host
 ports and an isolated Compose project, so it can run beside the persistent
 development stack. It builds both ARM64
 Hub images, drives real requests, requires non-empty PromQL and Tempo results,

@@ -1,13 +1,8 @@
-// tests/go/connect/apply-reviewed-digest.test.ts
-//
-// T8 RED contract (digest/recompute/CAS, AMENDMENT-aligned).
-//
-// This file pins the contract for `hub hub connect apply` against the
-// authorized amendment, NOT against the legacy "byte-stable raw JSON
-// across processes" assertion set. Three load-bearing pieces:
+// `hub hub connect apply` and its reviewed-digest gate. Raw JSON
+// is not asserted to be byte-stable across processes. Three key rules:
 //
 //   1. --reviewed-digest is REQUIRED. Missing → exit 2 BEFORE the
-//      adapter runs (closed-by-default, audit I-11). The diagnostic
+//      adapter runs (closed by default). The diagnostic
 //      must name the missing flag.
 //
 //   2. --reviewed-digest is FORMAT-STRICT. Any value that is not
@@ -42,11 +37,6 @@
 //     layer is independent: tests prove that `reviewedDigest`
 //     equality does NOT substitute for the CAS compare.
 //
-// Today (pre-T8) every test in this file is RED: the dispatcher
-// rejects `hub hub connect` with exit 2 / "unknown command". Once
-// T8 lands production, the SAME assertions flip GREEN with zero
-// changes — that is the point of writing them first.
-//
 // Hermetic fixtures: per-test HUB_HOME + targetRoot + lockDir
 // mkdtemps, no SQLite migrations, no Docker, no public services,
 // no canonical data. The Go shell + child Node + adapter are the
@@ -70,7 +60,7 @@ const FAKE_HEX_64 = '0'.repeat(64);
 // packages/materializers/src/manifest.ts `digestPlan` output.
 const PLAN_DIGEST_REGEX = /^[0-9a-f]{64}$/u;
 
-describe('hub hub connect apply — reviewed-digest refusal (T8, I-11)', () => {
+describe('hub hub connect apply — reviewed-digest refusal', () => {
   let homeCleanup: (() => void) | undefined;
   let targetCleanup: (() => void) | undefined;
   let lockCleanup: (() => void) | undefined;
@@ -90,7 +80,7 @@ describe('hub hub connect apply — reviewed-digest refusal (T8, I-11)', () => {
   });
 
   // -----------------------------------------------------------------
-  // 1. Required-flag refusal. The slice contract is explicit:
+  // 1. Required-flag refusal:
   //    apply without --reviewed-digest must be refused BEFORE the
   //    adapter is invoked. Exit 2 + stderr diagnostic naming the
   //    missing flag.
@@ -117,10 +107,9 @@ describe('hub hub connect apply — reviewed-digest refusal (T8, I-11)', () => {
     // Exit 2 (contract violation) — the missing --reviewed-digest
     // is a CLI contract violation, NOT an operator/runtime error.
     expect(res.status, `stderr=${JSON.stringify(res.stderr)}`).toBe(2);
-    // The diagnostic MUST name the missing flag. The slice says
-    // the audit trail must show the refusal happened in the Go
-    // shell; a missing-name diagnostic is the cheapest way to
-    // assert that contract from the outside.
+    // The diagnostic MUST name the missing flag. That is the
+    // cheapest way to show from the outside that the refusal
+    // happened in the Go shell.
     expect(res.stderr).toMatch(/--reviewed-digest/);
   }, 30_000);
 
@@ -228,14 +217,14 @@ describe('hub hub connect apply — reviewed-digest refusal (T8, I-11)', () => {
   }, 30_000);
 
   // -----------------------------------------------------------------
-  // 3. Mismatch refusal. The slice contract says the apply must
+  // 3. Mismatch refusal. The apply must
   //    refuse any --reviewed-digest that does not match the
   //    current planDigest computed by owner TS in process B.
   //    For an unchanged logical source, currentPlanDigest MUST
   //    equal planDigest from preview A. A reviewer that passed a
   //    format-valid but never-reviewed digest MUST be refused
   //    with a typed PREVIEW_STALE contract error (or its
-  //    amendment-equivalent) BEFORE any target mutation.
+  //    equivalent) BEFORE any target mutation.
   //
   //    The diagnostic must surface the digest mismatch — not just
   //    a generic "apply failed". Without this, an operator cannot
@@ -281,8 +270,8 @@ describe('hub hub connect apply — reviewed-digest refusal (T8, I-11)', () => {
   }, 30_000);
 
   // -----------------------------------------------------------------
-  // 4. Required-flag matrix. The slice commits to a closed-by-
-  //    default apply surface: missing --reason, --request-id, or
+  // 4. Required-flag matrix. The apply surface is closed by
+  //    default: missing --reason, --request-id, or
   //    --lock-dir must each be a separate exit-2 contract
   //    violation so the audit can pinpoint which knob was wrong.
   // -----------------------------------------------------------------
@@ -379,7 +368,7 @@ describe('hub hub connect apply — reviewed-digest refusal (T8, I-11)', () => {
     expect(previewPayload.planDigest, `planDigest missing from preview payload: ${JSON.stringify(previewPayload)}`).toMatch(PLAN_DIGEST_REGEX);
 
     // Step 2: apply with the preview's planDigest as the
-    // --reviewed-digest. The slice says this is the ONLY way the
+    // --reviewed-digest. This is the ONLY way the
     // apply can succeed: the operator has explicit, auditable
     // proof they saw the preview and confirmed the digest.
     const apply = await runConnect(
@@ -412,10 +401,9 @@ describe('hub hub connect apply — reviewed-digest refusal (T8, I-11)', () => {
     expect(Array.isArray(applyPayload.writtenFiles)).toBe(true);
 
     // Anti-aliasing: planDigest (content) and observedDigest (CAS
-    // manifest on disk) MUST NOT be conflated. The amendment
-    // explicitly requires the test layer to lock this down. For
+    // manifest on disk) MUST NOT be conflated. For
     // an applied materialization they will both be present; they
-    // serve different purposes (one is the reviewed contract
+    // serve different purposes (one is the reviewed plan
     // digest, the other is the live manifest CAS digest).
     expect(applyPayload.observedDigest, 'observedDigest aliases planDigest — CAS independence broken').toBeDefined();
   }, 60_000);
@@ -495,7 +483,7 @@ describe('hub hub connect apply — reviewed-digest refusal (T8, I-11)', () => {
   }, 60_000);
 
   // -----------------------------------------------------------------
-  // 7. CAS independence. The slice says `observedDigest` /
+  // 7. CAS independence. `observedDigest` /
   //    `expectedDigest` (CAS for manifest drift detection) and
   //    `planDigest` / `reviewedDigest` (content digest the
   //    reviewer carries) are SEPARATE concepts. A regression that
@@ -506,9 +494,7 @@ describe('hub hub connect apply — reviewed-digest refusal (T8, I-11)', () => {
   //    contract errors.
   //
   //    This test probes the surface for a CAS mismatch while the
-  //    reviewedDigest would otherwise be accepted. Today (pre-T8)
-  //    the dispatcher is RED — exit 2 "unknown command". Once
-  //    production lands, the test asserts:
+  //    reviewedDigest would otherwise be accepted. It asserts:
   //      * exit ≠ 0 (CAS surfaced, not silently swallowed);
   //      * stderr names a CAS-class error, NOT a planDigest
   //        mismatch, because the reviewedDigest equality was held.
@@ -576,7 +562,7 @@ describe('hub hub connect apply — reviewed-digest refusal (T8, I-11)', () => {
   }, 60_000);
 
   // -----------------------------------------------------------------
-  // 8. Lock-contention mapping. The slice says lock contention at
+  // 8. Lock-contention mapping. Lock contention at
   //    the TS adapter boundary maps to 409. The CLI must surface
   //    that as a non-zero exit — NOT a silent success.
   //    The hermetic trigger is two concurrent apply subprocesses
@@ -637,9 +623,8 @@ describe('hub hub connect apply — reviewed-digest refusal (T8, I-11)', () => {
 
     const successes = [a, b].filter((r) => r.status === 0);
     const failures = [a, b].filter((r) => r.status !== 0);
-    // The slice mandates: lock contention is surfaced as a
-    // non-zero exit. The exact exit (1 or 2) is owned by the
-    // production author; the contract is "at least one failure".
+    // Lock contention is surfaced as a non-zero exit. The exact
+    // exit (1 or 2) is not asserted, only at least one failure.
     expect(successes.length, `both concurrent applies succeeded (lock failed open): a=${a.status} b=${b.status}`).toBeLessThan(2);
     expect(failures.length, `neither concurrent apply surfaced lock contention`).toBeGreaterThan(0);
     // Every failure must surface a diagnostic on stderr so the

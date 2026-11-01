@@ -1,6 +1,4 @@
-// packages/migration/src/shadow.ts
-//
-// Slice 10 shadow service.
+// Shadow service.
 //
 // The shadow service writes to a SEPARATE namespace from the canonical
 // hub database. It NEVER dual-writes; observations are recorded against
@@ -9,10 +7,9 @@
 // safety property of shadow mode: if shadow blows up, the canonical
 // store is untouched.
 //
-// For S10 GREEN core, observation storage is in-process: a side map
-// keyed by runId holds the observation count and the recorded records.
-// The full persistence of observations (so shadow can survive a
-// restart) is out of scope for this slice — only the contract is pinned.
+// Observation storage is in-process: a side map keyed by runId holds the
+// observation count and the recorded records, so shadow state does not
+// survive a restart.
 
 import type { MigrationRunRecord, MigrationStorage } from './storage.js';
 import { adaptMigrationStorage } from './storage-adapter.js';

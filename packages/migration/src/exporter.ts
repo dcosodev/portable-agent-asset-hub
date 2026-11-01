@@ -1,6 +1,4 @@
-// packages/migration/src/exporter.ts
-//
-// Slice 10 deterministic export service.
+// Deterministic export service.
 //
 // The exporter reads rows from a SourceAdapter (e.g. the python-v2
 // adapter) and writes a deterministic NDJSON bundle to `workdir`:

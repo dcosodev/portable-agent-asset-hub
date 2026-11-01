@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/claude-code/index.ts
-//
 // Claude Code harness implementation. The harness-native config file
 // is `.mcp.json` (Claude Code MCP servers block); the wrapper is
 // `CLAUDE.md`.

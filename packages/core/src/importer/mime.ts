@@ -1,5 +1,3 @@
-// packages/core/src/importer/mime.ts
-//
 // Deterministic, narrow MIME detector used by the skill pack importer.
 //
 // The contract is "good enough for REST consumers" — we never depend

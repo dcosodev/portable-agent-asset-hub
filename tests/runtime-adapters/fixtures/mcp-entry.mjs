@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// tests/runtime-adapters/fixtures/mcp-entry.mjs
-//
-// A minimal MCP stdio server fixture used by the FASE 4 descriptor
+// A minimal MCP stdio server fixture used by the descriptor
 // tests. Reads JSON-RPC requests line-by-line from stdin, replies
 // to `initialize` and `tools/list` with the canonical
 // agent-memory tool surface used by every harness.

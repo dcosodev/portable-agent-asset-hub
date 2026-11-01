@@ -1,11 +1,9 @@
-// packages/rest/src/routes/explicit-relations.ts
-//
 // REST routes for the explicit-relation extractor. Read-only, with one
 // stage action that reuses the production RelationProposalRepository.
 //
 // Each route's `pattern` is declared as a RegExp literal directly
-// inside the entry. The S6 structural test in
-// `tests/rest/s6-routes-modularization.test.ts` extracts these with
+// inside the entry. The OpenAPI structural test in
+// `tests/rest/routes-modularization.test.ts` extracts these with
 // a `pattern:\s*(\/.*\/[gimsuy]*)` regex. To keep the greedy `.*`
 // from crossing route boundaries, we use a non-greedy variant of
 // the pattern (`^` anchored at the start of the literal) so the

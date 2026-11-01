@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// internal/backup/backup_runner.mjs
-//
-// T9 child Node process for `hub backup --out <archive>` and
+// Child Node process for `hub backup --out <archive>` and
 // `hub backup --restore <archive>`.
 //
 // Contract (mirrored in internal/backup/runner.go):
@@ -38,8 +36,7 @@
 //     NEVER walk a HUB_HOME/*.sqlite fallback. The child's argv
 //     envelope carries the single resolved path the Go side got from
 //     resolveHubDatabasePath; the Go side got it through the same
-//     authoritative resolution (no other resolution is allowed by
-//     the slice contract).
+//     authoritative resolution (no other resolution is allowed).
 //
 //   * ATOMIC OUTPUT. The archive is staged to a sibling tmpfile in
 //     the same directory as the destination, fsync'd, chmod 0600,
@@ -58,7 +55,7 @@
 //         `*.pem`, `*token*`, `*secret*`, `*.env`, `*.key`
 //     The exclusion is a LIVE rule on the snapshot set, not a
 //     hardcoded list: a secret-shaped file written AFTER `hub init`
-//     must still be excluded. For T9's narrow scope the snapshot
+//     must still be excluded. Given the narrow scope the snapshot
 //     set is the canonical DB only, so the exclusion rule is
 //     structural defence-in-depth rather than a hot path.
 //
@@ -224,8 +221,8 @@ function stageSnapshot(archivePath, dbPath) {
     //
     //    PORTABILITY NOTE: the system tar may be the BSD variant on
     //    macOS (libarchive 3.x) which does NOT accept GNU's
-    //    `--mode=0600` flag. The slice contract pins the archive file
-    //    mode at 0600, but pins it on the FILE, not on tar entries
+    //    `--mode=0600` flag. The archive file mode is 0600, but that
+    //    applies to the FILE, not to tar entries
     //    (the snapshot set is a single regular file we chmod
     //    ourselves before staging). We omit `--mode` entirely and
     //    enforce 0600 on the archive file via Node's chmodSync after
@@ -256,10 +253,9 @@ function stageSnapshot(archivePath, dbPath) {
       );
     }
 
-    // 4) Enforce 0600 explicitly on the staged tmpfile. The slice
-    //    contract is "archive file mode 0600"; we hold that on the
-    //    FILE (post-staging, post-rename, verified) so the contract
-    //    is independent of the system tar's idea of entry mode bits.
+    // 4) Enforce 0600 explicitly on the staged tmpfile. This holds on
+    //    the FILE (post-staging, post-rename, verified), independent of
+    //    the system tar's idea of entry mode bits.
     chmodSync(tmpArchive, 0o600);
 
     // 5) Enforce archive byte cap.

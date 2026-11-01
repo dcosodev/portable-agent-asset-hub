@@ -1,6 +1,4 @@
-// packages/skill-export/src/types.ts
-//
-// Public contract for the FASE 5 skill exporter. The exporter is a
+// Public contract for the skill exporter. The exporter is a
 // read-only projection that walks `skill_entries` (filtered by
 // `lifecycle = 'active'` and the actor's scope) and produces a
 // deterministic, metadata-only `SkillExportPlan`. Body bytes and

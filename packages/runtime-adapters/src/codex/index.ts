@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/codex/index.ts
-//
 // Codex harness implementation. The harness-native config file is
 // `.codex/config.toml` (Codex CLI MCP servers block); the wrapper is
 // `AGENTS.md`.

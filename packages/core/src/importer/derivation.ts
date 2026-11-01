@@ -1,6 +1,4 @@
-// packages/core/src/importer/derivation.ts
-//
-// Phase 2 — Pure skill name derivation helpers.
+// Pure skill name derivation helpers.
 //
 // These helpers NEVER touch the filesystem, NEVER depend on `node:fs`
 // or `node:path`, and have no observable side effects. They belong in

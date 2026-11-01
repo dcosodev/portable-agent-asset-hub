@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/internal/deep-readonly.ts
-//
 // Minimal deep-readonly helper. Kept local because the codebase uses
 // `readonly` annotations on `PlanFile[]` already and a dependency on
 // a third-party library would be overkill for one utility.

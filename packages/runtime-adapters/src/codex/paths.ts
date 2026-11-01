@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/codex/paths.ts
-//
 // Codex harness layout. Every renderer owns exactly one file per
 // layer; the apply pipeline writes them at their relative paths.
 //

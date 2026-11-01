@@ -1,6 +1,4 @@
-// tests/runtime-adapters/factories.mts
-//
-// Shared test helpers for the FASE 4 `runtime-adapters` test
+// Shared test helpers for the `runtime-adapters` test
 // suite. All factories return real, on-disk artefacts rooted in a
 // per-test tmpdir that the suite cleans up after each test.
 

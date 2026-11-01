@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/templates/wrapper.ts
-//
 // The wrapper is a small plain-text file the harness reads at boot.
 // It is intentionally a *pointer*, not the data: the data lives in
 // the canonical SQLite database, available through the agent-memory

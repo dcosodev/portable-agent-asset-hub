@@ -1,7 +1,5 @@
-// tests/go/init/_init-harness.ts
-//
-// Shared subprocess harness for the T3 init/token subprocess tests.
-// Mirrors tests/go/shell/_hub-harness.ts but specialised for T3:
+// Shared subprocess harness for the init/token subprocess tests.
+// Mirrors tests/go/shell/_hub-harness.ts but specialised for init/token:
 //   * builds the hub binary once per process (with -trimpath)
 //   * exposes runHub() with a per-call fresh HOME so HUB_HOME /
 //     HUB_OPENAPI can be overridden per case

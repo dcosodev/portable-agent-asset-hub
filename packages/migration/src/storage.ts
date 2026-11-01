@@ -1,9 +1,7 @@
-// packages/migration/src/storage.ts
-//
-// Slice 10 storage port. Defines the *minimal* persistence contract
-// that the migration package needs from the storage layer. The
-// canonical implementation lives in storage-sqlite; tests in Slice 10
-// use an in-memory stub that satisfies the same interface.
+// Storage port. Defines the *minimal* persistence contract that the
+// migration package needs from the storage layer. The canonical
+// implementation lives in storage-sqlite; tests use an in-memory stub
+// that satisfies the same interface.
 //
 // IMPORTANT: this port is intentionally narrow. It does NOT expose the
 // full Storage transaction interface; the migration package must be

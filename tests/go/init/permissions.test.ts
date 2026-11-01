@@ -1,7 +1,5 @@
-// tests/go/init/permissions.test.ts
-//
-// T3 contract for token-file permissions and `hub token show` redacted
-// surface. Per docs/roadmap/slices.json (T3):
+// Contract for token-file permissions and `hub token show` redacted
+// surface.
 //
 //   * verify tokens/hub.token is 0600
 //   * verify no bearer in logs after rotate

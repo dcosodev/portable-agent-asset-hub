@@ -1,5 +1,3 @@
-// packages/mcp/src/stdio-entry.ts
-//
 // Executable stdio entrypoint for the Agent Memory Hub MCP server. This
 // file is the only piece of the @portable-agent-asset-hub/mcp package
 // that reads environment variables and writes to the process logs.

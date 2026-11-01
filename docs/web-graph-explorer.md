@@ -238,7 +238,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
-pnpm s6:drift
+pnpm openapi:drift
 curl -fsS http://127.0.0.1:39422/api/v1/admin/doctor | jq -e '.ok == true'
 sqlite3 /absolute/path/hub.sqlite 'PRAGMA integrity_check; PRAGMA foreign_key_check;'
 ```

@@ -1,6 +1,6 @@
 # `@portable-agent-asset-hub/baseline`
 
-Public-surface baseline tooling used by the S0 gate: builds and verifies a
+Public-surface baseline tooling used by the baseline gate: builds and verifies a
 manifest of exactly which files are allowed to be part of the public
 export, and validates the input JSON Schemas the contract depends on.
 
@@ -31,8 +31,8 @@ export, and validates the input JSON Schemas the contract depends on.
 
 ## Role in the system
 
-This package backs `pnpm baseline:audit` (`scripts/s0-audit.mjs`) and the
-S0 gate — see the root [`README.md`](../../README.md#staged-gates-s0s10).
+This package backs `pnpm baseline:audit` (`scripts/baseline-audit.mjs`) and
+`pnpm baseline:gate`. See [`docs/validation.md`](../../docs/validation.md#local-gates).
 It is deliberately paranoid about path handling (no symlinks, no
 traversal, canonical-path-only) because its entire job is proving a
 negative: that nothing outside the declared allowlist made it into the

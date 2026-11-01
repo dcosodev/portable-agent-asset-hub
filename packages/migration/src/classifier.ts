@@ -1,6 +1,4 @@
-// packages/migration/src/classifier.ts
-//
-// Slice 10 data classifier. Walks a record and assigns each leaf a
+// Data classifier. Walks a record and assigns each leaf a
 // classification from {PUBLIC, INTERNAL, SENSITIVE, SECRET}. The classifier
 // is *key-shape-driven*: a key whose name matches a "secret-shaped"
 // pattern (apiKey, api_key, password, secret, token, cookie, …) is

@@ -1,5 +1,3 @@
-// tests/storage-sqlite/explicit-relations.test.ts
-//
 // Tests for the production-side explicit-relation extractor and
 // its SQLite adapter. These tests use the `HubDatabase` accessor
 // (test boundary) to populate fixture skills with metadata.hermes.related_skills.

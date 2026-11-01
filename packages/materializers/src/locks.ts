@@ -1,6 +1,4 @@
-// packages/materializers/src/locks.ts
-//
-// Per-(harness,profile) mutual-exclusion lock for the S8 materializer.
+// Per-(harness,profile) mutual-exclusion lock for the materializers.
 // The lock file lives next to the manifest so it travels with the
 // target; the lock directory is `targetRoot/.pah/locks` by default.
 //
@@ -13,7 +11,7 @@
 //     caller is responsible for releasing on every code path — apply
 //     and rollback both release through their `finally` blocks.
 //   * Lock root must not be a symlink (defence in depth; matches the
-//     `FileMaterializer` rule from Slice 4).
+//     `FileMaterializer` rule).
 
 import { existsSync, lstatSync, mkdirSync, openSync, closeSync, unlinkSync, writeFileSync, readFileSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';

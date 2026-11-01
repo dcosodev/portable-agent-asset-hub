@@ -17,7 +17,7 @@ export default tseslint.config(
   {
     // `.tmp-*/` are per-run scratch directories created by
     // `mkdtempSync` in tests and scripts (the stdio smoke uses
-    // `.tmp-s7-mcp-*`, replay tests use `.tmp-test-*`). They contain
+    // `.tmp-mcp-*`, replay tests use `.tmp-test-*`). They contain
     // generated `.mjs` shims with bare Node globals (`console`,
     // `process`) which would otherwise trip `no-undef`. `test-stdio.mjs`
     // is a developer scratch probe at the repo root — same globals, no
@@ -70,7 +70,7 @@ export default tseslint.config(
     languageOptions: { globals: nodeGlobals },
   },
   {
-    // FASE 4 runtime-adapters fixture scripts (`fake-rest.mjs`,
+    // Runtime-adapters fixture scripts (`fake-rest.mjs`,
     // `mcp-entry.mjs`) are short Node entry points used by the
     // vitest suite. Like `scripts/**/*.mjs` they use bare Node
     // globals (`process`, `console`) so we extend the same globals

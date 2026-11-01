@@ -1,6 +1,4 @@
-// tests/go/shell/version.test.ts
-//
-// T1 real-subprocess contract for `hub --version` / `hub version` /
+// Real-subprocess contract for `hub --version` / `hub version` /
 // `hub version --json`. The tests build a temp hub binary with
 // `go build -trimpath`, then spawn it for every case and assert on
 // the LIVE output — no static regex over the source. The contract

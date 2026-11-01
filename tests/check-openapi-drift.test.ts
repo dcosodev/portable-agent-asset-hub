@@ -1,10 +1,8 @@
-// tests/check-openapi-drift.test.ts
-//
 // Detection tests for `scripts/check-openapi-drift.mjs`. The script is the
 // gate that decides whether the OpenAPI surface, REST routes, and drift
 // detection are still in parity. These tests pin three things:
 //
-//   1. Salida OK on the real repo: 26 operations, 26 REST routes, refs
+//   1. Passes on the real repo: 26 operations, 26 REST routes, refs
 //      resolved, no errors, artifact written.
 //
 //   2. The errors.yaml <-> schemas.yaml logical alias is honored:

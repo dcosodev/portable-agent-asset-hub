@@ -9,8 +9,8 @@
 //
 // Every field carries an explicit JSON tag and explicit zero
 // values that map "nothing to report" to the operator-visible
-// empty form (empty string / empty slice). The slice mandates
-// no Date.now()-style timestamps in the JSON payload; the
+// empty form (empty string / empty slice). The JSON payload has
+// no Date.now()-style timestamps; the
 // runner stamps a fixed generatedAt so two previews of the same
 // plan produce byte-identical JSON, which is the invariant the
 // deterministic-output suite asserts on.
@@ -38,10 +38,9 @@ type PreviewPayload struct {
 	// (volatile runId / generatedAt normalised out). This is the
 	// value the operator carries across the preview→apply boundary
 	// as `--reviewed-digest`. It is byte-deterministic across two
-	// previews of the same logical input. The amendment pins
-	// planDigest as a distinct field from observedDigest so the
-	// audit trail can disambiguate the reviewed contract digest
-	// from the live CAS manifest digest.
+	// previews of the same logical input. It is a distinct field
+	// from observedDigest so the audit trail can tell the reviewed
+	// plan digest from the live CAS manifest digest.
 	PlanDigest string `json:"planDigest"`
 	// Profile is the resolved Profile the adapter returned;
 	// surfaced for human readers without parsing the plan.
@@ -94,17 +93,14 @@ type ApplyPayload struct {
 	RunID          string   `json:"runId"`
 	ObservedDigest string   `json:"observedDigest"`
 	WrittenFiles   []string `json:"writtenFiles"`
-	// BackupRoot is the on-disk path the apply created. The
-	// slice does not require surfacing it; we include it so a
-	// future operator action (e.g. manual rollback in
-	// `docs/architecture/operator-shell.md`) can find the
-	// backup without re-scanning the target.
+	// BackupRoot is the on-disk path the apply created. It is
+	// included so a future operator action (e.g. a manual
+	// rollback) can find the backup without re-scanning the target.
 	BackupRoot string `json:"backupRoot"`
 }
 
 // RollbackPayload is the JSON shape returned by a successful
-// `hub hub connect rollback --json`. The slice mandates
-// (runId, restored[]); we project only those keys.
+// `hub hub connect rollback --json`.
 type RollbackPayload struct {
 	Command  string   `json:"command"`
 	Action   string   `json:"action"`

@@ -1,6 +1,6 @@
 // internal/connect — regexes and shared constants.
 //
-// These patterns are the canonical T8 surface validation, mirrored
+// These patterns are the canonical surface validation, mirrored
 // from packages/materializers/src/{preview,apply,rollback}.ts. The
 // Go side MUST refuse invalid inputs BEFORE the adapter runs so the
 // audit trail clearly attributes the rejection to the Go shell
@@ -12,7 +12,7 @@ package connect
 
 import "regexp"
 
-// profileIDRegex matches a slice-mandated profile id:
+// profileIDRegex matches a required profile id:
 // "prf_" followed by one or more of [A-Za-z0-9._-].
 //
 // Mirrors: packages/materializers/src/preview.ts

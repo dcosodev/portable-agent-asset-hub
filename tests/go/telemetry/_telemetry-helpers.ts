@@ -1,10 +1,8 @@
-// tests/go/telemetry/_telemetry-helpers.ts
-//
-// Shared assertion helpers for the T5 telemetry subprocess tests
+// Shared assertion helpers for the telemetry subprocess tests
 // (up-down.test.ts and loopback-only.test.ts). The helpers mirror
-// _runtime-helpers.ts so the T2 and T5 surfaces read alike — the
-// only difference is the compose-file path (T5 owns the top-level
-// docker-compose.observability.yml that the slice adds).
+// _runtime-helpers.ts so the two surfaces read alike — the
+// only difference is the compose-file path (the top-level
+// docker-compose.observability.yml).
 //
 // Every helper documents the invariant it locks. Adding a new
 // helper is a contract-visible change — a new envelope assertion
@@ -118,12 +116,12 @@ export function expectComposeLeader(argv: readonly string[]): void {
 
 /**
  * I-10 (loopback-first) defence-in-depth: assert the recorded argv
- * does NOT carry any non-loopback bind literal. The T5 surface
+ * does NOT carry any non-loopback bind literal. The surface
  * binds every published port to 127.0.0.1; a regression that lets
  * `0.0.0.0` / `8.8.8.8` / `::` slip through trips the gate before
  * any public socket can be opened.
  *
- * T5's compose-file surface uses Docker Compose's `127.0.0.1:HOST:CONTAINER`
+ * The compose-file surface uses Docker Compose's `127.0.0.1:HOST:CONTAINER`
  * port syntax — the only thing we can grep on is the absence of
  * non-loopback IP literals and the absence of bare port mappings
  * (e.g. `HOST:CONTAINER` with no host literal). Any bare mapping

@@ -1,5 +1,3 @@
-// packages/mcp/src/tool-registry.ts
-//
 // The tool registry. The static manifest (generated-tool-metadata.ts) is
 // the canonical source of truth; the registry exposes it as maps for
 // fast lookup and lists the operationIds in the same order the contract

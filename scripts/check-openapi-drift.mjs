@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-// scripts/check-openapi-drift.mjs
-//
 // Drift detector for openapi/openapi.yaml and the split files in
 // openapi/components/. Checks:
 //
@@ -39,11 +37,8 @@ const KNOWN_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 // Canonical operation set. The drift detector refuses to pass unless the
 // spec declares exactly these operationIds — in any order — so accidental
 // renames or additions show up as failures instead of silently shipping.
-//   Phase 1 added the four skill operations on top of the 22 pre-existing
-// ones (searchSkills, getSkill, listSkillResources, readSkillResource).
-// The legacy `listSkills` and `listSkillVersions` were removed from the
-// contract — the canonical skill surface now is read-only and consists
-// exactly of these four.
+// The canonical skill surface is read-only: searchSkills, getSkill,
+// listSkillResources, readSkillResource.
 const EXPECTED_OPERATION_IDS = Object.freeze([
   'getHealth',
   'getStatus',

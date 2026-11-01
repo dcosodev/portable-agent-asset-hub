@@ -1,6 +1,4 @@
-// tests/go/mcp/_mcp-harness.ts
-//
-// Shared subprocess harness for the T7 MCP supervisor test suite
+// Shared subprocess harness for the MCP supervisor test suite
 // (tests/go/mcp/spawn-forward.test.ts + restart-backoff.test.ts).
 // The harness builds the Go test binary ONCE per vitest worker via
 // `go test -c` into a per-suite temp directory, and exposes a small

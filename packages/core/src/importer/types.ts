@@ -1,6 +1,4 @@
-// packages/core/src/importer/types.ts
-//
-// Phase 2 — Skill pack importer contract surface (pure types only).
+// Skill pack importer contract surface (pure types only).
 //
 // `SkillPackImporter` lives in `@portable-agent-asset-hub/storage-files`
 // because the preview step reads the filesystem (`node:fs` / `node:path`)

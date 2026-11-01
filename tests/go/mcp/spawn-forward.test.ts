@@ -1,10 +1,7 @@
-// tests/go/mcp/spawn-forward.test.ts
-//
-// T7 real-subprocess contract for the MCP stdio launcher (supervisor).
+// Real-subprocess contract for the MCP stdio launcher (supervisor).
 // The Go test file at tests/go/mcp/spawn-forward_test.go is the source
-// of truth for every assertion; this TS file is the thin subprocess
-// wrapper required by the slice contract (.test.ts naming + real
-// subprocess + hermetic fixtures).
+// of truth for every assertion; this TS file is a thin wrapper so the
+// suite runs under vitest as a real subprocess with hermetic fixtures.
 //
 // Strategy mirrors tests/go/rest/auth.test.ts:
 //   1. Compile the Go tests via _mcp-harness.ts (one `go test -c` per
@@ -14,10 +11,8 @@
 //
 // The Go test file uses a hermetic FAKE external MCP (an embedded Node
 // fixture) that speaks JSON-RPC frames over stdio. The fake MCP never
-// touches packages/mcp/** or the real REST surface — T7 is "supervisor
-// only", the TS MCP is the system under test in production but a fake
-// in the test (per the slice contract: "fake external MCP only,
-// never fake product").
+// touches packages/mcp/** or the real REST surface: these tests cover
+// the supervisor only, and the TS MCP is replaced by a fake.
 
 import { describe, expect, it } from 'vitest';
 import { runMcpTest } from './_mcp-harness';

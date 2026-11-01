@@ -1,9 +1,7 @@
-// internal.ts
-//
 // Test-only entry point for @portable-agent-asset-hub/storage-sqlite.
 // Exposes raw database accessors that the public surface intentionally
-// hides (see tests/s2/integrity-and-boundaries.test.ts). Do NOT import
-// this from production code; the boundary is asserted by the S2
+// hides (see tests/storage-contract/integrity-and-boundaries.test.ts).
+// Do NOT import this from production code; the boundary is asserted by the storage
 // integrity test which fails if HubDatabase reappears on the public
 // index.ts surface.
 //

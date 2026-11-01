@@ -1,7 +1,5 @@
-// tests/e2e/migration-cutover-rollback.e2e.test.ts
-//
 // E2E: export → import dry-run → shadow → replay → cutover → rollback →
-// retired. This is the Slice 10 normative end-to-end test. It exercises
+// retired. Exercises
 // the real Python v2 source adapter (driven by an in-memory fixture source
 // so the test is hermetic), the real storage-sqlite storage contract, and
 // the full state-machine lifecycle. The test is hermetic and never
@@ -33,14 +31,14 @@ afterEach(() => {
 });
 
 const tempDir = (label: string): string => {
-  const dir = mkdtempSync(join(tmpdir(), `s10-e2e-${label}-`));
+  const dir = mkdtempSync(join(tmpdir(), `migration-e2e-${label}-`));
   cleanup.push(dir);
   return dir;
 };
 
 const makeActor = () => createActorContext({
-  userId: 'usr_s10_e2e',
-  agentId: 'agt_s10_e2e',
+  userId: 'usr_migration_e2e',
+  agentId: 'agt_migration_e2e',
   role: 'user',
   capabilities: ['admin.migrate', 'admin.materialize'],
 });
@@ -73,7 +71,7 @@ const PYTHON_V2_FIXTURE = {
   sourceDigest: '0'.repeat(64),
 };
 
-describe('S10 E2E: cutover + rollback', () => {
+describe('migration E2E: cutover + rollback', () => {
   it('drives a full export → replay → cutover → rollback lifecycle on a hermetic SQLite store', async () => {
     const workdir = tempDir('cutover');
     const source = createPythonV2SourceAdapter({ ...PYTHON_V2_FIXTURE });

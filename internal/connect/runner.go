@@ -7,10 +7,9 @@
 // environment that contains one. Every contract violation
 // detected by the child becomes a non-zero exit code that the
 // dispatcher in cmd/hub/cmd_connect.go maps to exit 1 (operator
-// error) — the slice's audit policy is unambiguous: any error
-// that surfaces from the adapter is "the operator typed
-// something wrong against the live system", not a CLI
-// contract violation.
+// error): an error from the adapter means the operator asked for
+// something wrong against the live system, not a CLI contract
+// violation.
 //
 // Security invariants:
 //
@@ -21,7 +20,7 @@
 //     hex). The runner's diagnostic channel goes through
 //     output.Redact before it reaches the operator's stderr.
 //
-//   * Read-only preview (T8 contract). The runner refuses to
+//   * Read-only preview. The runner refuses to
 //     invoke the child with an --action=preview when the
 //     target root is missing OR is a symlink — the apply/rollback
 //     paths reach the same conclusion via the adapter
@@ -475,8 +474,8 @@ func (r *Runner) RunApply(ctx context.Context, flags ConnectFlags) (RunResult, e
 	}
 	lockDir := strings.TrimSpace(flags.LockDir)
 	if lockDir == "" {
-		// The slice mandates an explicit lockDir to scope
-		// concurrency. Without it, two parallel applies
+		// An explicit lockDir scopes concurrency. Without
+		// it, two parallel applies
 		// could race on the same (harness, profile) lock.
 		// Default to the target root so the lock sits next
 		// to the manifest, matching the materializer's
@@ -524,7 +523,7 @@ func (r *Runner) RunRollback(ctx context.Context, flags ConnectFlags) (RunResult
 // resolveHubHome forwards the operator's HUB_HOME to the child
 // process so the receipt store can land at the canonical
 // $HUB_HOME/state/connect/receipts/<runId>.json path. The function
-// prefers HUB_HOME (the slice-mandated knob) and falls back to the
+// prefers HUB_HOME (the documented knob) and falls back to the
 // runner's RepoRoot-relative .hub-home only when HUB_HOME is unset
 // (a development-only convenience; production operators always
 // export HUB_HOME).
@@ -554,7 +553,7 @@ type PreviewRequest struct {
 
 // ApplyRequest mirrors PreviewRequest with apply-only fields. The
 // reviewedDigest field is the operator-supplied CAS-pin for the
-// plan content; the slice mandates it as a separate field from
+// plan content; it is a separate field from
 // observedDigest / expectedDigest so the audit trail distinguishes
 // the operator's review from the live CAS compare.
 type ApplyRequest struct {

@@ -1,5 +1,3 @@
-// tests/mcp/stdio-entry-smoke.test.ts
-//
 // Focused process-level smoke for the compiled stdio entrypoint at
 // `dist/packages/mcp/stdio-entry.js`, reached via the published bin
 // shim `packages/mcp/bin/agent-memory-mcp.mjs`. Sister to
@@ -24,10 +22,10 @@
 // the happy-path case is a distinctive, opaque sentinel string the
 // test asserts does *not* leak into stderr.
 //
-// The temp artefact (the `.tmp-s7-mcp-entry-*` directory) is created in
+// The temp artefact (the `.tmp-mcp-entry-*` directory) is created in
 // `beforeAll` and torn down in `afterAll` with `rmSync` inside
 // `finally`-style guards. It lives next to the existing
-// `.tmp-s7-mcp-*` fixtures from `stdio-smoke.test.ts` so the lint
+// `.tmp-mcp-*` fixtures from `stdio-smoke.test.ts` so the lint
 // ignore pattern `.tmp-*/` covers them too.
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -116,7 +114,7 @@ beforeAll(async () => {
   // an assertion fails before the test body runs. The directory is
   // also the per-run scratch space for the bin shim's child process
   // (the `.tmp-*/` ignore pattern keeps `pnpm lint` happy).
-  mcpEntryDir = mkdtempSync(join(repoRoot, '.tmp-s7-mcp-entry-'));
+  mcpEntryDir = mkdtempSync(join(repoRoot, '.tmp-mcp-entry-'));
 });
 
 afterAll(async () => {

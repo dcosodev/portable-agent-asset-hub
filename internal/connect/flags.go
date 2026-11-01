@@ -1,16 +1,12 @@
-// Package connect is the T8 owner of `hub hub connect …` — a thin
+// Package connect is the owner of `hub hub connect …` — a thin
 // orchestrator that drives the existing TypeScript materializers via
 // a small child Node process (internal/connect/connect_runner.mjs).
 //
-// The package exists because the T8 contract surfaces a brand-new
-// CLI shape (subcommand-root `hub` followed by `connect`) without
-// touching forbidden paths. Everything here is additively wired
-// into cmd/hub via cmd/hub/cmd_connect.go; the existing T0–T7
-// dispatcher in cmd/hub/main.go is preserved verbatim.
+// Everything here is wired into cmd/hub via cmd/hub/cmd_connect.go.
 //
 // This file owns only the argv parser. The parser is strict on
 // flag names (every unknown flag is a contract violation), narrow
-// on semantics (the slice mandates a closed-by-default apply), and
+// on semantics (apply is closed by default), and
 // pure (no subprocess, no filesystem, no env probe beyond the
 // resolver indirection in runner.go).
 package connect
@@ -21,7 +17,7 @@ import (
 	"strings"
 )
 
-// Action names the three T8 verbs. The type is exported so
+// Action names the three verbs. The type is exported so
 // cmd/hub/cmd_connect.go can branch on the value without
 // re-typing the strings.
 type Action string
@@ -35,9 +31,7 @@ const (
 
 // ConnectFlags is the parsed argv for `hub hub connect …`.
 //
-// The struct is the canonical argument contract for T8 and mirrors
-// the field set the slice commits to. New fields land here on a
-// documented T8.x change.
+// The struct is the canonical argument contract. New fields land here on a documented change.
 type ConnectFlags struct {
 	// Action is the resolved sub-verb (preview | apply | rollback).
 	// An empty value plus Help=true means "no action, just print
@@ -51,8 +45,8 @@ type ConnectFlags struct {
 	// when both are requested.
 	Help bool
 
-	// Harness is the renderer id ("hermes" or "openclaw"). The
-	// slice authorises the hermes harness today; "openclaw" is
+	// Harness is the renderer id ("hermes" or "openclaw"). Only
+	// hermes can apply today; "openclaw" is
 	// recognised by the parser but apply refused before the
 	// adapter is invoked. The preview path accepts it and lets
 	// the underlying materializer validate.
@@ -66,24 +60,24 @@ type ConnectFlags struct {
 	// operates against. The apply + preview paths require it;
 	// rollback does not (runId is the only required input).
 	TargetRoot string
-	// LockDir is the absolute lock directory. The slice mandates
-	// it for apply so concurrent writers cannot stomp on each
+	// LockDir is the absolute lock directory. Apply requires
+	// it so concurrent writers cannot stomp on each
 	// other; the preview path ignores it.
 	LockDir string
 	// Reason is the operator-supplied audit reason for every mutating
-	// verb. The slice requires it; missing reason is exit 2.
+	// verb. A missing reason is exit 2.
 	Reason string
 	// RequestID is an optional correlation id the operator can pin
 	// to a CI run or ticket.
 	RequestID string
 	// ReviewedDigest is the close-by-default cas-pin for apply.
-	// The slice requires it (lowercase hex exactly 64 chars) and
-	// the parser refuses any other shape; the adapter would
-	// surface a mismatch but the audit contract demands the
-	// refusal happen in the Go shell.
+	// It is required (lowercase hex, exactly 64 chars) and the parser
+	// refuses any other shape. The adapter would surface a mismatch,
+	// but the refusal has to happen in the Go shell so the audit
+	// trail shows it there.
 	ReviewedDigest string
-	// ObservedDigest is the optional drift signal for apply. The
-	// slice exposes it; missing it means "trust the preview as
+	// ObservedDigest is the optional drift signal for apply.
+	// Missing it means "trust the preview as
 	// the live state" (no drift check).
 	ObservedDigest string
 	// RunID is the rollback target. The parser enforces the
@@ -256,7 +250,7 @@ func takeValue(rest []string, i *int, inline string) (string, error) {
 	return val, nil
 }
 
-// ValidateAfterParse runs the slice-mandated closed-by-default
+// ValidateAfterParse runs the closed-by-default
 // checks that the parser cannot enforce on its own:
 //
 //   - Unknown-action is handled by ParseConnectFlags itself (when
@@ -281,7 +275,7 @@ func (f ConnectFlags) ValidateAfterParse() error {
 	// Verb-scoped --help: skip required-flag enforcement so the
 	// operator can read the help block even when their typed
 	// preview/apply/rollback invocation is missing the required
-	// flags. The slice pins the help surface; a regression that
+	// flags. A regression that
 	// flags a help request as a missing-flag contract violation
 	// would defeat the operator's ability to recover.
 	if f.Help {
@@ -327,7 +321,7 @@ func previewMissing(f ConnectFlags) error {
 		// recognised, dispatch proceeds
 	case "openclaw":
 		// parser accepts; adapter validates (OpenClaw surface is
-		// out of scope for T8.x but the regex stays closed).
+		// out of scope but the regex stays closed).
 	default:
 		return fmt.Errorf("hub hub connect preview: --harness %q not recognised (expected hermes|openclaw)", f.Harness)
 	}
@@ -396,7 +390,7 @@ func rollbackMissing(f ConnectFlags) error {
 	if !runIDRegex.MatchString(f.RunID) {
 		return fmt.Errorf("hub hub connect rollback: --run-id %q does not match run_[A-Za-z0-9._-]+", f.RunID)
 	}
-	// The slice pins rollback's flag surface as minimal (--run-id,
+	// Rollback's flag surface is minimal (--run-id,
 	// --reason, --request-id, --json). --target-root is a parser-
 	// level reject: the global argv parser accepts --target-root on
 	// every verb, so we MUST gate it here before any child process

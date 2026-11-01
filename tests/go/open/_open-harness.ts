@@ -1,12 +1,10 @@
-// tests/go/open/_open-harness.ts
-//
-// Shared subprocess harness for the T4 Graph Explorer open tests
+// Shared subprocess harness for the Graph Explorer open tests
 // (loopback-bind.test.ts, rejects-non-loopback.test.ts). The harness
 // builds the hub binary ONCE per process with `go build -trimpath`
 // into a per-suite temp directory, and exposes a small runner that
 // captures stdout, stderr, and exit code.
 //
-// T4 invariants enforced by every consumer:
+// invariants enforced by every consumer:
 //   * The binary is built hermetically (no network, no state).
 //   * HUB_HOME points at a per-test fresh temp directory.
 //   * HUB_OPENAPI points at the repo's real openapi/openapi.yaml so
@@ -43,7 +41,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 // repo root (the directory holding cmd/, internal/, go.mod).
 const repoRoot = resolve(here, '..', '..', '..');
 
-// Repo-local openapi.yaml is the canonical T1+ target. The doctor
+// Repo-local openapi.yaml is the canonical target. The doctor
 // and config.Load both default to <repoRoot>/openapi/openapi.yaml;
 // we point HUB_OPENAPI at it explicitly so the binary does not have
 // to re-discover it.
@@ -69,8 +67,7 @@ export interface OpenBuildResult {
  * Build the hub binary with `go build -trimpath` into a per-call temp
  * directory. The function caches the result so callers that need a
  * fresh build (e.g. after editing Go source) can clear the cache via
- * `resetOpenBinary()`. The default behaviour — one build per process —
- * matches the s11 gate's hermetic test.
+ * `resetOpenBinary()`. The default is one build per process.
  */
 export function buildOpenBinary(): OpenBuildResult {
   if (cachedBinary && cachedBuildTmp && existsSync(cachedBinary)) {

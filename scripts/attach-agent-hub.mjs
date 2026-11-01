@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// scripts/attach-agent-hub.mjs
-//
-// FASE 4 CLI: attaches an agent-memory hub to a target agent
+// CLI: attaches an agent-memory hub to a target agent
 // directory by rendering the per-harness wrapper, USER/SOUL copy,
 // and MCP descriptor. Preview by default; --apply requires an
 // explicit --reviewed-digest; --rollback requires --run-id.
@@ -9,7 +7,7 @@
 // Contract:
 //
 //   * Default mode is preview. The preview JSON is written to
-//     --preview-output (defaults to `./artifacts/fase4-preview.json`)
+//     --preview-output (defaults to `./artifacts/attach-preview.json`)
 //     atomically and with mode 0600. The preview contains sha256 +
 //     size for USER/SOUL bytes, never the bodies.
 //   * `--apply --reviewed-digest <hex>` re-validates the preview,
@@ -225,7 +223,7 @@ async function main() {
   if (args.rollback) {
     const result = rollbackPlan({ targetDir: args.targetDir, runId: args.runId, reason: args.reason });
     atomicWrite0600(
-      args.previewOutput ?? resolve(`${REPO_ROOT}artifacts/fase4-rollback.json`),
+      args.previewOutput ?? resolve(`${REPO_ROOT}artifacts/attach-rollback.json`),
       JSON.stringify({ mode: 'rollback', runId: args.runId, ...result }, null, 2),
     );
     emitSummary({
@@ -254,7 +252,7 @@ async function main() {
       ...(args.agentId !== undefined ? { agentId: args.agentId } : {}),
       ...(args.authTokenFile !== undefined ? { authTokenFile: args.authTokenFile } : {}),
     });
-    const outputPath = args.previewOutput ?? resolve(`${REPO_ROOT}artifacts/fase4-preview.json`);
+    const outputPath = args.previewOutput ?? resolve(`${REPO_ROOT}artifacts/attach-preview.json`);
     const reviewArtifact = safePreviewFor(preview);
     atomicWrite0600(outputPath, JSON.stringify(reviewArtifact, null, 2));
     emitSummary(reviewArtifact);
@@ -263,7 +261,7 @@ async function main() {
   }
 
   // --apply path.
-  const sourcePath = args.previewOutput ?? resolve(`${REPO_ROOT}artifacts/fase4-preview.json`);
+  const sourcePath = args.previewOutput ?? resolve(`${REPO_ROOT}artifacts/attach-preview.json`);
   const preview = loadPreviewFromDisk(sourcePath);
   if (!isApplyInputObject(preview)) throw new Error('preview file is not an object');
   // Drift detection: rebuild the preview from current inputs and
@@ -309,7 +307,7 @@ async function main() {
   });
 
   atomicWrite0600(
-    `${REPO_ROOT}artifacts/fase4-apply-${result.runId}.json`,
+    `${REPO_ROOT}artifacts/attach-apply-${result.runId}.json`,
     JSON.stringify({ mode: 'apply', result }, null, 2),
   );
   emitSummary({

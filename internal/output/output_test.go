@@ -8,8 +8,8 @@ import (
 	"hub/internal/output"
 )
 
-// TestLooksLikeBearer exercises each bearer pattern the redactor and
-// the s11 gate recognise. A negative assertion is included so future
+// TestLooksLikeBearer exercises each bearer pattern the redactor
+// recognises. A negative assertion is included so future
 // drift (a regex that starts catching ordinary English) is caught.
 func TestLooksLikeBearer(t *testing.T) {
 	for _, tc := range []struct {
@@ -135,8 +135,8 @@ func TestSinkPrintfWritesToStdout(t *testing.T) {
 	}
 }
 
-// TestSinkAppendsTrailingNewline pins the newline contract that the
-// s11 gate relies on. Every Printf/Errorf call MUST terminate the
+// TestSinkAppendsTrailingNewline checks line termination.
+// Every Printf/Errorf call MUST terminate the
 // rendered line with a single '\n'. Three rules are encoded:
 //
 //  1. A non-empty payload without a trailing newline gets exactly one

@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// scripts/import-agent-skills.mjs
-//
-// Phase 2 skill pack import CLI.
+// Skill pack import CLI.
 //
 // Contract:
 //
@@ -82,7 +80,7 @@ function parseCli(argvList) {
     inventory: resolve(inventory),
     ...(db !== undefined ? { db: resolve(db) } : {}),
     ...(backupDir !== undefined ? { backupDir: resolve(backupDir) } : {}),
-    previewOutput: resolve(previewOutput ?? `${REPO_ROOT}artifacts/s2-import-preview-${Date.now()}.json`),
+    previewOutput: resolve(previewOutput ?? `${REPO_ROOT}artifacts/skills-import-preview-${Date.now()}.json`),
     apply,
     ...(reviewedDigest !== undefined ? { reviewedDigest } : {}),
     userId,

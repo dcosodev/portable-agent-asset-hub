@@ -1,11 +1,8 @@
-// tests/go/connect/receipt-security.test.ts
-//
-// T8 RED contract — receipt security matrix (digest/recompute/CAS,
-// AMENDMENT-aligned).
+// Receipt security matrix (digest/recompute/CAS).
 //
 // The durable rollback receipt lives at
 //   $HUB_HOME/state/connect/receipts/<runId>.json
-// and is the cross-process rollback bridge. The amendment pins:
+// and is the cross-process rollback bridge. Its rules:
 //   * dir 0700, file 0600 — strict perms, no group/other access
 //   * atomic temp+rename — no leftover .tmp / .partial files
 //   * no symlinks in any path segment
@@ -21,7 +18,7 @@
 // Hermetic fixtures: every receipt fixture is a HERMETIC FILE on
 // disk under a per-test HUB_HOME mkdtemp. The tests NEVER call
 // `hub hub connect apply` to write a receipt — they write the
-// fixture directly via fs (per the amendment, the rollback
+// fixture directly via fs (the rollback
 // subprocess reads the canonical path; the receipt store is
 // allowed to write any subset of the schema, and the security
 // checks apply to whatever bytes land on disk). This decouples
@@ -54,7 +51,7 @@ import {
 const FAKE_HEX_64 = '0'.repeat(64);
 const RUN_ID = 'run_unit_receipt_security';
 
-// Canonical receipt body — the amendment pins these exact keys.
+// Canonical receipt body with its exact keys.
 function canonicalReceipt(opts: Partial<{
   schemaVersion: number;
   runId: string;
@@ -77,7 +74,7 @@ function canonicalReceipt(opts: Partial<{
   };
 }
 
-describe('hub hub connect — receipt security matrix (T8, I-15)', () => {
+describe('hub hub connect — receipt security matrix', () => {
   let home: { home: string; cleanup: () => void } | undefined;
   let target: { targetRoot: string; cleanup: () => void } | undefined;
   let databaseCleanup: (() => void) | undefined;
@@ -94,12 +91,9 @@ describe('hub hub connect — receipt security matrix (T8, I-15)', () => {
   });
 
   // -----------------------------------------------------------------
-  // 1. Permissions: dir 0700 + file 0600. The amendment pins
-  //    these exact modes. We do NOT pre-create the receipts
-  //    directory — the apply subprocess must create it with the
-  //    correct mode. (Phase A: apply refuses, so this test only
-  //    becomes green when production lands; the assertions
-  //    below the apply call are guarded.)
+  // 1. Permissions: dir 0700 + file 0600. We do NOT pre-create
+  //    the receipts directory — the apply subprocess must create
+  //    it with the correct mode.
   // -----------------------------------------------------------------
   it('1. apply creates receipts dir with mode 0700 and the receipt file with mode 0600', async () => {
     const h = home!.home;
@@ -172,9 +166,9 @@ describe('hub hub connect — receipt security matrix (T8, I-15)', () => {
   }, 90_000);
 
   // -----------------------------------------------------------------
-  // 2. Atomic write: no leftover .tmp / .partial files. The
-  //    amendment pins atomic temp+rename as the only allowed
-  //    write path. A round-trip must leave EXACTLY ONE entry
+  // 2. Atomic write: no leftover .tmp / .partial files. Atomic
+  //    temp+rename is the only allowed write path. A round-trip
+  //    must leave EXACTLY ONE entry
   //    in the receipts directory.
   // -----------------------------------------------------------------
   it('2. atomic write: apply leaves exactly one entry in receipts dir, no .tmp / .partial leftover', async () => {
@@ -297,16 +291,15 @@ describe('hub hub connect — receipt security matrix (T8, I-15)', () => {
     // The outside file MUST NOT have been mutated by the
     // refused rollback (we just check it still exists and is
     // not rewritten; if rollback had followed the symlink and
-    //    written something, mtime would have changed — but in
-    //    Phase A nothing happens at all).
+    //    written something, mtime would have changed).
     expect(existsSync(outside)).toBe(true);
     unlinkSync(outside);
   }, 30_000);
 
   // -----------------------------------------------------------------
   // 4. No secrets / no bearers / no raw auth in the receipt
-  //    payload. The amendment pins a bounded schema and
-  //    forbids secrets-shaped keys.
+  //    payload. The schema is bounded and secrets-shaped keys
+  //    are refused.
   // -----------------------------------------------------------------
   describe('no-secret payload invariants', () => {
     const SECRET_KEYS = [
@@ -403,7 +396,7 @@ describe('hub hub connect — receipt security matrix (T8, I-15)', () => {
     );
     // Bounded schema enforcement: either exit 1 (refused) or
     // the rollback accepts the bounded subset and ignores the
-    // extra keys. The amendment forbids EXTRA KEYS; the strict
+    // extra keys. Extra keys are not allowed; the strict
     // read is exit 1. A robust implementation MAY strip + log
     // and continue; we lock the strict behaviour here.
     expect(res.status, `stderr=${JSON.stringify(res.stderr)}`).toBe(1);
@@ -438,11 +431,11 @@ describe('hub hub connect — receipt security matrix (T8, I-15)', () => {
   //    receipts. We assert this against TWO manually-seeded
   //    receipts with the same canonical content but different
   //    key insertion order — the rollback MUST accept both as
-  //    semantically equal (the amendment pins determinism at
+  //    semantically equal (determinism applies on
   //    the WRITER side, but the READER must be permissive
   //    about insertion order because JSON.parse discards it).
   // -----------------------------------------------------------------
-  it('6. two receipts with same content but different key order are semantically equal (deterministic contract)', async () => {
+  it('6. two receipts with same content but different key order are semantically equal', async () => {
     const h = home!.home;
     const t = target!.targetRoot;
 
@@ -495,8 +488,8 @@ describe('hub hub connect — receipt security matrix (T8, I-15)', () => {
 
   // -----------------------------------------------------------------
   // 8. Schema version mismatch: a receipt with schemaVersion=2
-  //    is refused (the amendment pins versioned schema; older
-  //    or future versions must NOT be silently accepted).
+  //    is refused (older or future versions must NOT be
+  //    silently accepted).
   // -----------------------------------------------------------------
   it('8a. rollback refuses a receipt with schemaVersion=0 (legacy)', async () => {
     const h = home!.home;

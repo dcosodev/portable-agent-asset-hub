@@ -1,7 +1,6 @@
 // Package rest_test exercises hub/internal/rest via the public
 // package API. The tests live at tests/go/rest/*_test.go (not in
-// internal/rest/) on purpose: the T6 contract is "thin curated
-// stdlib-only Go REST client" and the test surface is a separate
+// internal/rest/) on purpose: the test surface is a separate
 // subprocess boundary driven by tests/go/rest/*.test.ts. The TS
 // harness (tests/go/rest/_rest-harness.ts) compiles this file
 // with `go test -c` and spawns the resulting binary; the Go

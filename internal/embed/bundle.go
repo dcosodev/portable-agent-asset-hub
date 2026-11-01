@@ -1,6 +1,5 @@
 // Package embed wires the Graph Explorer static bundle into the Go
-// binary via `go:embed`. The contract (docs/roadmap/slices.json T4)
-// is unambiguous about the runtime surface:
+// binary via `go:embed`. The runtime surface:
 //
 //   - hub open serves the embedded bundle on 127.0.0.1 only.
 //   - The embedded tree is the production bundle built by
@@ -14,7 +13,7 @@
 // with `-trimpath`.
 //
 // Bundle provenance. The dist/ tree is populated by
-// scripts/copy-graph-ui-bundle.mjs (T4) which mirrors
+// scripts/copy-graph-ui-bundle.mjs which mirrors
 // packages/graph-ui/dist/ into internal/embed/dist/. We deliberately
 // do NOT use a symlink: `go:embed` follows the file at compile time
 // and a symlink would force every developer / CI runner to keep

@@ -37,7 +37,7 @@ export class MemoryFtsRepository {
     // every token to force a literal search), memory search
     // deliberately passes the raw query straight through as an FTS5
     // MATCH expression: `hybrid_or_fts_never_bypasses_scope` in
-    // tests/s3-memory.test.ts exercises an explicit `OR` combinator as
+    // tests/memory-contracts.test.ts exercises an explicit `OR` combinator as
     // an intentional, tested feature, so quoting it away here would be
     // a behavior regression, not a fix. What IS a bug is that
     // malformed syntax (an unbalanced quote, a dangling operator)

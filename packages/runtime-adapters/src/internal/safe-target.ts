@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/internal/safe-target.ts
-//
 // The target directory gate. Both preview and apply refuse to
 // operate when:
 //   * the path is empty,

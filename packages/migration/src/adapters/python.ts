@@ -1,6 +1,4 @@
-// packages/migration/src/adapters/python.ts
-//
-// Slice 10 source adapter for the legacy Python v2 hub. The Python v2
+// Source adapter for the legacy Python v2 hub. The Python v2
 // hub exposed 8 row tables (identities, memories, catalog_entries,
 // catalog_sources, catalog_relations, events, audit, sync_previews)
 // keyed by stable string ids. The adapter is constructed from a

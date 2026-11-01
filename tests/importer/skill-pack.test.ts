@@ -1,6 +1,4 @@
-// tests/importer/skill-pack.test.ts
-//
-// TDD slice for Phase 2 skill pack importer + apply coordinator.
+// Skill pack importer + apply coordinator.
 //
 // Split:
 //
@@ -15,7 +13,7 @@
 //         COMMITs each write. Force-failures mid-transaction
 //         trigger a ROLLBACK so no partial state escapes.
 //
-// Normative contracts exercised below:
+// Contracts exercised below:
 //
 //   * Determinism: two scans over the same inputs are byte-identical
 //     (no timestamps, POSIX byte-order comparator).
@@ -101,7 +99,7 @@ function tempRoot(prefix: string): string {
 }
 
 function freshDb(): string {
-  const dir = tempRoot('s2-pack-db-');
+  const dir = tempRoot('skill-pack-db-');
   return join(dir, 'agent-memory.sqlite');
 }
 
@@ -175,7 +173,7 @@ function buildInventory(
     },
   };
   const inventoryDigest = canonicalDigest(stable);
-  const fixtureRoot = tempRoot('s2-pack-inv-');
+  const fixtureRoot = tempRoot('skill-pack-inv-');
   const rootsConfigPath = join(fixtureRoot, 'roots.json');
   const inventoryPath = join(fixtureRoot, 'inventory.json');
   writeFileSync(rootsConfigPath, JSON.stringify([{ id: rootId, path: rootPath, excludePrefixes: [] }]));
@@ -209,7 +207,7 @@ describe('SkillPackImporter (pure scan, storage-files)', () => {
   let importer: SkillPackImporter;
 
   beforeEach(() => {
-    rootDir = tempRoot('s2-pack-roots-');
+    rootDir = tempRoot('skill-pack-roots-');
     importer = new SkillPackImporter();
   });
 
@@ -288,12 +286,12 @@ describe('SkillPackImporter (pure scan, storage-files)', () => {
   });
 
   it('derives stable logicalKey + id across two roots hosting the same declared name', () => {
-    const rootA = tempRoot('s2-pack-root-a-');
-    const rootB = tempRoot('s2-pack-root-b-');
+    const rootA = tempRoot('skill-pack-root-a-');
+    const rootB = tempRoot('skill-pack-root-b-');
     const body = Buffer.from('---\nname: shared\ndescription: shared name\n---\nshared body\n', 'utf8');
     writeSkill(rootA, 'shared', body.toString('utf8'));
     writeSkill(rootB, 'shared', body.toString('utf8'));
-    const fixtureRoot = tempRoot('s2-pack-stable-roots-');
+    const fixtureRoot = tempRoot('skill-pack-stable-roots-');
     const rootsConfigPath = join(fixtureRoot, 'roots.json');
     const inventoryPath = join(fixtureRoot, 'inventory.json');
     writeFileSync(
@@ -337,12 +335,12 @@ describe('SkillPackImporter (pure scan, storage-files)', () => {
   });
 
   it('rejects when the inventory contains a duplicate-name collision declared fail-closed', () => {
-    const rootA = tempRoot('s2-pack-coll-a-');
-    const rootB = tempRoot('s2-pack-coll-b-');
+    const rootA = tempRoot('skill-pack-coll-a-');
+    const rootB = tempRoot('skill-pack-coll-b-');
     const body = Buffer.from('---\nname: collide\n---\nbody\n', 'utf8');
     writeSkill(rootA, 'a', body.toString('utf8'));
     writeSkill(rootB, 'b', body.toString('utf8'));
-    const fixtureRoot = tempRoot('s2-pack-coll-');
+    const fixtureRoot = tempRoot('skill-pack-coll-');
     const rootsConfigPath = join(fixtureRoot, 'roots.json');
     const inventoryPath = join(fixtureRoot, 'inventory.json');
     writeFileSync(
@@ -380,7 +378,7 @@ describe('SkillPackImporter (pure scan, storage-files)', () => {
   it('rejects symlinks and special files inside the skill package', () => {
     const body = Buffer.from('---\nname: link\n---\nlink\n', 'utf8');
     writeSkill(rootDir, 'link', body.toString('utf8'));
-    const outside = tempRoot('s2-pack-outside-');
+    const outside = tempRoot('skill-pack-outside-');
     writeFileSync(join(outside, 'secret.txt'), 'external');
     symlinkSync(join(outside, 'secret.txt'), join(rootDir, 'link', 'secret.lnk'));
     const fixture = buildInventory('docs', rootDir, [
@@ -440,7 +438,7 @@ describe('SkillPackImporter (pure scan, storage-files)', () => {
   it('rejects when inventory drift (sha/size) does not match on-disk source', () => {
     const body = Buffer.from('---\nname: drift\n---\nbody\n', 'utf8');
     writeSkill(rootDir, 'drift', body.toString('utf8'));
-    const fixtureRoot = tempRoot('s2-pack-drift-');
+    const fixtureRoot = tempRoot('skill-pack-drift-');
     const rootsConfigPath = join(fixtureRoot, 'roots.json');
     const inventoryPath = join(fixtureRoot, 'inventory.json');
     writeFileSync(rootsConfigPath, JSON.stringify([{ id: 'docs', path: rootDir, excludePrefixes: [] }]));
@@ -552,7 +550,7 @@ describe('SkillPackApplyCoordinator (storage-sqlite, real DB + temp roots)', () 
   let dbPath: string;
 
   beforeEach(() => {
-    rootDir = tempRoot('s2-apply-roots-');
+    rootDir = tempRoot('skill-apply-roots-');
     dbPath = freshDb();
   });
 
@@ -562,7 +560,7 @@ describe('SkillPackApplyCoordinator (storage-sqlite, real DB + temp roots)', () 
     const fixture = buildInventory('docs', rootDir, [
       { packageDir: 'nodigest', declaredName: 'nodigest', sha256: sha256(body), size: body.byteLength },
     ]);
-    const backupDir = mkdtempSync(join(tmpdir(), 's2-apply-nodigest-'));
+    const backupDir = mkdtempSync(join(tmpdir(), 'skill-apply-nodigest-'));
     tempRoots.push(backupDir);
     const coord = new SkillPackApplyCoordinator({
       dbPath,
@@ -586,7 +584,7 @@ describe('SkillPackApplyCoordinator (storage-sqlite, real DB + temp roots)', () 
     const fixture = buildInventory('docs', rootDir, [
       { packageDir: 'dig', declaredName: 'dig', sha256: sha256(body), size: body.byteLength },
     ]);
-    const backupDir = mkdtempSync(join(tmpdir(), 's2-apply-dig-'));
+    const backupDir = mkdtempSync(join(tmpdir(), 'skill-apply-dig-'));
     tempRoots.push(backupDir);
     const coord = new SkillPackApplyCoordinator({
       dbPath,
@@ -609,7 +607,7 @@ describe('SkillPackApplyCoordinator (storage-sqlite, real DB + temp roots)', () 
       { packageDir: 'alpha', declaredName: 'alpha', sha256: sha256(bodyA), size: bodyA.byteLength },
       { packageDir: 'bravo', declaredName: 'bravo', sha256: sha256(bodyB), size: bodyB.byteLength },
     ]);
-    const backupDir = mkdtempSync(join(tmpdir(), 's2-apply-rollback-'));
+    const backupDir = mkdtempSync(join(tmpdir(), 'skill-apply-rollback-'));
     tempRoots.push(backupDir);
     const importer = new SkillPackImporter();
     const { plan } = importer.scan({ rootsConfigPath: fixture.rootsConfigPath, inventoryPath: fixture.inventoryPath });
@@ -651,7 +649,7 @@ describe('SkillPackApplyCoordinator (storage-sqlite, real DB + temp roots)', () 
     const fixture = buildInventory('docs', rootDir, [
       { packageDir: 'bk', declaredName: 'bk', sha256: sha256(body), size: body.byteLength },
     ]);
-    const backupDir = mkdtempSync(join(tmpdir(), 's2-apply-backup-'));
+    const backupDir = mkdtempSync(join(tmpdir(), 'skill-apply-backup-'));
     tempRoots.push(backupDir);
     const importer = new SkillPackImporter();
     const { plan } = importer.scan({
@@ -707,7 +705,7 @@ describe('SkillPackApplyCoordinator (storage-sqlite, real DB + temp roots)', () 
     const fixture = buildInventory('docs', rootDir, [
       { packageDir: 'idem', declaredName: 'idem', sha256: sha256(body), size: body.byteLength },
     ]);
-    const backupDir = mkdtempSync(join(tmpdir(), 's2-apply-idem-'));
+    const backupDir = mkdtempSync(join(tmpdir(), 'skill-apply-idem-'));
     tempRoots.push(backupDir);
     const importer = new SkillPackImporter();
     const { plan } = importer.scan({ rootsConfigPath: fixture.rootsConfigPath, inventoryPath: fixture.inventoryPath });
@@ -742,7 +740,7 @@ describe('SkillPackApplyCoordinator (storage-sqlite, real DB + temp roots)', () 
     const fixture1 = buildInventory('docs', rootDir, [
       { packageDir: 'cas', declaredName: 'cas', sha256: sha256(body1), size: body1.byteLength },
     ]);
-    const backupDir = mkdtempSync(join(tmpdir(), 's2-apply-cas-'));
+    const backupDir = mkdtempSync(join(tmpdir(), 'skill-apply-cas-'));
     tempRoots.push(backupDir);
     const importer = new SkillPackImporter();
     const { plan: plan1 } = importer.scan({ rootsConfigPath: fixture1.rootsConfigPath, inventoryPath: fixture1.inventoryPath });
@@ -794,7 +792,7 @@ describe('SkillPackApplyCoordinator (storage-sqlite, real DB + temp roots)', () 
     const fixture = buildInventory('docs', rootDir, [
       { packageDir: 'rt', declaredName: 'rt', sha256: sha256(body), size: body.byteLength },
     ]);
-    const backupDir = mkdtempSync(join(tmpdir(), 's2-apply-rt-'));
+    const backupDir = mkdtempSync(join(tmpdir(), 'skill-apply-rt-'));
     tempRoots.push(backupDir);
     const importer = new SkillPackImporter();
     const { plan } = importer.scan({ rootsConfigPath: fixture.rootsConfigPath, inventoryPath: fixture.inventoryPath });
@@ -848,7 +846,7 @@ describe('SkillPackApplyCoordinator (storage-sqlite, real DB + temp roots)', () 
     const fixture = buildInventory('docs', rootDir, [
       { packageDir: 'stale', declaredName: 'stale', sha256: sha256(body), size: body.byteLength },
     ]);
-    const backupDir = mkdtempSync(join(tmpdir(), 's2-apply-stale-'));
+    const backupDir = mkdtempSync(join(tmpdir(), 'skill-apply-stale-'));
     tempRoots.push(backupDir);
     const importer = new SkillPackImporter();
     const { plan } = importer.scan({ rootsConfigPath: fixture.rootsConfigPath, inventoryPath: fixture.inventoryPath });
@@ -936,7 +934,7 @@ describe('relation projection round-trip', () => {
 
 describe('SkillPackApplyCoordinator outcomes surface', () => {
   it('returns one outcome per package with id, version, changed', async () => {
-    const rootDir = tempRoot('s2-outcomes-roots-');
+    const rootDir = tempRoot('skill-outcomes-roots-');
     const bodyA = Buffer.from('---\nname: one\n---\nA\n', 'utf8');
     const bodyB = Buffer.from('---\nname: two\n---\nB\n', 'utf8');
     const bodyC = Buffer.from('---\nname: three\n---\nC\n', 'utf8');
@@ -948,7 +946,7 @@ describe('SkillPackApplyCoordinator outcomes surface', () => {
       { packageDir: 'two', declaredName: 'two', sha256: sha256(bodyB), size: bodyB.byteLength },
       { packageDir: 'three', declaredName: 'three', sha256: sha256(bodyC), size: bodyC.byteLength },
     ]);
-    const backupDir = mkdtempSync(join(tmpdir(), 's2-outcomes-bk-'));
+    const backupDir = mkdtempSync(join(tmpdir(), 'skill-outcomes-bk-'));
     tempRoots.push(backupDir);
     const importer = new SkillPackImporter();
     const { plan } = importer.scan({ rootsConfigPath: fixture.rootsConfigPath, inventoryPath: fixture.inventoryPath });

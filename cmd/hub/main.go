@@ -1,7 +1,7 @@
 // Command hub is the canonical product shell for portable-agent-asset-hub.
 //
-// Per docs/phase0/naming.md and docs/architecture/go-product-shell.md
-// the binary name is `hub`. T0.5 ships a deliberately narrow surface:
+// Per docs/architecture/go-product-shell.md
+// the binary name is `hub`. The surface is deliberately narrow:
 //
 //	hub           — default invocation: prints --help to stdout and exits 0
 //	hub help      — alias for --help
@@ -161,10 +161,10 @@ func run(argv []string, stdout, stderr io.Writer) (int, error) {
 	case "runtime":
 		return runRuntime(sink, stdout, stderr, cfg, rest, jsonFlag)
 	case "telemetry":
-		// T5 — Optional observability profile control. Mirrors
+		// Optional observability profile control. Mirrors
 		// runRuntime's shape: Detect → NewService → typed flags →
 		// RunTelemetry. Detect's HUB_RUNTIME polymorphism points the
-		// telemetry service at the T5-owned top-level
+		// telemetry service at the telemetry top-level
 		// docker-compose.observability.yml (NOT observability/compose.yaml,
 		// which is read-only under ADR-0004).
 		return runTelemetry(sink, stdout, stderr, cfg, rest, jsonFlag)
@@ -204,11 +204,11 @@ func run(argv []string, stdout, stderr io.Writer) (int, error) {
 	case "mcp":
 		return runMcp(sink, os.Stdin, stdout, stderr, rest, jsonFlag)
 	case "backup":
-		// T9 — `hub backup --out <archive>` (snapshot) and
+		// `hub backup --out <archive>` (snapshot) and
 		// `hub backup --restore <archive>` (restore). The
 		// dispatcher in cmd_backup.go is the single
 		// authoritative handler for the verb; main.go is the
-		// dispatch shim. The amendment pins exactly these two
+		// dispatch shim. There are exactly these two
 		// flags — anything else on the verb is fail-closed
 		// (exit 2). The dispatcher never opens SQLite or
 		// derives a DB path from HUB_HOME; the canonical DB
@@ -216,7 +216,7 @@ func run(argv []string, stdout, stderr io.Writer) (int, error) {
 		// Go shell stays a transport.
 		return runBackup(sink, stdout, stderr, cfg, rest)
 	case "update":
-		// T9 — `hub update` is the plan-only dry-run by
+		// `hub update` is the plan-only dry-run by
 		// default. The literal channel `stable` is the only
 		// accepted channel (compiled-only); non-stable
 		// channels are refused pre-network with a non-zero
@@ -228,18 +228,15 @@ func run(argv []string, stdout, stderr io.Writer) (int, error) {
 		// the filesystem — internal/update is planner-only.
 		return runUpdate(sink, stdout, stderr, cfg, rest)
 	case "hub":
-		// T8 — `hub hub connect …` is the T8 dispatcher surface.
-		// The `hub hub` prefix is per docs/phase0/naming.md
-		// (the binary name IS the product name) and the
-		// `connect` verb is the T8 amendment's only new CLI
-		// surface. The dispatcher refuses anything other than
+		// `hub hub connect …` is the dispatcher surface.
+		// The `hub hub` prefix exists because
+		// the binary name IS the product name. The dispatcher refuses anything other than
 		// `connect` here so `hub hub foo` surfaces a clean
 		// contract-violation diagnostic instead of a confusing
 		// `unknown command` fallthrough. The bare `hub connect`
-		// alias is intentionally NOT supported: the slice's
-		// only contract is `hub hub connect …`, and adding a
-		// shortcut would widen the T8 dispatcher surface
-		// beyond what the amendment authorises.
+		// alias is intentionally NOT supported: the only form is
+		// `hub hub connect …`, and a shortcut would widen the
+		// dispatcher surface.
 		if len(rest) > 0 && rest[0] == "connect" {
 			return runConnect(sink, stdout, stderr, cfg, rest[1:], jsonFlag)
 		}
@@ -306,7 +303,7 @@ func parseArgs(argv []string) (string, bool, []string, error) {
 }
 
 // printHelp writes the help text to stdout. The text is a fixed
-// string so the s11 gate can assert on its shape without snapshot
+// string so the shell tests can assert on its shape without snapshot
 // drift.
 func printHelp(sink *output.Sink) {
 	help := []string{
@@ -331,13 +328,13 @@ func printHelp(sink *output.Sink) {
 		"  hub open               serve the embedded Graph Explorer bundle (loopback only)",
 		"  hub open --help        loopback bind, port, json, env-knob docs",
 		"  hub mcp launch --stdio supervise the existing TypeScript MCP process",
-		"  hub backup           snapshot / restore the canonical resolver database (T9)",
+		"  hub backup           snapshot / restore the canonical resolver database",
 		"  hub backup --out <archive>      snapshot the canonical DB to <archive>",
 		"  hub backup --restore <archive>  restore the canonical DB from <archive>",
-		"  hub backup --help     full T9 backup surface",
-		"  hub update             plan-only dry-run; literal `stable` channel (T9)",
-		"  hub update --apply     refuses exit 2 — apply transport out of scope (T9)",
-		"  hub update --help      full T9 update surface",
+		"  hub backup --help     full backup surface",
+		"  hub update             plan-only dry-run; literal `stable` channel",
+		"  hub update --apply     refuses exit 2 — apply transport out of scope",
+		"  hub update --help      full update surface",
 		"  hub doctor             read-only health + contract + policy check",
 		"  hub doctor --json      the same report as a structured payload",
 		"",
@@ -513,7 +510,7 @@ func printConfigJSON(sink *output.Sink, cfg config.Config) {
 			"source": cfg.Source.OpenAPI,
 		},
 	}
-	// Render with sorted keys to keep the s11 gate's assertions
+	// Render with sorted keys to keep the shell test assertions
 	// stable. encoding/json's Marshal already sorts map keys.
 	data, err := json.MarshalIndent(payload, "", "  ")
 	if err != nil {
@@ -554,7 +551,7 @@ func displayOrUnset(v string) string {
 // resolved compose file is missing — env drift, not shell contract
 // drift.
 func runRuntime(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, rest []string, jsonFlag bool) (int, error) {
-	// T2 polish: cfg.Runtime IS HUB_RUNTIME. The architecture
+	// cfg.Runtime IS HUB_RUNTIME. The architecture
 	// documents HUB_RUNTIME as "the Compose project root" — but
 	// operators / hermetic tests commonly point it at an absolute
 	// compose-file path (the .yaml the binary should drive). Detect
@@ -565,7 +562,7 @@ func runRuntime(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, 
 	// into opts.ComposeFile here — doing so would (a) force the
 	// Detect codepath to treat HUB_RUNTIME as a project-root marker
 	// even when it is unambiguously a file path, and (b) couple
-	// the CLI to config-time value resolution that future slices
+	// the CLI to config-time value resolution that future changes
 	// may want to alter.
 	rt, err := compose.Detect(compose.DetectOptions{RepoRoot: repoRoot})
 	if err != nil {
@@ -603,7 +600,7 @@ func runRuntime(sink *output.Sink, stdout, stderr io.Writer, cfg config.Config, 
 //  2. The flags type is TelemetryFlags, not RuntimeFlags.
 //  3. The config type is TelemetryConfig, not RuntimeConfig.
 //
-// T5 owns docker-compose.observability.yml (the top-level
+// This suite owns docker-compose.observability.yml (the top-level
 // observability profile). Detect's HUB_RUNTIME polymorphism points
 // the telemetry service at that file when HUB_RUNTIME is set to the
 // .yml's absolute path — the hermetic test harness relies on this

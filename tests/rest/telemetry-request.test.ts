@@ -522,8 +522,7 @@ describe('REST telemetry instrumentation', () => {
     const address = server.address();
     if (!address || typeof address === 'string') throw new Error('no address');
     // We use a 404 route — the request still flows through the
-    // telemetry funnel, which is what the plan §Tarea 3 case 2
-    // verifies for 403-class errors. To exercise FORBIDDEN we send
+    // telemetry funnel. To exercise FORBIDDEN we send
     // a body that the dispatcher will reject with HubError FORBIDDEN.
     const response = await fetch(`http://127.0.0.1:${address.port}/api/v1/catalog`, {
       method: 'POST',

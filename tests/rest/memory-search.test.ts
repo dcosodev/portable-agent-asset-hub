@@ -1,6 +1,4 @@
-// tests/rest/memory-search.test.ts
-//
-// Normative test for the `searchMemories` and `getMemory` REST surfaces.
+// Tests for the `searchMemories` and `getMemory` REST surfaces.
 // Mirrors the helpers used by tests/rest/memory-blocks.test.ts: each test
 // owns its own temp dir + SQLite DB + spawned launcher process so they
 // cannot leak state into each other. Memory rows are seeded directly via

@@ -1,5 +1,3 @@
-// packages/core/src/skills/explicit-relations.ts
-//
 // Production-side extractor for `metadata.hermes.related_skills`.
 //
 // Replaces the previous Python audit under

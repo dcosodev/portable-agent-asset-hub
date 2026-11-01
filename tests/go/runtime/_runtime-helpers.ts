@@ -1,6 +1,4 @@
-// tests/go/runtime/_runtime-helpers.ts
-//
-// Shared assertion helpers for the T2 runtime subprocess tests
+// Shared assertion helpers for the runtime subprocess tests
 // (up-down.test.ts and status.test.ts). The helpers are kept here
 // — NOT inside the harness module — so the harness stays focused
 // on subprocess orchestration (build / PATH / rig install) and the

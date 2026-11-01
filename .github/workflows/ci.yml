@@ -30,7 +30,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - name: OpenAPI drift gate
-        run: pnpm s6:drift
+        run: pnpm openapi:drift
       - name: Observability source contract
         # Static checks over the telemetry kernel and the Docker stack
         # configuration. Neither needs a running Docker daemon; the live

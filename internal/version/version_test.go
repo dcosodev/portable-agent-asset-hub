@@ -10,7 +10,7 @@ import (
 )
 
 // TestCurrentValuesKnownShape — every documented field is present and
-// non-empty. The s11 gate relies on this contract.
+// non-empty.
 func TestCurrentValuesKnownShape(t *testing.T) {
 	v := version.Current()
 	if v.Service != version.ServiceLabel {
@@ -26,8 +26,7 @@ func TestCurrentValuesKnownShape(t *testing.T) {
 
 // TestCurrentValuesMarshalsToJSON — the JSON payload must round-trip
 // through encoding/json and contain every documented key. The
-// orchestrator parses this payload, so its shape is part of the
-// contract.
+// orchestrator parses this payload, so its shape must stay stable.
 func TestCurrentValuesMarshalsToJSON(t *testing.T) {
 	v := version.Current()
 	data, err := json.Marshal(v)
@@ -43,7 +42,7 @@ func TestCurrentValuesMarshalsToJSON(t *testing.T) {
 }
 
 // TestInfoStringDeterministic — two adjacent calls produce the same
-// line. The format is the s11 gate's `hub version` shape.
+// line.
 func TestInfoStringDeterministic(t *testing.T) {
 	info := version.CurrentInfo()
 	first := info.String()
@@ -58,20 +57,20 @@ func TestInfoStringDeterministic(t *testing.T) {
 	}
 }
 
-// TestConstantsArePinned — Hub and ServiceLabel are the contract. A
-// drift here means the contract drifted.
+// TestConstantsArePinned — Hub, ServiceLabel, REST and OpenAPI hold
+// their expected fixed values.
 func TestConstantsArePinned(t *testing.T) {
 	if version.Hub != "0.1.0" {
-		t.Fatalf("Hub = %q, want %q (T0.5 contract pin)", version.Hub, "0.1.0")
+		t.Fatalf("Hub = %q, want %q", version.Hub, "0.1.0")
 	}
 	if version.ServiceLabel != "hub" {
 		t.Fatalf("ServiceLabel = %q, want %q (canonical product name)", version.ServiceLabel, "hub")
 	}
 	if version.REST != "unknown" {
-		t.Fatalf("REST = %q, want %q (deferred to T1)", version.REST, "unknown")
+		t.Fatalf("REST = %q, want %q (not wired in yet)", version.REST, "unknown")
 	}
 	if version.OpenAPI != "unknown" {
-		t.Fatalf("OpenAPI = %q, want %q (deferred to T6)", version.OpenAPI, "unknown")
+		t.Fatalf("OpenAPI = %q, want %q (not wired in yet)", version.OpenAPI, "unknown")
 	}
 }
 

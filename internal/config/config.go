@@ -1,6 +1,6 @@
 // Package config is the single env-loading boundary for the hub shell.
 // Per docs/architecture/go-product-shell.md the shell reads (and
-// MUST NOT write) the following three path-shaped env vars at T0.5:
+// MUST NOT write) the following three path-shaped env vars today:
 //
 //	HUB_HOME      — override HUB_HOME (XDG-style fallback applies)
 //	HUB_RUNTIME   — override the Compose project root (deferred)
@@ -26,7 +26,7 @@ import (
 	"hub/internal/paths"
 )
 
-// EnvKey* are the canonical env-var names. Exported so the s11 gate
+// EnvKey* are the canonical env-var names. Exported so the shell tests
 // can assert on the contract surface from outside the package.
 const (
 	EnvKeyHome    = "HUB_HOME"

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://portable-agent-asset-hub/schemas/openclaw.plugin.schema.json",
   "title": "PAH OpenClaw Plugin Manifest",
-  "description": "Frozen v1 contract for the OpenClaw plugin manifest descriptor. The host loads this file when wiring the OpenClaw adapter into a runtime; the descriptor pins the renderer version + snapshot/profile the plugin was built against so a host can refuse to load a stale plugin against a newer snapshot.",
+  "description": "v1 contract for the OpenClaw plugin manifest descriptor. The host loads this file when wiring the OpenClaw adapter into a runtime; the descriptor pins the renderer version + snapshot/profile the plugin was built against so a host can refuse to load a stale plugin against a newer snapshot.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -20,7 +20,7 @@
     "kind": {
       "type": "string",
       "const": "openclaw",
-      "description": "Plugin kind. The S9 surface only ships the 'openclaw' kind."
+      "description": "Plugin kind. Only the 'openclaw' kind exists."
     },
     "name": {
       "type": "string",

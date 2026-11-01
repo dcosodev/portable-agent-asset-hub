@@ -1,6 +1,4 @@
-// packages/runtime-adapters/src/contracts.ts
-//
-// Frozen contract surface for the FASE 4 runtime-adapters package. The
+// Public contract of the runtime-adapters package. The
 // public types declared here are the only shapes external callers
 // (scripts/attach-agent-hub.mjs, tests/runtime-adapters/*) may import.
 // Everything under src/internal/* and src/<harness>/implementation.ts

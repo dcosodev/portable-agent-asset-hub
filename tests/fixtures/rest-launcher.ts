@@ -1,5 +1,3 @@
-// tests/fixtures/rest-launcher.ts
-//
 // Shared harness for the tests that drive `agent-memory-rest` as a real
 // child process.
 //

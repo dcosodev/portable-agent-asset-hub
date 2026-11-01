@@ -1,42 +1,18 @@
-// tests/go/distribution/update-dry-run-default.test.ts
+// Real-subprocess contract for `hub update`.
 //
-// T9 RED real-subprocess contract for `hub update`. This is one of the
-// three test files the T9 amendment names explicitly in `tests[]`.
+// Contract:
 //
-// Contract source of truth — docs/roadmap/slices.json slice `T9`:
-//
-//   objective
-//     "hub update (literal channel `stable` compiled-only; plan-only
-//      dry-run by default; `hub update --apply` refuses with exit 2
-//      pending a future separately governed apply transport)"
-//
-//   implementation_tasks[1]
-//     "literal channel `stable` only, compiled binaries only (no source
-//      / script / dev channels); plan-only dry-run is the default (no
-//      network mutation, no download, no install); `hub update --apply`
-//      refuses with exit code 2 with a message that says the apply
-//      transport is out of scope and must be added by a future
-//      separately governed slice"
-//
-//   audit_requirements[4..6]
-//     non-stable channels are rejected with a clear error BEFORE any
-//       network call
-//     `hub update` defaults to plan-only dry-run and never auto-applies
-//     `hub update --apply` refuses with exit code 2; no install mutation
-//       occurs on refuse
-//
-//   forbidden_paths
-//     internal/update/apply.go, and any install-mutating applier
+//   * Literal channel `stable` only, compiled binaries only. Non-stable
+//     channels are rejected with a clear error BEFORE any network call.
+//   * Plan-only dry-run is the default (no network mutation, no download,
+//     no install), and it never auto-applies.
+//   * `hub update --apply` refuses with exit code 2; no install mutation
+//     occurs on refuse. There is deliberately no internal/update/apply.go.
 //
 // "No install mutation" is proven byte-for-byte: the test digests the
 // built hub binary and the whole `$HUB_HOME` tree before and after each
 // invocation and requires both snapshots to be identical.
 //
-// RED STATE at authoring time: `update` is not registered in
-// cmd/hub/main.go, so every invocation exits 2 with
-// `hub: unknown command "update"`. Note that the `--apply` refusal case
-// ALSO expects exit 2 — `assertDispatched()` is what stops that from
-// going accidentally GREEN against the missing verb.
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { existsSync, readdirSync, statSync } from 'node:fs';
@@ -81,7 +57,7 @@ function binaryDigest(): { path: string; digest: string; size: number } {
 // 1. `hub update --help`.
 // ---------------------------------------------------------------------------
 
-describe('hub update — help surface (T9)', () => {
+describe('hub update — help surface', () => {
   it('`hub update --help` exits 0 and documents the plan-only default plus --apply', async () => {
     const fx = fixture('update-help');
     const res = await runUpdate(fx, ['update', '--help']);
@@ -91,8 +67,8 @@ describe('hub update — help surface (T9)', () => {
     ).toBe(0);
     expect(res.stdout).not.toBe('');
     expect(res.stderr).toBe('');
-    // The amendment pins `--apply` as the (refused) flag and `stable`
-    // as the only channel. Both must be discoverable from --help.
+    // `--apply` is the (refused) flag and `stable` the only channel.
+    // Both must be discoverable from --help.
     expect(res.stdout).toMatch(/--apply\b/u);
     expect(res.stdout).toMatch(/\bstable\b/u);
   }, CASE_TIMEOUT_MS);
@@ -109,7 +85,7 @@ describe('hub update — help surface (T9)', () => {
 // 2. Default invocation is a plan-only dry-run.
 // ---------------------------------------------------------------------------
 
-describe('hub update — plan-only dry-run is the default (T9)', () => {
+describe('hub update — plan-only dry-run is the default', () => {
   it('`hub update` exits 0, emits a plan on stdout, and mutates nothing', async () => {
     const fx = fixture('update-default');
     await hubInit(fx);
@@ -122,10 +98,9 @@ describe('hub update — plan-only dry-run is the default (T9)', () => {
       res.status,
       `stdout=${JSON.stringify(res.stdout)}\nstderr=${JSON.stringify(res.stderr)}`,
     ).toBe(0);
-    // The default is described as a PLAN. The amendment does not pin the
-    // plan's exact wording or schema, so the assertion is limited to
-    // "something was reported on the contract stream" — no invented
-    // fields, no invented keys.
+    // The default is described as a PLAN. Its exact wording and schema
+    // are not fixed, so the assertion is limited to "something was
+    // reported on stdout".
     expect(res.stdout).not.toBe('');
 
     // No install mutation: the binary is byte-identical.
@@ -171,7 +146,7 @@ describe('hub update — plan-only dry-run is the default (T9)', () => {
 // 3. Non-stable channels are refused.
 // ---------------------------------------------------------------------------
 
-describe('hub update — literal `stable` is the only channel (T9)', () => {
+describe('hub update — literal `stable` is the only channel', () => {
   const nonStable = [
     'beta',
     'dev',
@@ -179,7 +154,7 @@ describe('hub update — literal `stable` is the only channel (T9)', () => {
     'source',
     'script',
     'edge',
-    'Stable',   // case-sensitivity: the amendment pins the LITERAL `stable`
+    'Stable',   // case-sensitivity: only the LITERAL `stable` is accepted
     'stable-2', // near-miss must not be accepted by a prefix match
   ] as const;
 
@@ -191,10 +166,9 @@ describe('hub update — literal `stable` is the only channel (T9)', () => {
       const homeBefore = snapshotTree(fx.hubHome);
       const res = await runUpdate(fx, ['update', '--channel', channel]);
       assertDispatched(res, 'update');
-      // The amendment says "rejected with a clear error before any
-      // network call" but does not pin 1 vs 2 for the channel refusal
-      // (it pins exit 2 only for `--apply`). The assertion is therefore
-      // "does not succeed" + "diagnostic on stderr" — no invented code.
+      // The channel refusal happens before any network call. The exit
+      // code is not asserted here, only "does not succeed" + "diagnostic
+      // on stderr".
       expect(
         res.status,
         `stdout=${JSON.stringify(res.stdout)}\nstderr=${JSON.stringify(res.stderr)}`,
@@ -218,13 +192,12 @@ describe('hub update — literal `stable` is the only channel (T9)', () => {
 // ---------------------------------------------------------------------------
 // 4. `hub update --apply` refuses with exit 2 and mutates nothing.
 //
-// This is the single exit code the amendment pins numerically:
-//   "`hub update --apply` refuses with exit code 2 and a message
-//    declaring the apply transport out of scope; no install mutation
-//    occurs on refuse"
+// `hub update --apply` refuses with exit code 2 and a message
+// declaring the apply transport out of scope; no install mutation
+// occurs on refuse.
 // ---------------------------------------------------------------------------
 
-describe('hub update --apply — refuses exit 2, no mutation (T9)', () => {
+describe('hub update --apply — refuses exit 2, no mutation', () => {
   it('exits exactly 2 with a diagnostic on stderr and no plan-success on stdout', async () => {
     const fx = fixture('update-apply');
     await hubInit(fx);
@@ -281,7 +254,7 @@ describe('hub update --apply — refuses exit 2, no mutation (T9)', () => {
 // 5. Unknown verb / unknown flag under `update`.
 // ---------------------------------------------------------------------------
 
-describe('hub update — unknown verb and unknown flag are fail-closed (T9)', () => {
+describe('hub update — unknown verb and unknown flag are fail-closed', () => {
   it('`hub update install` (unknown positional verb) is refused non-zero', async () => {
     const fx = fixture('update-unknown-verb');
     const res = await runUpdate(fx, ['update', 'install']);
@@ -300,7 +273,7 @@ describe('hub update — unknown verb and unknown flag are fail-closed (T9)', ()
 });
 
 // ---------------------------------------------------------------------------
-// Local runner: `hub update` must never reach the network in this slice,
+// Local runner: `hub update` must never reach the network in this version,
 // so every invocation is given an unroutable loopback endpoint alongside
 // the standard fixture env. Keeping it in one helper means no test can
 // accidentally run against a live endpoint.

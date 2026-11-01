@@ -1,5 +1,3 @@
-// packages/mcp/src/error-mapper.ts
-//
 // The MCP tool layer must surface REST errors byte-identically. This
 // module is the single place where HubError-shaped envelopes are
 // converted to the MCP-side error shape. It never invents new codes —

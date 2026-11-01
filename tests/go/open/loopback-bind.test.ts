@@ -1,8 +1,6 @@
-// tests/go/open/loopback-bind.test.ts
+// Contract for the loopback-only `hub open` command.
 //
-// T4 contract for the loopback-only `hub open` command.
-//
-// What this test proves (per docs/roadmap/slices.json T4):
+// What this test proves:
 //
 //   * `hub open` serves the embedded Graph Explorer bundle on
 //     127.0.0.1 only — a TCP probe to 127.0.0.1:<port> succeeds.
@@ -10,8 +8,7 @@
 //   * The dispatcher is fail-closed: `hub open --help` exits 0 and
 //     mentions loopback-only publication.
 //   * The handler refuses 0.0.0.0 — see rejects-non-loopback.test.ts
-//     for the negative case (kept as a separate file per the T4
-//     contract's test list).
+//     for the negative case (kept as a separate file).
 //   * No bearer-shaped content leaks on stdout or stderr.
 //
 // These are real subprocess tests. The harness builds the binary
@@ -72,7 +69,7 @@ afterEach(async () => {
   await new Promise((r) => setTimeout(r, 50));
 });
 
-describe('hub open — loopback bind (T4 contract)', () => {
+describe('hub open — loopback bind', () => {
   it('probes 127.0.0.1:<port> while hub open is serving the bundle', async () => {
     const port = await pickFreeLoopbackPort();
     const { home, cleanup } = freshHome('loopback-bind-ok');

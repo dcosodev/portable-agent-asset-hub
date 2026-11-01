@@ -1,5 +1,3 @@
-// packages/materializers/src/preview.ts
-//
 // The renderer-agnostic preview pipeline. Given a (store, actor,
 // harness, profileId, snapshotId, targetRoot) tuple, it:
 //   1. Loads the Profile from storage under the actor's scope.
@@ -63,7 +61,7 @@ function deterministicGeneratedAt(harness: HarnessId, profileId: string, snapsho
  * Reject target roots that are not real, existing, non-symlink
  * directories. The preview/apply/rollback pipeline must never operate
  * against an attacker-controlled symlink (defence in depth matches
- * Slice 4's `FileMaterializer` rule).
+ * the `FileMaterializer` rule).
  */
 export function assertSafeTargetRoot(targetRoot: string): string {
   if (!targetRoot || typeof targetRoot !== 'string') {

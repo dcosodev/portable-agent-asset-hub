@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/internal/digest.ts
-//
 // SHA-256 over canonicalised manifests. The canonicalisation is a
 // strict subset of RFC 8785 (JSON Canonicalization Scheme), tuned
 // for our own output so the apply can reproduce the byte stream:

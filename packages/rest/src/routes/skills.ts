@@ -1,5 +1,3 @@
-// packages/rest/src/routes/skills.ts
-//
 // Skill REST routes. Order matters: the literal
 // `/api/v1/skills/search` route MUST be declared BEFORE the
 // path-parameter `/api/v1/skills/{id}` route in the registry, otherwise

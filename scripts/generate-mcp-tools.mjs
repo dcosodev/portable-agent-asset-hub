@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-// scripts/generate-mcp-tools.mjs
-//
 // Deterministic generator for the MCP tool manifest. Reads:
 //
 //   * openapi/openapi.yaml         — picks every operation whose
@@ -32,7 +30,7 @@
 //
 // This script is the single source of truth for the MCP catalog. Editing
 // `packages/mcp/src/generated-tool-metadata.ts` by hand is a violation of
-// S7; the file carries a `// DO NOT EDIT` comment and the README points
+// MCP; the file carries a `// DO NOT EDIT` comment and the README points
 // operators at this script. The drift detector in `tests/mcp/schema-match
 // .test.ts` enforces that the file stays in sync with OpenAPI.
 

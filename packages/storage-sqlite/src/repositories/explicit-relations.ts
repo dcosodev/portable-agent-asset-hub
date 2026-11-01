@@ -1,5 +1,3 @@
-// packages/storage-sqlite/src/repositories/explicit-relations.ts
-//
 // SQLite adapter for the explicit-relation extractor. The adapter
 // implements `ExplicitRelationSource` from core and reads the
 // `metadata_json` column on `skill_entries` plus the proposal and

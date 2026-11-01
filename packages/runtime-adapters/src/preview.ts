@@ -1,5 +1,3 @@
-// packages/runtime-adapters/src/preview.ts
-//
 // The preview pipeline. Given (harness, targetDir, profile, agentId,
 // userFile, soulFile, restUrl, mcpEntry) it:
 //

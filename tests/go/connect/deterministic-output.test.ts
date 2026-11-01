@@ -1,11 +1,7 @@
-// tests/go/connect/deterministic-output.test.ts
-//
-// T8 RED contract (digest/recompute/CAS, AMENDMENT-aligned).
+// Contract
 //
 // This file pins the determinism contract for `hub hub connect`
-// OUTPUT under the authorized amendment, NOT the legacy
-// "byte-stable raw JSON across processes" assertion set. The
-// amendment is explicit:
+// OUTPUT, not "byte-stable raw JSON across processes":
 //
 //   * The preview process A uses real TypeScript, produces a real
 //     plan (runId / generatedAt MAY vary across invocations).
@@ -28,11 +24,6 @@
 //     MUST NOT be aliases — a regression that conflates them
 //     breaks the drift detector and the audit trail.
 //
-// Today (pre-T8) every test in this file is RED: the dispatcher
-// rejects `hub hub connect` with exit 2 / "unknown command".
-// Once T8 lands, the SAME assertions flip GREEN with zero
-// changes — that is the point of writing them first.
-//
 // Hermetic fixtures: per-test HUB_HOME + targetRoot mkdtemps; the
 // harness strips inherited env vars that could leak into output
 // (HUB_BEARER_TOKEN*, PATH perturbations, etc.).
@@ -54,7 +45,7 @@ const FAKE_HEX_64 = '0'.repeat(64);
 
 const PLAN_DIGEST_REGEX = /^[0-9a-f]{64}$/u;
 
-describe('hub hub connect — deterministic output (T8, amendment)', () => {
+describe('hub hub connect — deterministic output', () => {
   let homeCleanup: (() => void) | undefined;
   let targetCleanup: (() => void) | undefined;
   let databaseCleanup: (() => void) | undefined;
@@ -231,9 +222,8 @@ describe('hub hub connect — deterministic output (T8, amendment)', () => {
 
   // -----------------------------------------------------------------
   // 5. Human-form output (without --json) carries no timestamp
-  //    drift that survives substring stripping. The amendment
-  //    allows runId / generatedAt to appear on stdout (they
-  //    are part of the plan); the contract is that after
+  //    drift that survives substring stripping. runId / generatedAt
+  //    may appear on stdout (they are part of the plan); after
   //    stripping the ISO-8601 substring, the rest is
   //    byte-stable across two invocations of the same input.
   // -----------------------------------------------------------------
@@ -270,10 +260,9 @@ describe('hub hub connect — deterministic output (T8, amendment)', () => {
 
   // -----------------------------------------------------------------
   // 6. Diagnostic-channel stderr is stable for the same input.
-  //    The slice says contract-violation diagnostics are stable
-  //    across invocations: same argv, same diagnostic. A
-  //    regression that adds a per-call timestamp to a usage
-  //    diagnostic is a contract regression.
+  //    Contract-violation diagnostics are stable across
+  //    invocations: same argv, same diagnostic. A per-call
+  //    timestamp in a usage diagnostic would be a regression.
   // -----------------------------------------------------------------
   it('unknown-verb stderr is byte-stable across two invocations', async () => {
     const res1 = await runConnect(['hub', 'connect', 'migrate']);
@@ -286,8 +275,7 @@ describe('hub hub connect — deterministic output (T8, amendment)', () => {
 
   // -----------------------------------------------------------------
   // 7. --json output is parseable: no truncation, no trailing
-  //    garbage. The slice says JSON output is the contract
-  //    surface; a regression that adds a stray log line after
+  //    garbage. A regression that adds a stray log line after
   //    the JSON payload surfaces here as a JSON.parse failure.
   // -----------------------------------------------------------------
   it('preview --json: stdout is exactly one JSON document with no trailing garbage', async () => {

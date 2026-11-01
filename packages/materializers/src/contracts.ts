@@ -1,10 +1,6 @@
-// packages/materializers/src/contracts.ts
-//
-// Frozen contract surface for the S8 materializer. The types in this
-// file are the public API for every renderer (hermes, openclaw) and for
-// every consumer (REST, MCP, SDKs). They must remain renderer-agnostic
-// so that Slice 9 (OpenClaw) can reuse the same apply/rollback pipeline
-// by swapping the `hermesAdapter` for an `openclawAdapter`.
+// Public types for every renderer (hermes, openclaw) and every consumer
+// (REST, MCP, SDKs). They must remain renderer-agnostic so all renderers
+// can share the same apply/rollback pipeline.
 
 import type { ActorContext, Profile, Storage } from '@portable-agent-asset-hub/core';
 
@@ -28,8 +24,7 @@ export type ManifestFile = {
 
 /**
  * The manifest v1 contract. This is the value the renderer hands to
- * `applyPlan`. Slice 9 reuses this exact shape — `harness` is the only
- * field that distinguishes a Hermes materialization from an OpenClaw
+ * `applyPlan`. `harness` is the only field that distinguishes a Hermes materialization from an OpenClaw
  * one.
  */
 export type ManifestV1 = {
@@ -93,9 +88,8 @@ export type RollbackResult = {
 
 /**
  * A renderer adapter turns a Profile + harness metadata into a list of
- * `ManifestFile`s. The default Hermes adapter writes USER.md / MEMORY.md
- * / SKILL.md (per Slice 8 plan), and the manifest itself. Slice 9 ships
- * an `openclawAdapter` with the same shape but a different layout.
+ * `ManifestFile`s. The Hermes adapter writes USER.md / MEMORY.md / SKILL.md and the
+ * manifest; `openclawAdapter` has the same shape with a different layout.
  */
 export type RenderResult = { files: ManifestFile[] };
 

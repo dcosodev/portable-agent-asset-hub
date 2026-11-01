@@ -1,5 +1,5 @@
 // Package compose is the engine-agnostic adapter the hub shell uses
-// to drive the runtime stack. Per T2 / docs/roadmap/slices.json the
+// to drive the runtime stack. The
 // runtime is "Docker / Compose runtime control from Go", and the
 // objective is to add hub runtime {up,down,status,logs,ps} "without
 // coupling to a single engine".
@@ -74,7 +74,7 @@ import (
 // -----------------------------------------------------------------------------
 
 // Engine identifies which Compose execution path the adapter is
-// using. The set is closed; new engines require a slice bump.
+// using. The set is closed; new engines require a contract change.
 type Engine string
 
 const (
@@ -199,7 +199,7 @@ func Detect(opts DetectOptions) (Runtime, error) {
 	// the caller gets a precise "missing file" diagnostic instead
 	// of a Compose-side cryptic error.
 	//
-	// HUB_RUNTIME polymorphism (T2 polish): the environment contract
+	// HUB_RUNTIME polymorphism (): the environment contract
 	// documents HUB_RUNTIME as "the Compose project root", but
 	// operators / hermetic tests routinely point it at an existing
 	// .yaml/.yml compose-file path to bypass the repoRoot-based
@@ -238,10 +238,9 @@ func Detect(opts DetectOptions) (Runtime, error) {
 
 	// Resolve executable. `docker` is the only documented Compose
 	// driver today; Podman / nerdctl are deliberately NOT added
-	// because the slice explicitly says "without coupling to a
-	// single engine" but the audit surface is the single Docker
-	// contract documented by docker-stack-contract.mjs. A future
-	// slice may add `podman compose` behind the same Engine
+	// because the checks in scripts/docker-stack-contract.mjs cover
+	// Docker only. A future
+	// change may add `podman compose` behind the same Engine
 	// abstraction.
 	dockerPath, err := lookPath("docker")
 	if err != nil {
@@ -355,7 +354,7 @@ func isSafeProjectName(s string) bool {
 // compose YAML extension. We accept .yaml, .yml, and the documented
 // yml canonicalisations a hermetic test / operator may pass. The
 // function performs NO filesystem access — pair it with os.Stat when
-// you also need existence. T2 deliberately rejects any extension
+// you also need existence. It deliberately rejects any extension
 // besides those three so an operator pointing HUB_RUNTIME at a
 // non-compose artefact (e.g. an inventory file) is treated as a
 // project-root override, not a ComposeFile override.
@@ -1032,7 +1031,7 @@ type LogsOptions struct {
 	// follow in the Go shell — the shell's logs command renders
 	// the captured stdout and exits, leaving a long-running
 	// stream to `docker compose logs -f` outside the shell. The
-	// field exists so future slices can opt in without
+	// field exists so future changes can opt in without
 	// reshaping the wire shape.
 	Follow bool
 	// Timeout bounds the subprocess lifetime. Required — every
@@ -1186,7 +1185,7 @@ func (s *Service) sanitizeEnv(extra []string, bearerFile string) []string {
 }
 
 // isBearerEnvKey returns true for any env-var name that could carry
-// a bearer. The set is closed; new entries require a slice bump.
+// a bearer. The set is closed; new entries require a contract change.
 func isBearerEnvKey(key string) bool {
 	switch key {
 	case "HUB_BEARER_TOKEN",
@@ -1227,5 +1226,5 @@ func ValidateLoopback(host string) error {
 	if strings.HasPrefix(host, "127.") {
 		return nil
 	}
-	return fmt.Errorf("compose: refuse non-loopback host %q (I-10 loopback-first)", host)
+	return fmt.Errorf("compose: refuse non-loopback host %q (loopback only)", host)
 }

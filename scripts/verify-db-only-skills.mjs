@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// scripts/verify-db-only-skills.mjs
-//
-// Fase 3 helper. Given a SQLite file produced by the Fase2 apply CLI,
+// Given a SQLite file produced by the skill pack apply CLI,
 // the helper opens it directly with `node:sqlite`, asserts the schema
 // is at migration 16, that the named skill row exists, and that the
 // body / resource bytes round-trip exactly. The helper is hermetic: it

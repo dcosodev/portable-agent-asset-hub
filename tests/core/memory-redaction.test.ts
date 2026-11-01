@@ -1,5 +1,3 @@
-// tests/core/memory-redaction.test.ts
-//
 // Regression coverage for packages/core/src/memory/redaction.ts.
 // `redact()` had no test file at all before this: the by-key
 // full-field redaction compared a candidate key against a Set of
