@@ -18,6 +18,11 @@ jobs:
           node-version: 22.16.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Production dependency audit
+        # Fails on any known advisory in a production dependency. Advisories
+        # are published independently of this repo, so this step can fail on
+        # an unchanged commit; that is the point.
+        run: pnpm audit --prod
       - name: Documentation contract
         # Cheap and independent of the build, so it runs first: a broken
         # link should not wait behind a full typecheck.
