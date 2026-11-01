@@ -28,7 +28,9 @@ export default defineConfig({
   // locally.
   test: {
     include: ['tests/**/*.test.ts'],
-    globalSetup: ['tests/go-build-cache.global-setup.ts'],
+    // Absolute: Vitest resolves this against its root, and a workspace package
+    // without its own config (slices/1-spike-skills) inherits this file.
+    globalSetup: [new URL('./tests/go-build-cache.global-setup.ts', import.meta.url).pathname],
     testTimeout: 20_000,
     hookTimeout: 60_000,
   },

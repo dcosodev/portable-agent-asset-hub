@@ -123,7 +123,17 @@ export async function buildBaselineManifest(root: string, options: { allowlist: 
   return { version: 1, root: safe.root, files: await Promise.all(discovered.map(p => fileMetadata(safe.root, p))), allowlist, exclusions, toolVersion: TOOL_VERSION, snapshot: options.snapshot, completeness: 'complete', extrasPolicy: 'reject-non-excluded', symlinkPolicy: 'reject-root-and-internal' };
 }
 
-export async function verifyBaselineManifest(root: string, manifest: BaselineManifest): Promise<ManifestCheck> {
+/**
+ * `exact` compares all permission bits. `git-executable-bit` compares only the
+ * owner executable bit, the one permission git records, for a tree that came
+ * from a checkout: there, the other bits come from the machine's umask.
+ */
+export type BaselineModePolicy = 'exact' | 'git-executable-bit';
+
+export async function verifyBaselineManifest(root: string, manifest: BaselineManifest, options: { modePolicy?: BaselineModePolicy } = {}): Promise<ManifestCheck> {
+  const modeMatches = options.modePolicy === 'git-executable-bit'
+    ? (actual: number, pinned: number) => (actual & 0o100) === (pinned & 0o100)
+    : (actual: number, pinned: number) => actual === pinned;
   const errors: string[] = [];
   let safe: { root: string; physical: string };
   try { safe = await assertSafeRoot(root); } catch (e) { return { valid: false, errors: [String(e instanceof Error ? e.message : e)] }; }
@@ -152,7 +162,8 @@ export async function verifyBaselineManifest(root: string, manifest: BaselineMan
   for (const item of candidates) {
     try {
       const actual = await fileMetadata(safe.root, item.path); expected.add(item.path);
-      for (const key of ['bytes', 'mode', 'sha256'] as const) if (actual[key] !== item[key]) errors.push(`${item.path} ${key} mismatch`);
+      for (const key of ['bytes', 'sha256'] as const) if (actual[key] !== item[key]) errors.push(`${item.path} ${key} mismatch`);
+      if (!modeMatches(actual.mode, item.mode)) errors.push(`${item.path} mode mismatch`);
     } catch { errors.push(`${item.path} missing or unsafe`); }
   }
   try {

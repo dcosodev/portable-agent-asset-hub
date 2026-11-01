@@ -939,11 +939,13 @@ func TestSignals_SIGINTPropagatesToChildAndExits(t *testing.T) {
 	scriptPath := filepath.Join(dir, "fake-mcp-sigint.mjs")
 	const script = `
 	import { appendFileSync } from 'node:fs';
-	appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'start\n');
 	process.on('SIGINT', function() {
 	  appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'sigint\n');
 	  process.exit(0);
 	});
+	// Only after the handler exists: the test signals as soon as it reads
+	// this marker, and an earlier signal would kill the process by default.
+	appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'start\n');
 	setInterval(function(){}, 1000);
 	`
 	if err := os.WriteFile(scriptPath, []byte(script), 0o600); err != nil {
@@ -1021,11 +1023,13 @@ func TestSignals_SIGTERMPropagatesToChild(t *testing.T) {
 	scriptPath := filepath.Join(dir, "fake-mcp-sigterm.mjs")
 	const script = `
 	import { appendFileSync } from 'node:fs';
-	appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'start\n');
 	process.on('SIGTERM', function() {
 	  appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'sigterm\n');
 	  process.exit(0);
 	});
+	// Only after the handler exists: the test signals as soon as it reads
+	// this marker, and an earlier signal would kill the process by default.
+	appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'start\n');
 	setInterval(function(){}, 1000);
 	`
 	if err := os.WriteFile(scriptPath, []byte(script), 0o600); err != nil {
@@ -1061,6 +1065,11 @@ func TestSignals_SIGTERMPropagatesToChild(t *testing.T) {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
+	}
+	if !strings.Contains(readFileString(t, sidecar), "start\n") {
+		cancel()
+		<-runDone
+		t.Fatalf("fake-mcp did not start within 2s")
 	}
 	if err := sup.Signal(syscall.SIGTERM); err != nil {
 		cancel()

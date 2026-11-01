@@ -82,8 +82,16 @@ try {
     if (!first.entries.some((entry) => entry.path === 'package/dist/index.d.ts')) throw new Error(`${name}:MISSING_TYPES`);
     const forbidden = first.entries.filter((entry) => entry.path.endsWith('.tsbuildinfo') || (entry.path.endsWith('.ts') && !entry.path.endsWith('.d.ts')));
     if (forbidden.length > 0) throw new Error(`${name}:FORBIDDEN_PACKAGE_ENTRIES:${forbidden.map((entry) => entry.path).join(',')}`);
-    if (name === 'storage-sqlite' && first.entries.filter((entry) => entry.path.endsWith('.sql')).length !== 19) {
-      throw new Error('storage-sqlite:MIGRATION_SET_INCOMPLETE');
+    if (name === 'storage-sqlite') {
+      // The source directory is the migration set, so a new migration cannot
+      // leave this check stale, and every source file must reach the package.
+      const packaged = new Set(first.entries.map((entry) => entry.path));
+      const sources = (await readdir(join(root, 'packages', 'storage-sqlite', 'src', 'migrations'))).filter((file) => file.endsWith('.sql'));
+      const missing = sources.filter((file) => !packaged.has(`package/dist/migrations/${file}`));
+      const packagedCount = first.entries.filter((entry) => entry.path.endsWith('.sql')).length;
+      if (sources.length === 0 || missing.length > 0 || packagedCount !== sources.length) {
+        throw new Error(`storage-sqlite:MIGRATION_SET_INCOMPLETE:expected=${sources.length}:packaged=${packagedCount}:missing=${missing.join(',')}`);
+      }
     }
     if (name === 'storage-files' && !first.entries.some((entry) => entry.path === 'package/dist/index.js')) throw new Error('storage-files:MISSING_JS');
     results[name] = { first, second, package: firstName };

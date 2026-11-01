@@ -14,7 +14,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "build": "tsc -p tsconfig.json",
-    "package": "node scripts/package.mjs && node scripts/metrics.mjs",
+    "package": "node scripts/package.mjs",
     "smoke": "node scripts/smoke.mjs",
     "external-install": "node scripts/external-install.mjs",
     "protocol-smoke": "node scripts/protocol-smoke.mjs",
