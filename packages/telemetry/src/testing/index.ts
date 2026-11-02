@@ -5,17 +5,17 @@
  * only test fixtures do.
  *
  * Names are pinned to the public-stable API exposed by:
- * - `@opentelemetry/sdk-trace-base@2.10.0` → `InMemorySpanExporter`
- * - `@opentelemetry/sdk-metrics@2.10.0`  → `InMemoryMetricExporter`
+ * - `@opentelemetry/sdk-trace@3.0.0` → `InMemorySpanExporter`
+ * - `@opentelemetry/sdk-metrics@3.0.0`  → `InMemoryMetricExporter`
  *
  * When the upstream package is replaced (or renamed) the failure is loud
  * here and at the test imports, never silent at runtime.
  */
 
-export { InMemorySpanExporter } from '@opentelemetry/sdk-trace-base';
+export { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 export { InMemoryMetricExporter } from '@opentelemetry/sdk-metrics';
 export { installInMemoryTelemetry, resetInMemoryTelemetry } from './in-memory.js';
 export type { InMemoryTelemetry } from './in-memory.js';
 
-export type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+export type { ReadableSpan } from '@opentelemetry/sdk-trace';
 export type { ResourceMetrics, ScopeMetrics } from '@opentelemetry/sdk-metrics';

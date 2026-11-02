@@ -1,11 +1,11 @@
 import { context, metrics, propagation, trace } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import {
-  BasicTracerProvider,
+  TracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import {
   AggregationTemporality,
   InMemoryMetricExporter,
@@ -24,7 +24,7 @@ export type InMemoryTelemetry = {
 let active: InMemoryTelemetry | undefined;
 
 export function installInMemoryTelemetry(level: TelemetryLevel = 'standard'): InMemoryTelemetry {
-  const cm = new AsyncHooksContextManager();
+  const cm = new AsyncLocalStorageContextManager();
   cm.enable();
   (context as unknown as { setGlobalContextManager?: (m: unknown) => boolean }).setGlobalContextManager?.(cm);
   propagation.setGlobalPropagator(new W3CTraceContextPropagator());
@@ -32,8 +32,8 @@ export function installInMemoryTelemetry(level: TelemetryLevel = 'standard'): In
   metrics.disable();
 
   const spanExporter = new InMemorySpanExporter();
-  const tracerProvider = new BasicTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(spanExporter)],
+  const tracerProvider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: spanExporter })],
   });
   trace.setGlobalTracerProvider(tracerProvider);
 

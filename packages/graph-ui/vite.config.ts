@@ -13,12 +13,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom'],
-          graph: ['cytoscape'],
-          markdown: ['react-markdown', 'remark-gfm'],
+        manualChunks: (id) => {
+          if (/\/node_modules\/(react|react-dom)\//.test(id)) return 'react';
+          if (id.includes('/node_modules/cytoscape/')) return 'graph';
+          if (/\/node_modules\/(react-markdown|remark-gfm)\//.test(id)) return 'markdown';
+          return null;
         },
       },
     },
