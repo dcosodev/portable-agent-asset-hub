@@ -389,11 +389,11 @@ func RefuseIfWrongFileMode(path string) error {
 //   - The directory chain is lstat-clean (no symlinks) and ends
 //     with mode 0700.
 //   - The receipt file is written via os.CreateTemp in the SAME
-//     directory + fsync + os.Rename (atomic on POSIX).
+//     directory + fsync + os.Link (atomic, and fails if the name exists).
 //   - The final file is mode 0600 (umask-respected by CreateTemp
-//     pattern + explicit Chmod after rename).
+//     pattern + explicit Chmod before the link).
 //   - No leftover .tmp file: the deferred cleanup removes the
-//     temp file if rename never happens (early return on error).
+//     temp file on every path (early return on error).
 //   - No secrets sweep on field values — Validate() does that.
 func writeReceipt(hubHome string, r Receipt) (string, error) {
 	if err := r.Validate(); err != nil {
@@ -419,7 +419,7 @@ func writeReceipt(hubHome string, r Receipt) (string, error) {
 			finalPath,
 		)
 	}
-	// Create the temp file in the SAME directory so the rename
+	// Create the temp file in the SAME directory so the link
 	// is intra-filesystem (atomic on POSIX). Pattern matches
 	// <runId>.json-*.tmp; the leading runId makes leaked temp
 	// files (which should never happen) easy to attribute.
@@ -429,10 +429,8 @@ func writeReceipt(hubHome string, r Receipt) (string, error) {
 	}
 	tmpPath := tmp.Name()
 	defer func() {
-		// Best-effort cleanup of the temp file if any error
-		// path below returns. If rename succeeded, the file is
-		// already gone and the os.Remove silently fails on
-		// ENOENT.
+		// Remove the temp name on every path, including success,
+		// where the final name keeps the file alive.
 		_ = os.Remove(tmpPath)
 	}()
 	// Deterministic, sorted-key serialisation. encoding/json
@@ -457,10 +455,18 @@ func writeReceipt(hubHome string, r Receipt) (string, error) {
 	if err := os.Chmod(tmpPath, receiptFileMode); err != nil {
 		return "", fmt.Errorf("connect receipt: chmod temp: %w", err)
 	}
-	if err := os.Rename(tmpPath, finalPath); err != nil {
-		return "", fmt.Errorf("connect receipt: rename %s → %s: %w", tmpPath, finalPath, err)
+	// Atomic and exclusive: os.Link, unlike os.Rename, fails if the name
+	// exists, so two racing writers cannot both pass the check above. The
+	// deferred os.Remove clears the temp name.
+	if err := os.Link(tmpPath, finalPath); err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return "", fmt.Errorf(
+				"connect receipt: refusing to overwrite existing receipt %s (duplicate runId)",
+				finalPath,
+			)
+		}
+		return "", fmt.Errorf("connect receipt: link %s → %s: %w", tmpPath, finalPath, err)
 	}
-	// After rename, the file is final at finalPath.
 	return finalPath, nil
 }
 

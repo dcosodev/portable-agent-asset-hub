@@ -60,11 +60,11 @@
 
 import {
   existsSync,
+  linkSync,
   lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
-  renameSync,
   rmSync,
   writeFileSync,
   openSync,
@@ -291,13 +291,13 @@ export function receiptPath(hubHome, runId) {
  *      arbitrary filesystem ancestors.
  *   5. openSync(O_CREAT | O_WRONLY | O_EXCL, 0o600) on a
  *      per-runid .tmp path in the SAME directory.
- *   6. write the body; fsync; close; rename(2) atomic within
- *      the directory. rename of the SAME filesystem is
- *      atomic on POSIX; the test suite locks the "no
+ *   6. write the body; fsync; close; link(2) atomic within
+ *      the directory, which fails if the name exists, then
+ *      remove the temp name; the test suite locks the "no
  *      leftover .tmp" invariant by listing the directory
  *      post-write.
  *   7. chmod the final file to 0600 (the temp file is
- *      already 0600 from O_EXCL but the rename preserves
+ *      already 0600 from O_EXCL and the link shares
  *      the inode's mode; explicit re-chmod is belt-and-
  *      braces for kernel quirks).
  *
@@ -379,10 +379,21 @@ export function write(hubHome, receipt) {
     // Belt-and-braces: explicit chmod in case the kernel
     // applied a group/other bit via inherited umask.
     chmodSafe(tmpPath, RECEIPT_FILE_MODE);
-    // Atomic intra-filesystem rename. Both endpoints are
-    // in the SAME directory → guaranteed atomic rename(2)
-    // on POSIX (macOS APFS / Linux ext4).
-    renameSync(tmpPath, finalPath);
+    // Atomic and exclusive: link(2) publishes the finished file and,
+    // unlike rename(2), fails if the name exists. Two racing writers
+    // can both pass the check above, and only this one call decides.
+    // The finally block removes the temp name.
+    try {
+      linkSync(tmpPath, finalPath);
+    } catch (err) {
+      if (err.code === 'EEXIST') {
+        throw new ReceiptStoreError(
+          ERROR_CODES.DUPLICATE,
+          `refusing to overwrite existing receipt ${finalPath} (duplicate runId)`,
+        );
+      }
+      throw err;
+    }
     // Re-chmod the final path (some kernels preserve the
     // temp inode's mode; some reset to 0666&~umask).
     chmodSafe(finalPath, RECEIPT_FILE_MODE);
