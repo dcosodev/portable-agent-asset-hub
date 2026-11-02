@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, symlink, writeFile, rm } from 'node:fs/promises';
+import { chmod, mkdtemp, mkdir, symlink, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -94,5 +94,21 @@ const tempRoot = () => mkdtemp(join(tmpdir(), 'pah-baseline-'));
     const root = await tempRoot();
     try { await mkdir(join(root, 'dir')); await writeFile(join(root, 'dir', 'a'), 'a'); const manifest = await buildBaselineManifest(resolve(root), { allowlist: ['dir'] }); expect(manifest.root).toBe(resolve(root)); expect(manifest.files.map(f => f.path)).toEqual(['dir/a']); expect(await verifyBaselineManifest(root, manifest)).toEqual({ valid: true, errors: [] }); }
     finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('reports a mode change exactly by default, and only the executable bit under the git policy', async () => {
+    const root = await tempRoot();
+    try {
+      await writeFile(join(root, 'a.txt'), 'a');
+      await chmod(join(root, 'a.txt'), 0o600);
+      const manifest = await buildBaselineManifest(root, { allowlist: ['.'] });
+      await chmod(join(root, 'a.txt'), 0o644);
+      expect((await verifyBaselineManifest(root, manifest)).errors).toEqual(['a.txt mode mismatch']);
+      expect((await verifyBaselineManifest(root, manifest, { modePolicy: 'git-executable-bit' })).valid).toBe(true);
+      await chmod(join(root, 'a.txt'), 0o755);
+      expect((await verifyBaselineManifest(root, manifest, { modePolicy: 'git-executable-bit' })).errors).toEqual(['a.txt mode mismatch']);
+      await chmod(join(root, 'a.txt'), 0o644);
+      await writeFile(join(root, 'a.txt'), 'b');
+      expect((await verifyBaselineManifest(root, manifest, { modePolicy: 'git-executable-bit' })).errors).toEqual(['a.txt sha256 mismatch']);
+    } finally { await rm(root, { recursive: true, force: true }); }
   });
 });

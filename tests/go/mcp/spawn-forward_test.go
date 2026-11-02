@@ -31,6 +31,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -789,16 +790,23 @@ process.exit(1);
 		}
 		ts = append(ts, v)
 	}
-	// Inter-start deltas must be >= Min and <= Max (no zero, no
-	// unbounded growth).
+	// Inter-start deltas must be >= Min (no zero delay). A wall-clock upper
+	// bound would also measure Node's startup time, which grows with machine
+	// load, so the schedule's upper end is checked on the logged delays below.
 	for i := 1; i < len(ts); i++ {
 		delta := time.Duration(ts[i]-ts[i-1]) * time.Millisecond
 		if delta < 50*time.Millisecond {
 			t.Fatalf("backoff delta[%d] = %v < Min (50ms); possible thundering herd", i, delta)
 		}
-		if delta > 600*time.Millisecond {
-			t.Fatalf("backoff delta[%d] = %v > 1.5xMax; backoff is unbounded", i, delta)
-		}
+	}
+	// The supervisor must follow the exact schedule: doubling from Min, capped
+	// at Max (no unbounded growth). Run has returned, so reading parentErr is safe.
+	var delays []string
+	for _, m := range regexp.MustCompile(`restart attempt=\d+ delay=(\S+)`).FindAllStringSubmatch(parentErr.String(), -1) {
+		delays = append(delays, m[1])
+	}
+	if got, want := strings.Join(delays, " "), "50ms 100ms 200ms 400ms 400ms"; got != want {
+		t.Fatalf("restart delays = %q, want %q; stderr=%q", got, want, parentErr.String())
 	}
 	if sup.ExitCode() == 0 {
 		t.Fatalf("supervisor exit code = 0, want non-zero (MaxAttempts exhausted)")
@@ -939,11 +947,13 @@ func TestSignals_SIGINTPropagatesToChildAndExits(t *testing.T) {
 	scriptPath := filepath.Join(dir, "fake-mcp-sigint.mjs")
 	const script = `
 	import { appendFileSync } from 'node:fs';
-	appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'start\n');
 	process.on('SIGINT', function() {
 	  appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'sigint\n');
 	  process.exit(0);
 	});
+	// Only after the handler exists: the test signals as soon as it reads
+	// this marker, and an earlier signal would kill the process by default.
+	appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'start\n');
 	setInterval(function(){}, 1000);
 	`
 	if err := os.WriteFile(scriptPath, []byte(script), 0o600); err != nil {
@@ -1021,11 +1031,13 @@ func TestSignals_SIGTERMPropagatesToChild(t *testing.T) {
 	scriptPath := filepath.Join(dir, "fake-mcp-sigterm.mjs")
 	const script = `
 	import { appendFileSync } from 'node:fs';
-	appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'start\n');
 	process.on('SIGTERM', function() {
 	  appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'sigterm\n');
 	  process.exit(0);
 	});
+	// Only after the handler exists: the test signals as soon as it reads
+	// this marker, and an earlier signal would kill the process by default.
+	appendFileSync(process.env.HUB_MCP_FAKE_SIDECAR, 'start\n');
 	setInterval(function(){}, 1000);
 	`
 	if err := os.WriteFile(scriptPath, []byte(script), 0o600); err != nil {
@@ -1061,6 +1073,11 @@ func TestSignals_SIGTERMPropagatesToChild(t *testing.T) {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
+	}
+	if !strings.Contains(readFileString(t, sidecar), "start\n") {
+		cancel()
+		<-runDone
+		t.Fatalf("fake-mcp did not start within 2s")
 	}
 	if err := sup.Signal(syscall.SIGTERM); err != nil {
 		cancel()

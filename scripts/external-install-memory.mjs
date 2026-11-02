@@ -7,6 +7,10 @@ import { promisify } from 'node:util';
 const exec = promisify(execFile);
 const root = resolve(new URL('..', import.meta.url).pathname);
 const temp = await mkdtemp(join(tmpdir(), 'memory-external-install-'));
+// The consumer pins the repo's own pnpm. Without a pin, a version-managing pnpm
+// launcher (Corepack) resolves "latest" and tries to download it, which the dead
+// registry below correctly refuses, so the install fails before it starts.
+const { packageManager } = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 const registry = 'http://127.0.0.1:9';
 
 async function pack(name) {
@@ -44,7 +48,7 @@ try {
   const storagePath = join(temp, JSON.parse(repacked.stdout)[0].filename);
 
   await writeFile(join(temp, 'package.json'), JSON.stringify({
-    name: 'memory-external-consumer', private: true, type: 'module',
+    name: 'memory-external-consumer', packageManager, private: true, type: 'module',
     dependencies: {
       '@portable-agent-asset-hub/core': `file:${corePath}`,
       '@portable-agent-asset-hub/storage-sqlite': `file:${storagePath}`,

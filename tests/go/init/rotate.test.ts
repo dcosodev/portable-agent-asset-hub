@@ -15,7 +15,8 @@
 //                                       STILL 0600; the old bytes
 //                                       do NOT survive.
 //   * captured stdout/stderr          → NO bearer-shaped string in
-//                                       any line (audit requirement).
+//                                       any line, so a token can
+//                                       never reach logs.
 //   * `hub token rotate --json`       → JSON payload includes the
 //                                       rotated-at timestamp, the
 //                                       new len, and the token_file

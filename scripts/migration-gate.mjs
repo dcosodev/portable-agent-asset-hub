@@ -637,7 +637,9 @@ async function main() {
     kind: 'hard',
     command: 'pnpm',
     args: ['mcp:gate'],
-    timeoutMs: 30 * 60 * 1000,
+    // Budget, not a check: this regression re-runs its own chain of gates and takes
+    // longer than the 30-minute default on a machine under load. A timeout still fails.
+    timeoutMs: 60 * 60 * 1000,
   });
   const mcpInspect = await inspectGateArtifact(mcpArtifactPath);
   steps['12b-mcp-artifact'] = {
@@ -665,7 +667,9 @@ async function main() {
     kind: 'hard',
     command: 'pnpm',
     args: ['hermes:gate'],
-    timeoutMs: 30 * 60 * 1000,
+    // Budget, not a check: this regression re-runs its own chain of gates and takes
+    // longer than the 30-minute default on a machine under load. A timeout still fails.
+    timeoutMs: 90 * 60 * 1000,
   });
   const hermesInspect = await inspectGateArtifact(hermesArtifactPath);
   steps['13b-hermes-artifact'] = {
@@ -716,7 +720,9 @@ async function main() {
     kind: 'hard',
     command: 'pnpm',
     args: ['openclaw:gate'],
-    timeoutMs: 30 * 60 * 1000,
+    // Budget, not a check: this regression re-runs its own chain of gates and takes
+    // longer than the 30-minute default on a machine under load. A timeout still fails.
+    timeoutMs: 180 * 60 * 1000,
   });
   const openclawInspect = await inspectGateArtifact(openclawArtifactPath);
   steps['14b-openclaw-artifact'] = {

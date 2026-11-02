@@ -13,7 +13,11 @@ const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 const resolvedRoot = resolve(hub, manifest.root);
 const resolvedSnapshot = resolve(hub, manifest.snapshot.path);
 const runtimeManifest = { ...manifest, root: resolvedRoot, snapshot: { ...manifest.snapshot, path: resolvedSnapshot } };
-const check = await verifyBaselineManifest(resolvedRoot, runtimeManifest);
+// The fixture directory is a git checkout, and git cannot preserve the 0600 the
+// manifest pins, so here only the bit git records is compared. The exact modes
+// are still enforced below, where the anchored snapshot is restored and compared
+// to the manifest: tar preserves them.
+const check = await verifyBaselineManifest(resolvedRoot, runtimeManifest, { modePolicy: 'git-executable-bit' });
 if (!check.valid) throw new Error(`baseline verify failed: ${check.errors.join('; ')}`);
 if (!manifest.snapshot || manifest.snapshot.path !== BASELINE_TRUST_ANCHOR.snapshotPath || manifest.snapshot.sha256.toLowerCase() !== BASELINE_TRUST_ANCHOR.snapshotSha256) throw new Error('manifest snapshot does not match immutable baseline trust anchor');
 const tar = resolvedSnapshot;

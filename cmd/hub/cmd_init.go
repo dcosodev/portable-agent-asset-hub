@@ -17,8 +17,7 @@
 //     internal/secrets.WriteAtomic; this handler only invokes it.
 //   - Idempotency. An existing tokens/hub.token is preserved
 //     byte-for-byte on re-init; the file's mtime MUST NOT
-//     advance. The audit requirement is "second init is
-//     idempotent".
+//     advance: a second init changes nothing.
 //   - No bearer in operator-visible output. The human envelope
 //     names the home and the subdirectories but never the token
 //     bytes; the JSON payload is filtered through output.Redact.

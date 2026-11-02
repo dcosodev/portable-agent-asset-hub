@@ -681,7 +681,7 @@
     },
     {
       "local": "scripts/gate-state.mjs",
-      "local_sha256": "a992504e4082d34001fdeca531b9eb398c7ee7e47d2917a69f73129ca5e72c29",
+      "local_sha256": "1bc49361b070865315dd9d125ba5eb6318e9860de968cb8c6cc88c802ab1a1a4",
       "classification": "new",
       "detection": {
         "direct_copy_detected": false,
@@ -698,30 +698,30 @@
     },
     {
       "local": "scripts/gate.mjs",
-      "local_sha256": "06a3fcf404c314b7691a3e3e94ad4d5437dbe7d58ff65723c6632abdd7030b3b",
+      "local_sha256": "8a1a0f4591ddd8044f30ead489a574b2c735243f3d0b737b7af42c2abcbc5973",
       "classification": "new",
       "detection": {
         "direct_copy_detected": false,
         "adaptation_similarity_detected": false,
-        "max_shingle_similarity": 0.002331002331002331,
+        "max_shingle_similarity": 0.002575107296137339,
         "exact_normalized_blocks": 0
       },
       "upstream": {
         "repository": "TencentCloud/TencentDB-Agent-Memory",
         "commit": "97f94654280b2932c35ba4806a491999ed244cc9",
-        "path": "MemoryCore/scripts/migrate-sqlite-to-tcvdb/manifest-write.ts",
-        "sha256": "e1757c44de2c049002d680b09eb355444e7f8cdb448b95486c6ad0397228c7ed"
+        "path": "MemoryCore/src/core/storage/local-backend.ts",
+        "sha256": "92b53af427cc74bfc80c34391c39b565fa434d872cfc08ea07f3cdf8bebdee39"
       },
       "evidence": "automated reproducible comparison; conceptual mapping (including inspired) is not treated as copying"
     },
     {
       "local": "scripts/metrics.mjs",
-      "local_sha256": "5762a16467ed2f3d4e9d318059810a56531181e294e471d0cfb5186d333bc663",
+      "local_sha256": "6709b1a09376a9c8463409b487532b19a65c05a28e5382846179120bd1719321",
       "classification": "new",
       "detection": {
         "direct_copy_detected": false,
         "adaptation_similarity_detected": false,
-        "max_shingle_similarity": 0.007462686567164179,
+        "max_shingle_similarity": 0.0074503311258278145,
         "exact_normalized_blocks": 0
       },
       "upstream": {
@@ -1060,7 +1060,7 @@
     "physical_nonblank_loc": {
       "src": 275,
       "tests": 166,
-      "scripts": 310
+      "scripts": 319
     },
     "ast": {
       "src": {

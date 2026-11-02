@@ -4,10 +4,11 @@ import { join, relative } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import ts from 'typescript';
+import { UPSTREAM_REVIEW_ROOT } from './gate-state.mjs';
 
 const run = promisify(execFile);
 const localRoots = ['src', 'tests', 'scripts'];
-const upstreamRoot = '/tmp/tencentdb-agent-memory-review';
+const upstreamRoot = UPSTREAM_REVIEW_ROOT;
 const commit = '97f94654280b2932c35ba4806a491999ed244cc9';
 const MIN_LINES = 5;
 const SHINGLE_SIZE = 5;

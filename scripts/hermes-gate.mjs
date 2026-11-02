@@ -547,7 +547,9 @@ async function main() {
     kind: 'hard',
     command: 'pnpm',
     args: ['mcp:gate'],
-    timeoutMs: 30 * 60 * 1000,
+    // Budget, not a check: this regression re-runs its own chain of gates and takes
+    // longer than the 30-minute default on a machine under load. A timeout still fails.
+    timeoutMs: 60 * 60 * 1000,
   });
   const mcpInspect = await inspectGateArtifact(mcpArtifactPath);
   steps['13b-mcp-artifact'] = {

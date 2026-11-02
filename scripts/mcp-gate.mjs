@@ -22,7 +22,14 @@ const generatedToolMetadataPath = resolve(repoRoot, 'packages/mcp/src/generated-
 
 const REQUIRED_GENERATOR_NAME = '@portable-agent-asset-hub/mcp/generate-mcp-tools';
 const REQUIRED_GENERATOR_VERSION = '0.1.0';
-const REQUIRED_TOOL_COUNT = 23;
+// The contract decides how many tools exist: every operation that declares
+// `x-mcp.exposed: true`. Counting from it rather than from the generated file
+// keeps this an independent check of the generator's output.
+const OPENAPI_METHODS = new Set(['get', 'put', 'post', 'delete', 'patch', 'head', 'options', 'trace']);
+const REQUIRED_TOOL_COUNT = Object.values(JSON.parse(await readFile(resolve(repoRoot, 'openapi/openapi.yaml'), 'utf8')).paths)
+  .flatMap((methods) => Object.entries(methods))
+  .filter(([method, operation]) => OPENAPI_METHODS.has(method) && operation?.['x-mcp.exposed'] === true)
+  .length;
 
 const steps = {};
 const assertions = [];

@@ -4,7 +4,6 @@ Status: ACCEPTED — kernel, REST/MCP seams and local Docker/Grafana stack
 implemented under TDD.
 Date: 2026-08-26.
 Supersedes: none.
-Related: `.hermes/plans/2026-08-25_235111-opentelemetry-grafana-implementation-orchestration.md`.
 
 Current implementation note: the original decision was delivered beyond its
 neutral kernel. REST and MCP now propagate W3C context, the Compose stack
@@ -70,7 +69,7 @@ for these answers. Adoption must be:
    accepted for operational infrastructure.
 9. **Local Grafana first.** Cloud adoption, retention policies, pseudonymous
    multi-tenant correlation and DEBUG-level raw payloads are explicit
-   unresolved questions (plan §9) and are not enabled by this decision.
+   unresolved questions and are not enabled by this decision.
 10. **Process-bound correlation.** Reserved headers (`authorization`,
     `traceparent`, `tracestate`, `baggage`, `x-agent-runtime`,
     `x-agent-client-version`, `x-request-id`) are stripped from any
