@@ -25,7 +25,7 @@ import {
   TraceIdRatioBasedSampler,
   type ReadableSpan,
   type Span,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import {
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
@@ -129,7 +129,8 @@ export async function startNodeTelemetry(
   const resource = buildResource(config);
   const traceExporter = buildTraceExporter(config.endpoint);
   const metricExporter = buildMetricExporter(config.endpoint);
-  const spanProcessor = new BatchSpanProcessor(traceExporter, {
+  const spanProcessor = new BatchSpanProcessor({
+    exporter: traceExporter,
     maxQueueSize: 1024,
     maxExportBatchSize: 256,
     scheduledDelayMillis: config.exportIntervalMs,
@@ -148,7 +149,7 @@ export async function startNodeTelemetry(
   const sdk = new NodeSDK({
     resource,
     spanProcessors: [spanProcessor],
-    metricReader,
+    metricReaders: [metricReader],
     sampler: new ParentBasedSampler({
       root: new TraceIdRatioBasedSampler(config.sampleRatio),
     }),
