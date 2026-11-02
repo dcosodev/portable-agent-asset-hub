@@ -39,11 +39,10 @@ JSX under its own configuration, so the root commands run it as a separate step.
 ## Local gates
 
 The gates are longer Node scripts in [`scripts/`](../scripts/). CI does not run them.
-**They are not all green at present:** the chained gates currently exit with a
-failure on a fresh machine, for reasons that include stale expectations in the
-scripts, open dependency advisories and environment assumptions. Do not read a gate
-listed here as passing validation. Use a gate as a detailed check of one surface, and
-read its evidence to see which step failed.
+`pnpm migration:gate` runs the whole chain and passes on a clean checkout, with one
+exception: the spike provenance step is reported as `SKIPPED` unless `SPIKE_UPSTREAM_ROOT`
+points to its external checkout, so that run does not re-derive provenance. Read a gate's
+evidence to see each step's result.
 
 | Command | Covers |
 |---|---|
@@ -64,7 +63,10 @@ Related single steps are `pnpm package:repro`, `pnpm storage:external-install`,
 covers telemetry and `pnpm docker:gate` runs `docker:contract` and `docker:smoke`.
 
 Most gates re-run earlier gates as regressions, so one early failure fails the later
-gates as well.
+gates as well. Within one top-level command, each gate runs once:
+[`scripts/run-gate.mjs`](../scripts/run-gate.mjs) replays a repeat's recorded result,
+including a failure, if the tree and the gate's evidence are unchanged. Nothing is kept
+between commands, and `GATE_NO_REUSE=1` runs every repeat for real.
 
 A gate stops with a failure when a required tool is missing, rather than continuing
 with less coverage. `pnpm openapi:gate` fails without Java 17 and OpenAPI Generator
