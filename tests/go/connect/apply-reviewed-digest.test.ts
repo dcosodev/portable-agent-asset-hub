@@ -42,6 +42,8 @@
 // no canonical data. The Go shell + child Node + adapter are the
 // only moving parts.
 
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   freshConnectHome,
@@ -632,6 +634,59 @@ describe('hub hub connect apply — reviewed-digest refusal', () => {
     for (const f of failures) {
       expect(f.stderr, 'lock-contention refusal had no stderr diagnostic').not.toBe('');
     }
+  }, 90_000);
+
+  // -----------------------------------------------------------------
+  // 8b. The race above can resolve through the lock or through the
+  //     receipt, depending on how the processes interleave. A lock
+  //     that is already held forces the lock path every time.
+  // -----------------------------------------------------------------
+  it('apply refuses a target whose lock is held, keeps that lock, and succeeds once it is released', async () => {
+    const home = freshConnectHome('apply-held-lock');
+    const target = freshConnectTarget('held-lock');
+    homeCleanup = home.cleanup;
+    targetCleanup = target.cleanup;
+    const database = createCanonicalConnectFixture('apply-held-lock', 'prf_apply_held', 'snap_apply_held');
+    databaseCleanup = database.cleanup;
+    const env = { HUB_HOME: home.home, ...database.env };
+
+    const preview = await runConnect(
+      [
+        'hub', 'connect', 'preview',
+        '--harness', 'hermes',
+        '--profile', 'prf_apply_held',
+        '--snapshot', 'snap_apply_held',
+        '--target-root', target.targetRoot,
+        '--json',
+      ],
+      env,
+    );
+    expect(preview.status).toBe(0);
+    const { planDigest } = JSON.parse(preview.stdout) as { planDigest: string };
+    const applyArgs = [
+      'hub', 'connect', 'apply',
+      '--harness', 'hermes',
+      '--profile', 'prf_apply_held',
+      '--snapshot', 'snap_apply_held',
+      '--target-root', target.targetRoot,
+      '--reason', 'unit-test-held-lock',
+      '--request-id', 'req_unit_apply_held',
+      '--reviewed-digest', planDigest,
+    ] as const;
+
+    const lockPath = join(target.targetRoot, '.pah', 'locks', 'hermes__prf_apply_held.lock');
+    mkdirSync(dirname(lockPath), { recursive: true });
+    writeFileSync(lockPath, '{"pid":1}\n');
+
+    const refused = await runConnect(applyArgs, env);
+    expect(refused.status, 'apply went ahead while the lock was held').not.toBe(0);
+    expect(refused.stderr).toMatch(/lock already held/);
+    expect(existsSync(lockPath), 'a refused apply removed a lock it does not own').toBe(true);
+
+    rmSync(lockPath);
+    const applied = await runConnect(applyArgs, env);
+    expect(applied.status, `apply after release failed: ${applied.stderr}`).toBe(0);
+    expect(existsSync(lockPath), 'a finished apply did not release its lock').toBe(false);
   }, 90_000);
 
   // -----------------------------------------------------------------
