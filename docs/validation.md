@@ -39,11 +39,10 @@ JSX under its own configuration, so the root commands run it as a separate step.
 ## Local gates
 
 The gates are longer Node scripts in [`scripts/`](../scripts/). CI does not run them.
-**They are not all green at present:** the chained gates currently exit with a
-failure on a fresh machine, for reasons that include stale expectations in the
-scripts, open dependency advisories and environment assumptions. Do not read a gate
-listed here as passing validation. Use a gate as a detailed check of one surface, and
-read its evidence to see which step failed.
+`pnpm migration:gate` runs the whole chain and passes on a clean checkout, with one
+exception: the spike provenance step is reported as `SKIPPED` unless `SPIKE_UPSTREAM_ROOT`
+points to its external checkout, so that run does not re-derive provenance. Read a gate's
+evidence to see each step's result.
 
 | Command | Covers |
 |---|---|
