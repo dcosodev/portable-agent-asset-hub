@@ -7,6 +7,11 @@ updates:
     cooldown:
       default-days: 7
     open-pull-requests-limit: 5
+    groups:
+      # The SDK packages pin each other's exact versions, so they only move together.
+      opentelemetry:
+        patterns:
+          - "@opentelemetry/*"
   - package-ecosystem: gomod
     directory: /
     schedule:
