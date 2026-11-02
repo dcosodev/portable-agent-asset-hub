@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/dcosodev/portable-agent-asset-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/dcosodev/portable-agent-asset-hub/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Status: beta](https://img.shields.io/badge/status-beta-blue.svg)](#project-status)
 
 **The problem in one sentence:** every AI coding agent (Claude Code, Codex,
 Cursor-likes, custom bots) wants your reusable knowledge — skills,
@@ -9,6 +10,11 @@ instructions, memories — in its own file format, in its own directory, so
 the same knowledge ends up copy-pasted and drifting across five tools with
 no single place that says which copy is right. This project keeps one
 versioned, audited copy and generates each tool's format from it on demand.
+
+## Project status
+
+`v0.3.0` is beta. It is in regular use and keeps changing as that use reveals bugs and
+new needs, so its APIs and CLI may change before `1.0`.
 
 ## What it is
 
